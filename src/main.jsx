@@ -1,15 +1,14 @@
-// src/main.jsx
 import React from "react";
 import { createRoot } from "react-dom/client";
+import { BrowserRouter } from "react-router-dom";
 import "./index.css";
+import App from "./App.jsx";
 
-// ✅ Importera din App-komponent
-import App from "./App";
-
-// ✅ Koppla React till din index.html -> <div id="root"></div>
 const root = createRoot(document.getElementById("root"));
 root.render(
   <React.StrictMode>
-    <App />
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
   </React.StrictMode>
 );

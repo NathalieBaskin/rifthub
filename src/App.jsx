@@ -1,41 +1,33 @@
 // src/App.jsx
-import React from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
+import Layout from "./components/Layout.jsx";
+import StartSida from "./pages/startsida.jsx";
 
-import Navbar from "./components/Navbar.jsx";
-import StartSida from "/pages/StartSida.jsx";
 import SummonersHall from "./pages/SummonersHall.jsx";
-// (valfritt) om du har en Footer-komponent kan du avkommentera nästa rad
-// import Footer from "./components/Footer.jsx";
 
 export default function App() {
   return (
-    <BrowserRouter>
-      {/* Navbar alltid överst */}
-      <Navbar />
+    <Routes>
+      {/* Allt innehåll använder Layout som wrapper (Navbar + ev. Footer där) */}
+      <Route element={<Layout />}>
+        {/* Startsida */}
+        <Route path="/" element={<StartSida />} />
 
-      {/* Sidinnehåll */}
-      <main style={{ minHeight: "100vh" }}>
-        <Routes>
-          <Route path="/" element={<StartSida />} />
-          <Route path="/summoners-hall" element={<SummonersHall />} />
+        {/* Forum / Summoners hall */}
+        <Route path="/summoners-hall" element={<SummonersHall />} />
 
-          {/* Enkla placeholders för länkar som inte är byggda ännu */}
-          <Route
-            path="/forum"
-            element={<div className="p-8">Forum (kommer senare)</div>}
-          />
+        {/* Enkla placeholders för sidor du inte byggt än */}
+        <Route
+          path="/forum"
+          element={<div className="p-8">Forum (kommer senare)</div>}
+        />
 
-          {/* 404 */}
-          <Route
-            path="*"
-            element={<div className="p-8">Sidan kunde inte hittas.</div>}
-          />
-        </Routes>
-      </main>
-
-      {/* Lägg gärna Footer här om du vill att den syns på alla sidor */}
-      {/* <Footer /> */}
-    </BrowserRouter>
+        {/* Fångar upp alla andra routes */}
+        <Route
+          path="*"
+          element={<div className="p-8">Sidan kunde inte hittas.</div>}
+        />
+      </Route>
+    </Routes>
   );
 }

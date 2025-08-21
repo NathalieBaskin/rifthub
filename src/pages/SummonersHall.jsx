@@ -1,5 +1,7 @@
-import { useMemo, useState, useEffect } from "react";
+// src/pages/SummonersHall.jsx
+import React, { useMemo, useState, useEffect } from "react";
 
+/* ===================== DATA ===================== */
 const TOPICS = [
   { id: "guides", name: "Guides & Builds" },
   { id: "champions", name: "Champs & Database" },
@@ -67,11 +69,13 @@ const THREADS = [
   },
 ];
 
-/* Mäter navbar-höjd */
+/* ===================== HJÄLP: NAVBAR-OFFSET ===================== */
 function useNavOffset() {
   const [offset, setOffset] = useState(0);
   useEffect(() => {
-    const header = document.querySelector("header[data-nav]") || document.querySelector("header");
+    const header =
+      document.querySelector("header[data-nav]") ||
+      document.querySelector("header");
     const measure = () => setOffset(header?.offsetHeight ?? 0);
     measure();
     window.addEventListener("resize", measure);
@@ -84,6 +88,7 @@ function useNavOffset() {
   return offset;
 }
 
+/* ===================== UI: TOPIC TABS ===================== */
 function TopicTabs({ topic, setTopic }) {
   return (
     <div className="w-full overflow-x-auto no-scrollbar">
@@ -110,11 +115,12 @@ function TopicTabs({ topic, setTopic }) {
   );
 }
 
+/* ===================== UI: TRÅDRAD ===================== */
 function ThreadRow({ t, onOpen }) {
   return (
     <li className="group">
       <button
-        className="w-full text-left px-4 md:px-6 py-4 transition hover:bg-white/55"
+        className="w-full text-left px-4 md:px-6 py-4 transition hover:bg-black/5 rounded-lg"
         onClick={() => onOpen(t)}
       >
         <div className="flex items-start gap-3 md:gap-4">
@@ -127,9 +133,13 @@ function ThreadRow({ t, onOpen }) {
           )}
           <div className="min-w-0 flex-1">
             <h3 className="font-display text-xl text-rift-bg/95">{t.title}</h3>
-            <p className="mt-1 text-sm text-rift-bg/85 line-clamp-2">{t.excerpt}</p>
+            <p className="mt-1 text-sm text-rift-bg/85 line-clamp-2">
+              {t.excerpt}
+            </p>
             <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-rift-bg/70">
-              <span>By <span className="font-medium">{t.author}</span></span>
+              <span>
+                By <span className="font-medium">{t.author}</span>
+              </span>
               <span>• {new Date(t.created).toLocaleDateString()}</span>
               <span>💬 {t.replies}</span>
               <span>👍 {t.likes}</span>
@@ -142,30 +152,53 @@ function ThreadRow({ t, onOpen }) {
   );
 }
 
+/* ===================== UI: MODAL ===================== */
 function ThreadModal({ thread, onClose }) {
   useEffect(() => {
     const onKey = (e) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
+
   if (!thread) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
-      <div className="max-w-3xl w-full parchment-panel rounded-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
+    <div
+      className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <div
+        className="max-w-3xl w-full parchment-panel rounded-2xl overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
         <span className="parchment-pin pin-tl" />
         <span className="parchment-pin pin-tr" />
         <div className="p-6 md:p-8">
-          <h3 className="font-display text-2xl md:text-3xl text-rift-bg/95">{thread.title}</h3>
+          <h3 className="font-display text-2xl md:text-3xl text-rift-bg/95">
+            {thread.title}
+          </h3>
           <div className="mt-2 text-xs text-rift-bg/70">
-            By <span className="font-medium">{thread.author}</span> • {new Date(thread.created).toLocaleDateString()} • 💬 {thread.replies} • 👍 {thread.likes}
+            By <span className="font-medium">{thread.author}</span> •{" "}
+            {new Date(thread.created).toLocaleDateString()} • 💬 {thread.replies} • 👍{" "}
+            {thread.likes}
           </div>
           <div className="rift-sep my-4"></div>
-          <pre className="whitespace-pre-wrap font-sans text-[15px] text-rift-bg/90">{thread.content}</pre>
+          <pre className="whitespace-pre-wrap font-sans text-[15px] text-rift-bg/90">
+            {thread.content}
+          </pre>
           <div className="mt-6 flex justify-end gap-3">
-            <button className="px-4 py-2 rounded-md border border-rift-gold/50 bg-white/85 text-rift-bg hover:bg-white" onClick={onClose}>Close</button>
-            <button className="px-4 py-2 rounded-md border border-rift-gold/65 bg-[linear-gradient(180deg,#fff,#f0e6c8)] text-rift-bg hover:brightness-95">👍 Like</button>
-            <button className="px-4 py-2 rounded-md border border-rift-gold/65 bg-[linear-gradient(180deg,#fff,#f0e6c8)] text-rift-bg hover:brightness-95">💬 Reply</button>
+            <button
+              className="px-4 py-2 rounded-md border border-rift-gold/50 bg-white/85 text-rift-bg hover:bg-white"
+              onClick={onClose}
+            >
+              Close
+            </button>
+            <button className="px-4 py-2 rounded-md border border-rift-gold/65 bg-[linear-gradient(180deg,#fff,#f0e6c8)] text-rift-bg hover:brightness-95">
+              👍 Like
+            </button>
+            <button className="px-4 py-2 rounded-md border border-rift-gold/65 bg-[linear-gradient(180deg,#fff,#f0e6c8)] text-rift-bg hover:brightness-95">
+              💬 Reply
+            </button>
           </div>
         </div>
       </div>
@@ -173,6 +206,7 @@ function ThreadModal({ thread, onClose }) {
   );
 }
 
+/* ===================== HUVUDKOMPONENT ===================== */
 export default function SummonersHall() {
   const [topic, setTopic] = useState(TOPICS[0].id);
   const [query, setQuery] = useState("");
@@ -192,35 +226,41 @@ export default function SummonersHall() {
 
   return (
     <div className="min-h-screen" style={{ paddingTop: navOffset }}>
-      <div className="max-w-7xl mx-auto px-4 pb-20">
-        <section className="relative parchment-panel rounded-3xl overflow-hidden">
-          <span className="parchment-pin pin-tl" />
-          <span className="parchment-pin pin-tr" />
-          <div className="p-6 md:p-10">
-            <h1 className="font-display text-3xl md:text-4xl text-rift-bg/95">Summoner&apos;s Hall</h1>
-            <p className="mt-2 text-rift-bg/85">
-              Forum för guider, diskussioner och nyheter. Välj ett ämne nedan för att se trådarna.
-            </p>
+      {/* ======= ALLT PÅ ETT STORT PAPPER ======= */}
+      <section className="relative parchment-panel rounded-3xl overflow-hidden max-w-7xl mx-auto">
+        <span className="parchment-pin pin-tl" />
+        <span className="parchment-pin pin-tr" />
 
-            <div className="mt-6 flex flex-col md:flex-row md:items-center gap-4">
-              <TopicTabs topic={topic} setTopic={setTopic} />
-              <div className="md:ml-auto w-full md:w-72">
-                <input
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search threads..."
-                  className="w-full rounded-xl border border-rift-gold/40 bg-white/85 text-rift-bg px-4 py-2 placeholder:text-rift-bg/60 focus:outline-none focus:ring-2 focus:ring-rift-gold/50"
-                />
-              </div>
+        <div className="p-6 md:p-10">
+          {/* Header */}
+          <h1 className="font-display text-3xl md:text-4xl text-rift-bg/95">
+            Summoner&apos;s Hall
+          </h1>
+          <p className="mt-2 text-rift-bg/85">
+            Forum för guider, diskussioner och nyheter. Välj ett ämne nedan för
+            att se trådarna.
+          </p>
+
+          {/* Topics + sök */}
+          <div className="mt-6 flex flex-col md:flex-row md:items-center gap-4">
+            <TopicTabs topic={topic} setTopic={setTopic} />
+            <div className="md:ml-auto w-full md:w-72">
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search threads..."
+                className="w-full rounded-xl border border-rift-gold/40 bg-white/85 text-rift-bg px-4 py-2 placeholder:text-rift-bg/60 focus:outline-none focus:ring-2 focus:ring-rift-gold/50"
+              />
             </div>
           </div>
-        </section>
 
-        <section className="mt-6 parchment-panel rounded-3xl overflow-hidden">
-          <div className="parchment-section-title px-4 md:px-6 py-3 text-xs md:text-sm uppercase tracking-widest text-rift-bg/80">
+          {/* Sektionstitel */}
+          <div className="parchment-section-title mt-8 mb-2 px-4 md:px-6 py-3 text-xs md:text-sm uppercase tracking-widest text-rift-bg/80 rounded-t-lg">
             Threads in {TOPICS.find((t) => t.id === topic)?.name}
           </div>
-          <ul className="divide-y divide-transparent">
+
+          {/* Trådlista – direkt på pappret */}
+          <ul className="px-2 md:px-4 pb-6">
             {list.map((t) => (
               <ThreadRow key={t.id} t={t} onOpen={setOpen} />
             ))}
@@ -230,9 +270,10 @@ export default function SummonersHall() {
               </li>
             )}
           </ul>
-        </section>
-      </div>
+        </div>
+      </section>
 
+      {/* Modal */}
       <ThreadModal thread={open} onClose={() => setOpen(null)} />
     </div>
   );

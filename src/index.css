@@ -4,18 +4,18 @@
 
 /* === Lokala fonter från /public/fonts === */
 @font-face {
-  font-family: "Spiegel";
-  src: url("/fonts/Spiegel_TT_Regular.ttf") format("truetype");
+  font-family: "";
+  src: url("/fonts/BeaufortforLOL-Regular") format("truetype");
   font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
-  font-family: "Spiegel";
-  src: url("/fonts/Spiegel_TT_Medium.ttf") format("truetype");
+  font-family: "Beufort";
+  src: url("/fonts/BeaufortforLOL-Medium") format("truetype");
   font-weight: 500; font-style: normal; font-display: swap;
 }
 @font-face {
-  font-family: "Spiegel";
-  src: url("/fonts/Spiegel_TT_Bold.ttf") format("truetype");
+  font-family: "Beufort";
+  src: url("/fonts/BeaufortforLOL-Bold") format("truetype");
   font-weight: 700; font-style: normal; font-display: swap;
 }
 @font-face {
@@ -37,7 +37,7 @@
 /* ===================== Bas ===================== */
 @layer base {
   html, body, #root { height: 100%; }
-  html, body { font-family: "Spiegel", sans-serif; }
+  html, body { font-family: "Beufort", sans-serif; }
 
   body {
     background: transparent;               /* ingen egen bild – den ligger i ::before */

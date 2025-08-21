@@ -21,7 +21,7 @@ export default {
         glow: "0 0 10px rgba(217,178,96,0.6)",
       },
       fontFamily: {
-        sans: ["Spiegel", "sans-serif"],
+        sans: ["Beufort", "sans-serif"],
         display: ["Beaufort", "ui-serif", "Georgia", "serif"],
       },
     },

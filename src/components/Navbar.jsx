@@ -59,7 +59,7 @@ export default function Navbar() {
     <header
       data-nav
       className={`fixed top-0 left-0 w-full z-50 transition-colors duration-300
-        ${isScrolled ? "bg-rift-bg/80 backdrop-blur border-b border-rift-gold/15" : "bg-transparent"}
+        ${isScrolled ? "backdrop-blur border-b border-rift-gold/15" : "bg-transparent"}
       `}
     >
       <div className="max-w-7xl mx-auto px-4">
@@ -87,7 +87,7 @@ export default function Navbar() {
 
         {/* === LÄGE 2: KOMPAKT RAD (alltid på andra sidor, eller på home när scrolled) === */}
         <div
-          className={`${(!isHome || isScrolled) ? "flex" : "hidden"} items-center justify-between py-2 transition-all duration-300`}
+          className={`${(!isHome || isScrolled) ? "flex" : "hidden"} items-center justify-between py-2 transition-all duration-500`}
         >
           <Link to="/" className="flex items-center gap-2 min-w-0">
             <img
