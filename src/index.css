@@ -2,66 +2,44 @@
 @tailwind components;
 @tailwind utilities;
 
-/* === Lokala fonter (serveras från public/) === */
-@font-face {
-  font-family: "LoL";
-  src: url("/fonts/BeaufortforLOL-Regular.ttf") format("truetype");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "LoL";
-  src: url("/fonts/BeaufortforLOL-Medium.ttf") format("truetype");
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "LoL";
-  src: url("/fonts/BeaufortforLOL-Bold.ttf") format("truetype");
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "LoL";
-  src: url("/fonts/BeaufortforLOL-Heavy.ttf") format("truetype");
-  font-weight: 900;
-  font-style: normal;
-  font-display: swap;
-}
-
+/* === Lokala fonter från /public/fonts === */
 @font-face {
   font-family: "Spiegel";
   src: url("/fonts/Spiegel_TT_Regular.ttf") format("truetype");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
+  font-weight: 400; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: "Spiegel";
-  src: url("/fonts/Spiegel_TT_SemiBold.ttf") format("truetype");
-  font-weight: 600;
-  font-style: normal;
-  font-display: swap;
+  src: url("/fonts/Spiegel_TT_Medium.ttf") format("truetype");
+  font-weight: 500; font-style: normal; font-display: swap;
 }
 @font-face {
   font-family: "Spiegel";
   src: url("/fonts/Spiegel_TT_Bold.ttf") format("truetype");
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
+  font-weight: 700; font-style: normal; font-display: swap;
 }
 
-/* === Tvinga in fonterna (testläge) === */
+/* Beaufort (LoL-rubrikfont) */
+@font-face {
+  font-family: "Beaufort";
+  src: url("/fonts/BeaufortforLOL-Regular.ttf") format("truetype");
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Beaufort";
+  src: url("/fonts/BeaufortforLOL-Medium.ttf") format("truetype");
+  font-weight: 500; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Beaufort";
+  src: url("/fonts/BeaufortforLOL-Bold.ttf") format("truetype");
+  font-weight: 700; font-style: normal; font-display: swap;
+}
+
+/* Basregler */
 @layer base {
-  html, body {
-    font-family: "Spiegel", ui-sans-serif, system-ui, sans-serif !important;
-  }
-  h1,h2,h3,h4,h5,h6 {
-    font-family: "LoL", ui-serif, Georgia, serif !important;
-  }
+  /* Säkerhetsbälte: tvinga sans på html/body */
+  html, body { @apply font-sans; }
 
   body {
     @apply bg-rift-bg text-gray-200 antialiased;
@@ -71,16 +49,18 @@
       radial-gradient(900px 500px at 0% 0%, rgba(58,169,160,.10), transparent 60%);
     background-blend-mode: overlay;
     background-size: auto;
-
     cursor: url("/cursor-default.png") 2 2, auto;
   }
+
+  /* Rubriker = Beaufort */
+  h1, h2, h3, h4, h5, h6 { @apply font-display; }
 
   a, button, [role="button"], .cursor-pointer {
     cursor: url("/cursor-pointer.png") 6 0, pointer;
   }
 }
 
-/* Hjälpklasser (oförändrat) */
+/* Hjälpklasser */
 .play-triangle {
   width: 0; height: 0;
   border-left: 14px solid white;
@@ -92,9 +72,7 @@
   content: ""; display: block; height: 1px; width: 100%;
   background: linear-gradient(90deg, transparent, rgba(217,178,96,.4), transparent);
 }
-.card-fantasy {
-  @apply bg-rift-card/90 border border-rift-gold/20 rounded-xl2 shadow-aura;
-}
+.card-fantasy { @apply bg-rift-card/90 border border-rift-gold/20 rounded-xl2 shadow-aura; }
 @media (hover:hover) {
   .no-scrollbar::-webkit-scrollbar { height: 8px }
   .no-scrollbar::-webkit-scrollbar-thumb { background: #2a3447; border-radius: 9999px }

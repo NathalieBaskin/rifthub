@@ -3,7 +3,6 @@ import yasuoImg from "../assets/images/nightbringerYasuo.jpeg";
 import tftImg from "../assets/images/TeamfightTacticts.png";
 
 export default function StartSida() {
-  // --- HERO video state/refs ---
   const videoRef = useRef(null);
   const [muted, setMuted] = useState(true);
 
@@ -12,18 +11,16 @@ export default function StartSida() {
     if (!video) return;
 
     const handleLoaded = () => {
-      // hoppa 10s in i videon när metadata är laddad
-    try {
+     try {
   video.currentTime = 10;
-} catch {
-  // ignorerar eventuella fel
+} catch (_) {
+  // ignore error
 }
 
-      // säkerställ spelning efter hoppet
       const p = video.play();
       if (p && typeof p.then === "function") {
         p.catch(() => {
-          /* ignore autoplay blocking since muted=true */
+          // ignore autoplay block (muted = true)
         });
       }
     };
@@ -33,13 +30,12 @@ export default function StartSida() {
   }, []);
 
   const toggleMute = () => {
-    const video = videoRef.current;
-    if (!video) return;
-    video.muted = !video.muted;
-    setMuted(video.muted);
+    const v = videoRef.current;
+    if (!v) return;
+    v.muted = !v.muted;
+    setMuted(v.muted);
   };
 
-  // --- FEATURED NEWS data ---
   const featured = [
     {
       id: 1,
@@ -72,32 +68,35 @@ export default function StartSida() {
 
   return (
     <>
-      {/* HERO: tyst, loopad, autoplay – endast lokal video (från public/) */}
-      <section className="relative">
-        <div className="aspect-[16/10] sm:aspect-[16/8] md:aspect-[16/6] overflow-hidden">
-          <video
-            ref={videoRef}
-            className="w-full h-full object-cover"
-            src="/videos/startsidaVideo.mp4"
-            autoPlay
-            muted={muted}
-            loop
-            playsInline
-            preload="auto"
-          />
-        </div>
+      {/* HERO: fullscreen video (visas helt) med navbar ovanpå */}
+      <section className="relative h-screen">
+        {/* Själva videon fyller hela ytan */}
+        <video
+          ref={videoRef}
+          className="absolute inset-0 w-full h-full object-cover"
+          src="/videos/startsidaVideo.mp4"
+          autoPlay
+          muted={muted}
+          loop
+          playsInline
+          preload="auto"
+        />
 
-        {/* Ljudknapp */}
-        <button
-          onClick={toggleMute}
-          className="absolute bottom-4 right-4 px-3 py-2 rounded-md bg-black/50 text-white border border-white/30 hover:bg-black/70 transition text-sm"
-        >
-          {muted ? "🔇" : "🔊"}
-        </button>
+        {/* Ljudknapp på overlay-lager */}
+        <div className="absolute inset-0 flex items-end justify-end p-4">
+          <button
+            onClick={toggleMute}
+            className="px-3 py-2 rounded-md bg-black/50 text-white border border-white/30 hover:bg-black/70 transition text-sm"
+            aria-label={muted ? "Enable sound" : "Mute"}
+            title={muted ? "Enable sound" : "Mute"}
+          >
+            {muted ? "🔇" : "🔊"}
+          </button>
+        </div>
       </section>
 
-      {/* FEATURED NEWS */}
-      <section className="max-w-7xl mx-auto px-4 py-6">
+      {/* FEATURED NEWS – lite top-padding så den inte ligger under den fasta navbaren i scroll-läget */}
+      <section className="max-w-7xl mx-auto px-4 pt-24 pb-6">
         <h3 className="font-display text-sm tracking-widest text-rift-gold">
           FEATURED NEWS
         </h3>
@@ -152,7 +151,7 @@ export default function StartSida() {
         <h2 className="font-display text-3xl md:text-4xl text-gray-100 drop-shadow-lg">
           CHAMPION
         </h2>
-      
+
         <a
           href="https://www.leagueoflegends.com/en-gb/champions/"
           className="inline-flex items-center justify-center mt-6 px-6 py-3 rounded-md border border-rift-gold/40 bg-rift-card/60 text-gray-100 hover:bg-rift-card drop-shadow-glow"

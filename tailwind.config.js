@@ -18,8 +18,10 @@ export default {
         glow: "0 0 10px rgba(217,178,96,0.6)",
       },
       fontFamily: {
-        display: ["LoL", "ui-serif", "Georgia", "serif"],
-        body: ["Spiegel", "ui-sans-serif", "system-ui", "sans-serif"],
+        // Brödtext (Spiegel används som standard sans)
+        sans: ["Spiegel", "sans-serif"],
+        // Rubriker (Beaufort används som display)
+        display: ["Beaufort", "ui-serif", "Georgia", "serif"],
       },
     },
   },
