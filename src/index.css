@@ -2,49 +2,64 @@
 @tailwind components;
 @tailwind utilities;
 
-/* === Lokala fonter från /public/fonts === */
+/* ===================== FONTER (från /public/fonts) ===================== */
 @font-face {
   font-family: "Beaufort";
   src: url("/fonts/BeaufortforLOL-Regular.ttf") format("truetype");
-  font-weight: 400; font-style: normal; font-display: swap;
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
 }
 @font-face {
   font-family: "Beaufort";
   src: url("/fonts/BeaufortforLOL-Medium.ttf") format("truetype");
-  font-weight: 500; font-style: normal; font-display: swap;
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
 }
 @font-face {
   font-family: "Beaufort";
   src: url("/fonts/BeaufortforLOL-Bold.ttf") format("truetype");
-  font-weight: 700; font-style: normal; font-display: swap;
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
 }
 
-/* ===================== Bas ===================== */
+/* ===================== BAS ===================== */
 @layer base {
   html, body, #root { height: 100%; }
-  /* Gör Beaufort till default överallt */
+
+  /* Global font = Beaufort */
   html, body { font-family: "Beaufort", ui-serif, Georgia, serif; }
 
   body {
-    background: transparent; /* bakgrundbilden läggs i ::before */
+    background: transparent;              /* global bakgrund ligger i ::before */
     color: #e5e7eb;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     cursor: url("/cursor-default.png") 2 2, auto;
+
+    /* Fallback-bild för komponenter (används t.ex. på startsidans hero) */
+    --bg-fallback: url("/images/fantasy-bg.png");
   }
+
+  /* Rubriker använder samma font (men låt Tailwind hantera viktstorlekar) */
+  h1, h2, h3, h4, h5, h6 { font-family: "Beaufort", ui-serif, Georgia, serif; }
 
   a, button, [role="button"], .cursor-pointer {
     cursor: url("/cursor-pointer.png") 6 0, pointer;
   }
 }
 
-/* === GLOBAL BAKGRUND (under allt) === */
+/* ===================== GLOBAL BAKGRUND (under allt) ===================== */
+/* Ligger absolut längst bak, påverkar inte layouten */
 body::before {
   content: "";
   position: fixed;
   inset: 0;
-  z-index: -1;             /* under allt innehåll */
+  z-index: -1;
   pointer-events: none;
+
   background-image:
     url("/images/fantasy-bg.png"),
     radial-gradient(1200px 600px at 50% -10%, rgba(58,169,160,.18), transparent 60%),
@@ -56,36 +71,41 @@ body::before {
   background-attachment: fixed, fixed, fixed, fixed;
 }
 
-/* === Parchment (papper) UI === */
+/* ===================== PARCHMENT (papper/panel) ===================== */
 .parchment-panel {
   position: relative;
   border-radius: 22px;
   background:
     url("/images/scroll.png") center/cover no-repeat,
-    radial-gradient(1200px 700px at 30% 0%, rgba(217,178,96,.25), transparent 60%),
     linear-gradient(180deg, rgba(255,255,255,.94), rgba(249,244,228,.94));
   box-shadow:
     0 10px 25px rgba(0,0,0,.35),
     inset 0 1px 0 rgba(255,255,255,.7),
     inset 0 -1px 0 rgba(0,0,0,.06);
   border: 1px solid rgba(217,178,96,.28);
-  z-index: 1;
 }
 .parchment-panel::before,
 .parchment-panel::after {
-  content: ""; position: absolute; inset: 0; border-radius: 22px; pointer-events: none;
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 22px;
+  pointer-events: none;
 }
 .parchment-panel::before { box-shadow: inset 0 0 60px rgba(0,0,0,.12); }
 .parchment-panel::after {
   background:
     radial-gradient(60% 12px at 50% 0%, rgba(0,0,0,.08), transparent 60%),
     radial-gradient(60% 12px at 50% 100%, rgba(0,0,0,.06), transparent 60%);
-  mix-blend-mode: multiply; opacity: .6; border-radius: 22px;
+  mix-blend-mode: multiply;
+  opacity: .6;
+  border-radius: 22px;
 }
 
-/* Dekor pins (om du använder i modal) */
+/* Dekor: pins */
 .parchment-pin {
-  position: absolute; width: 16px; height: 16px;
+  position: absolute;
+  width: 16px; height: 16px;
   background: radial-gradient(circle at 35% 35%, #f7e6b1, #d3b060 55%, #7f6a35);
   border-radius: 50%;
   box-shadow: 0 2px 6px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.6);
@@ -95,10 +115,74 @@ body::before {
 .parchment-pin.pin-bl { bottom: -8px; left: -8px; }
 .parchment-pin.pin-br { bottom: -8px; right: -8px; }
 
-/* Divider & länkar som passar pappret */
+/* ===================== HJÄLPKLASSER ===================== */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.rift-sep { position: relative; margin: 1.25rem 0; }
+.rift-sep::before {
+  content: "";
+  display: block;
+  height: 1px; width: 100%;
+  background: linear-gradient(90deg, transparent, rgba(217,178,96,.4), transparent);
+}
+
+.card-fantasy {
+  background-color: rgba(20, 28, 43, .9);
+  border: 1px solid rgba(217,178,96,.2);
+  border-radius: 1rem;
+  box-shadow: 0 0 25px rgba(217,178,96,0.15);
+}
+
+@media (hover:hover) {
+  .no-scrollbar::-webkit-scrollbar { height: 8px; width: 8px; }
+  .no-scrollbar::-webkit-scrollbar-thumb {
+    background: #2a3447;
+    border-radius: 9999px;
+  }
+}
+
+/* ===================== SUMMONER'S HALL – PAPER LAYOUT ===================== */
+/* Stora pappret som ALLT innehåll ska ligga på */
+.parchment-wrapper {
+  background: url("/images/scroll.png") no-repeat center top;
+  background-size: cover, auto;
+  max-width: 1200px;
+  margin: 0 auto;                 /* centrerar på sidan */
+  padding: 56px 40px 48px 40px;   /* luft runt innehållet */
+  min-height: 80vh;
+  border: 1px solid rgba(217,178,96,.28);
+  border-radius: 22px;
+  box-shadow:
+    0 10px 25px rgba(0,0,0,.35),
+   
+    inset 0 -1px 0 rgba(0,0,0,.06);
+  position: relative;
+  z-index: 1;                     /* över bakgrunden, under navbaren */
+}
+
+/* Grid på pappret: vänster rail + innehåll */
+.paper-grid {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 18px;
+}
+@media (max-width: 980px) {
+  .paper-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.paper-content { min-width: 0; }
+
+/* Divider mellan trådar */
 .paper-divider {
   height: 1px;
-  margin: 6px 0;
+  margin: 8px 0;
   background: linear-gradient(
     90deg,
     rgba(0,0,0,0) 0%,
@@ -106,33 +190,100 @@ body::before {
     rgba(0,0,0,0) 100%
   );
 }
+
+/* ===== Vänster flik/accordion-rail ===== */
+.paper-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.paper-acc {
+  border: 1px solid rgba(217,178,96,.30);
+  border-radius: 14px;
+
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,.05);
+}
+.paper-acc__summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 10px 14px;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  border-bottom: 1px solid rgba(217,178,96,.25);
+  
+  user-select: none;
+}
+
+/* dölj default marker */
+.paper-acc__summary::-webkit-details-marker { display: none; }
+
+.paper-acc__body { padding: 10px; }
+
+/* Lista med flikar (topics) */
+.paper-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.paper-tab {
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(217,178,96,.35);
+  transition: filter .12s ease, transform .04s ease, background .12s ease;
+}
+.paper-tab--idle {
+
+  color: #0f1624;
+}
+.paper-tab--idle:hover { filter: brightness(.98); }
+.paper-tab--active {
+ 
+  color: #0f1624;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.6);
+}
+
+/* Actions-knappar */
+.paper-actions {
+  display: grid;
+  gap: 8px;
+}
 .paper-link {
   display: inline-block;
-  padding: 8px 10px;
-  border-radius: 10px;
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  border-radius: 12px;
   border: 1px solid rgba(217,178,96,.35);
-  background: linear-gradient(180deg, #ffffff, #f0e6c8);
-  transition: filter .15s ease, transform .05s ease;
+
+  transition: filter .12s ease, transform .04s ease;
 }
-.paper-link:hover { filter: brightness(0.98); }
+.paper-link:hover { filter: brightness(.98); }
 .paper-link:active { transform: translateY(1px); }
 
-/* === Själva forum-pappret (wrapper) === */
-.parchment-wrapper {
-  background: url("/images/scroll.png") no-repeat center top;
-  background-size: cover;
-  max-width: 1200px;
-  margin: 0 auto;         /* centrera pappret */
-  padding: 48px 32px;     /* utrymme inuti pappret */
-  min-height: 80vh;       /* storlek på pappret */
-  position: relative;
-  z-index: 1;             /* över bakgrundsbilden, under navbar */
-  border-radius: 22px;
-  box-shadow: 0 10px 25px rgba(0,0,0,.35);
-  border: 1px solid rgba(217,178,96,.28);
+/* Latest-listan */
+.paper-latest {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
-
-/* Färgvariabler från Tailwind-temat (om du använder) */
-:root {
-  --rift-gold: #d9b260;
+.paper-latest__item {
+  display: grid;
+  grid-template-columns: 40px 1fr;
+  gap: 10px;
+  align-items: center;
 }
+.paper-latest__thumb {
+  width: 40px; height: 40px;
+  border-radius: 8px;
+  object-fit: contain;
+ 
+  box-shadow: 0 0 0 1px rgba(0,0,0,.08);
+}
+.paper-latest__text { min-width: 0; }
+.paper-latest__title { color: #0f1624; font-weight: 600; }
+.paper-latest__meta { color: rgba(15,22,36,.7); font-size: 12px; }

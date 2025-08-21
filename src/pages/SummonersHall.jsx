@@ -1,3 +1,4 @@
+// src/pages/SummonersHall.jsx
 import React, { useMemo, useState, useEffect } from "react";
 
 /* ===================== DATA ===================== */
@@ -88,44 +89,71 @@ function useNavOffset() {
 }
 
 /* ===================== UI-BLOCKS ===================== */
-function SideTopicList({ topic, setTopic }) {
+function Accordion({ title, defaultOpen = true, children }) {
   return (
-    <section className="rounded-xl border border-rift-gold/30 bg-white/80 text-rift-bg overflow-hidden">
-      <div className="px-4 py-2.5 text-xs tracking-widest uppercase border-b border-rift-gold/25 bg-white/85">
-        Topics
-      </div>
-      <ul className="py-2">
-        {TOPICS.map((t) => {
-          const active = topic === t.id;
-          return (
-            <li key={t.id}>
-              <button
-                onClick={() => setTopic(t.id)}
-                className={[
-                  "w-full text-left px-4 py-2.5 transition",
-                  active
-                    ? "bg-[linear-gradient(180deg,#fff,#f0e6c8)] text-rift-bg font-medium"
-                    : "hover:bg-white/80 text-rift-bg/80",
-                ].join(" ")}
-              >
-                {t.name}
-              </button>
-            </li>
-          );
-        })}
-      </ul>
-    </section>
+    <details className="paper-acc" open={defaultOpen}>
+      <summary className="paper-acc__summary">{title}</summary>
+      <div className="paper-acc__body">{children}</div>
+    </details>
   );
 }
 
-function Widget({ title, children }) {
+function SideRail({ topic, setTopic }) {
   return (
-    <section className="rounded-xl border border-rift-gold/30 bg-white/80 text-rift-bg overflow-hidden">
-      <div className="px-4 py-2.5 text-xs tracking-widest uppercase border-b border-rift-gold/25 bg-white/85">
-        {title}
-      </div>
-      <div className="p-4">{children}</div>
-    </section>
+    <aside className="paper-rail">
+      {/* Topics */}
+      <Accordion title="TOPICS" defaultOpen>
+        <ul className="paper-list">
+          {TOPICS.map((t) => {
+            const active = topic === t.id;
+            return (
+              <li key={t.id}>
+                <button
+                  onClick={() => setTopic(t.id)}
+                  className={[
+                    "paper-tab",
+                    active ? "paper-tab--active" : "paper-tab--idle",
+                  ].join(" ")}
+                >
+                  {t.name}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      </Accordion>
+
+      {/* Actions */}
+      <Accordion title="ACTIONS" defaultOpen={false}>
+        <div className="paper-actions">
+          <button className="paper-link">✍️ Start new thread</button>
+          <button className="paper-link">⭐ Mark as favorite</button>
+          <button className="paper-link">🧭 Rules &amp; etiquette</button>
+        </div>
+      </Accordion>
+
+      {/* Latest */}
+      <Accordion title="LATEST" defaultOpen={false}>
+        <ul className="paper-latest">
+          {THREADS.slice(0, 4).map((t) => (
+            <li key={t.id} className="paper-latest__item">
+              <img
+                src={t.thumb}
+                alt=""
+                className="paper-latest__thumb"
+                loading="lazy"
+              />
+              <div className="paper-latest__text">
+                <div className="paper-latest__title line-clamp-2">{t.title}</div>
+                <div className="paper-latest__meta">
+                  {new Date(t.created).toLocaleDateString()}
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </Accordion>
+    </aside>
   );
 }
 
@@ -237,64 +265,29 @@ export default function SummonersHall() {
   );
 
   return (
-    <div className="min-h-screen bg-transparent" style={{ paddingTop: navOffset }}>
-      {/* === HELA FORUMET PÅ PAPPRET === */}
-      <div className="parchment-wrapper">
-        {/* Header på pappret */}
+    <div className="min-h-screen bg-transparent">
+      {/* Hela forumet på ett centrerat PAPPER, nedanför navbaren */}
+      <div
+        className="parchment-wrapper"
+        style={{ marginTop: (navOffset || 0) + 16 }}
+      >
+        {/* Titel & ingress på pappret */}
         <h1 className="font-display text-3xl md:text-4xl text-rift-bg text-center">
           Summoner&apos;s Hall
         </h1>
-        <p className="mt-2 mb-8 text-center text-rift-bg/85">
-          Forum för guider, diskussioner och nyheter. Välj ett ämne nedan för att
-          se trådarna.
+        <p className="mt-1 mb-6 text-center text-rift-bg/85">
+          Forum för guider, diskussioner och nyheter. Välj ett ämne nedan för att se
+          trådarna.
         </p>
 
-        {/* Grid på pappret: vänsterkolumn staplad, trådar till höger */}
-        <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-8">
-          {/* Vänsterkolumn (staplad: Topics -> Actions -> Latest) */}
-          <div className="flex flex-col gap-6">
-            <SideTopicList topic={topic} setTopic={setTopic} />
+        {/* Layout på pappret: vänster flik-rail + innehåll */}
+        <div className="paper-grid">
+          <SideRail topic={topic} setTopic={setTopic} />
 
-            <Widget title="Actions">
-              <ul className="space-y-2 text-sm">
-                <li>
-                  <button className="paper-link w-full text-left">✍️ Start new thread</button>
-                </li>
-                <li>
-                  <button className="paper-link w-full text-left">⭐ Mark as favorite</button>
-                </li>
-                <li>
-                  <button className="paper-link w-full text-left">🧭 Rules & etiquette</button>
-                </li>
-              </ul>
-            </Widget>
-
-            <Widget title="Latest">
-              <ul className="space-y-3 text-sm">
-                {THREADS.slice(0, 3).map((t) => (
-                  <li key={t.id} className="flex gap-3">
-                    <img
-                      src={t.thumb}
-                      className="w-10 h-10 rounded-md object-contain ring-1 ring-black/10 bg-white/85"
-                      alt=""
-                    />
-                    <div className="min-w-0">
-                      <div className="font-medium text-rift-bg line-clamp-2">
-                        {t.title}
-                      </div>
-                      <div className="text-xs text-rift-bg/70">
-                        {new Date(t.created).toLocaleDateString()}
-                      </div>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </Widget>
-          </div>
-
-          {/* Trådlistan till höger, på pappret */}
-          <section>
-            <div className="flex flex-col md:flex-row gap-3 md:items-center md:justify-between mb-4">
+          {/* Innehållskolumn */}
+          <section className="paper-content">
+            {/* Sök på pappret */}
+            <div className="mb-4 flex items-center gap-3">
               <div className="text-sm uppercase tracking-widest text-rift-bg/80">
                 Threads in {TOPICS.find((t) => t.id === topic)?.name}
               </div>
@@ -302,10 +295,11 @@ export default function SummonersHall() {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search threads..."
-                className="w-full md:w-80 rounded-xl border border-rift-gold/40 bg-white/85 text-rift-bg px-4 py-2 placeholder:text-rift-bg/60 focus:outline-none focus:ring-2 focus:ring-rift-gold/50"
+                className="ml-auto w-full md:w-96 rounded-xl border border-rift-gold/40 bg-white/85 text-rift-bg px-4 py-2 placeholder:text-rift-bg/60 focus:outline-none focus:ring-2 focus:ring-rift-gold/50"
               />
             </div>
 
+            {/* Lista med trådar på pappret */}
             <ul>
               {list.map((t) => (
                 <ThreadRow key={t.id} t={t} onOpen={setOpen} />
@@ -320,7 +314,7 @@ export default function SummonersHall() {
         </div>
       </div>
 
-      {/* Modal för öppnad tråd */}
+      {/* Modal */}
       <ThreadModal thread={open} onClose={() => setOpen(null)} />
     </div>
   );
