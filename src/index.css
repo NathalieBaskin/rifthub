@@ -4,21 +4,6 @@
 
 /* === Lokala fonter från /public/fonts === */
 @font-face {
-  font-family: "";
-  src: url("/fonts/BeaufortforLOL-Regular") format("truetype");
-  font-weight: 400; font-style: normal; font-display: swap;
-}
-@font-face {
-  font-family: "Beufort";
-  src: url("/fonts/BeaufortforLOL-Medium") format("truetype");
-  font-weight: 500; font-style: normal; font-display: swap;
-}
-@font-face {
-  font-family: "Beufort";
-  src: url("/fonts/BeaufortforLOL-Bold") format("truetype");
-  font-weight: 700; font-style: normal; font-display: swap;
-}
-@font-face {
   font-family: "Beaufort";
   src: url("/fonts/BeaufortforLOL-Regular.ttf") format("truetype");
   font-weight: 400; font-style: normal; font-display: swap;
@@ -37,20 +22,16 @@
 /* ===================== Bas ===================== */
 @layer base {
   html, body, #root { height: 100%; }
-  html, body { font-family: "Beufort", sans-serif; }
+  /* Gör Beaufort till default överallt */
+  html, body { font-family: "Beaufort", ui-serif, Georgia, serif; }
 
   body {
-    background: transparent;               /* ingen egen bild – den ligger i ::before */
+    background: transparent; /* bakgrundbilden läggs i ::before */
     color: #e5e7eb;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     cursor: url("/cursor-default.png") 2 2, auto;
-
-    /* Fallback-färg till CSS-var för komponenter som vill ha en bg-fallback */
-    --bg-fallback: url("/images/fantasy-bg.png");
   }
-
-  h1, h2, h3, h4, h5, h6 { font-family: "Beaufort", ui-serif, Georgia, serif; }
 
   a, button, [role="button"], .cursor-pointer {
     cursor: url("/cursor-pointer.png") 6 0, pointer;
@@ -62,9 +43,8 @@ body::before {
   content: "";
   position: fixed;
   inset: 0;
-  z-index: -1;
+  z-index: -1;             /* under allt innehåll */
   pointer-events: none;
-
   background-image:
     url("/images/fantasy-bg.png"),
     radial-gradient(1200px 600px at 50% -10%, rgba(58,169,160,.18), transparent 60%),
@@ -76,7 +56,7 @@ body::before {
   background-attachment: fixed, fixed, fixed, fixed;
 }
 
-/* === Parchment (papper) === */
+/* === Parchment (papper) UI === */
 .parchment-panel {
   position: relative;
   border-radius: 22px;
@@ -89,6 +69,7 @@ body::before {
     inset 0 1px 0 rgba(255,255,255,.7),
     inset 0 -1px 0 rgba(0,0,0,.06);
   border: 1px solid rgba(217,178,96,.28);
+  z-index: 1;
 }
 .parchment-panel::before,
 .parchment-panel::after {
@@ -102,7 +83,7 @@ body::before {
   mix-blend-mode: multiply; opacity: .6; border-radius: 22px;
 }
 
-/* Dekor: pins */
+/* Dekor pins (om du använder i modal) */
 .parchment-pin {
   position: absolute; width: 16px; height: 16px;
   background: radial-gradient(circle at 35% 35%, #f7e6b1, #d3b060 55%, #7f6a35);
@@ -114,20 +95,7 @@ body::before {
 .parchment-pin.pin-bl { bottom: -8px; left: -8px; }
 .parchment-pin.pin-br { bottom: -8px; right: -8px; }
 
-/* Hjälpklasser */
-.line-clamp-2 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-.rift-sep { position: relative; margin: 1.25rem 0; }
-.rift-sep::before {
-  content: ""; display: block; height: 1px; width: 100%;
-  background: linear-gradient(90deg, transparent, rgba(217,178,96,.4), transparent);
-}
-.card-fantasy { background-color: rgba(20, 28, 43, .9); border: 1px solid rgba(217,178,96,.2); border-radius: 1rem; box-shadow: 0 0 25px rgba(217,178,96,0.15); }
-/* === Små helper-stilar för Summoner's Hall === */
+/* Divider & länkar som passar pappret */
 .paper-divider {
   height: 1px;
   margin: 6px 0;
@@ -138,7 +106,6 @@ body::before {
     rgba(0,0,0,0) 100%
   );
 }
-
 .paper-link {
   display: inline-block;
   padding: 8px 10px;
@@ -149,25 +116,23 @@ body::before {
 }
 .paper-link:hover { filter: brightness(0.98); }
 .paper-link:active { transform: translateY(1px); }
-/* === Forum parchment === */
+
+/* === Själva forum-pappret (wrapper) === */
 .parchment-wrapper {
   background: url("/images/scroll.png") no-repeat center top;
   background-size: cover;
   max-width: 1200px;
-  margin: 0 auto;           /* centrerar horisontellt */
-  padding: 60px 40px;       /* utrymme inuti pappret */
-  min-height: 80vh;         /* så pappret fyller större delen av skärmen */
+  margin: 0 auto;         /* centrera pappret */
+  padding: 48px 32px;     /* utrymme inuti pappret */
+  min-height: 80vh;       /* storlek på pappret */
   position: relative;
-  z-index: 1;
-}
-.parchment-panel {
-  position: relative;
+  z-index: 1;             /* över bakgrundsbilden, under navbar */
   border-radius: 22px;
-  background: url("/images/scroll.png") center/cover no-repeat,
-    linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(249, 244, 228, 0.95));
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35),
-    inset 0 1px 0 rgba(255, 255, 255, 0.7),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.06);
-  border: 1px solid rgba(217, 178, 96, 0.28);
-  z-index: 1;
+  box-shadow: 0 10px 25px rgba(0,0,0,.35);
+  border: 1px solid rgba(217,178,96,.28);
+}
+
+/* Färgvariabler från Tailwind-temat (om du använder) */
+:root {
+  --rift-gold: #d9b260;
 }

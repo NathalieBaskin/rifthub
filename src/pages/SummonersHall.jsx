@@ -87,67 +87,48 @@ function useNavOffset() {
   return offset;
 }
 
-/* ===================== UI-BLOCK: Topic-menyer ===================== */
+/* ===================== UI-BLOCKS ===================== */
 function SideTopicList({ topic, setTopic }) {
   return (
-    <aside className="hidden md:block">
-      <div className="rounded-xl border border-rift-gold/30 bg-white/70 text-rift-bg shadow-sm overflow-hidden">
-        <div className="px-4 py-3 text-xs tracking-widest uppercase border-b border-rift-gold/25 bg-white/80">
-          Topics
-        </div>
-        <ul className="py-2">
-          {TOPICS.map((t) => {
-            const active = topic === t.id;
-            return (
-              <li key={t.id}>
-                <button
-                  onClick={() => setTopic(t.id)}
-                  className={[
-                    "w-full text-left px-4 py-2.5 transition",
-                    active
-                      ? "bg-[linear-gradient(180deg,#fff,#f0e6c8)] text-rift-bg font-medium"
-                      : "hover:bg-white/80 text-rift-bg/80",
-                  ].join(" ")}
-                >
-                  {t.name}
-                </button>
-              </li>
-            );
-          })}
-        </ul>
+    <section className="rounded-xl border border-rift-gold/30 bg-white/80 text-rift-bg overflow-hidden">
+      <div className="px-4 py-2.5 text-xs tracking-widest uppercase border-b border-rift-gold/25 bg-white/85">
+        Topics
       </div>
-    </aside>
-  );
-}
-
-/* Mobilflikrad (visas bara < md) */
-function MobileTabs({ topic, setTopic }) {
-  return (
-    <div className="md:hidden -mx-2">
-      <div className="flex gap-2 overflow-x-auto no-scrollbar px-2 py-2">
+      <ul className="py-2">
         {TOPICS.map((t) => {
           const active = topic === t.id;
           return (
-            <button
-              key={t.id}
-              onClick={() => setTopic(t.id)}
-              className={[
-                "px-4 py-2 rounded-full text-sm whitespace-nowrap border",
-                active
-                  ? "bg-[linear-gradient(180deg,#fff,#f0e6c8)] border-rift-gold/60 text-rift-bg shadow-[inset_0_1px_0_rgba(255,255,255,.65)]"
-                  : "bg-white/70 border-rift-gold/30 text-rift-bg hover:bg-white/85",
-              ].join(" ")}
-            >
-              {t.name}
-            </button>
+            <li key={t.id}>
+              <button
+                onClick={() => setTopic(t.id)}
+                className={[
+                  "w-full text-left px-4 py-2.5 transition",
+                  active
+                    ? "bg-[linear-gradient(180deg,#fff,#f0e6c8)] text-rift-bg font-medium"
+                    : "hover:bg-white/80 text-rift-bg/80",
+                ].join(" ")}
+              >
+                {t.name}
+              </button>
+            </li>
           );
         })}
-      </div>
-    </div>
+      </ul>
+    </section>
   );
 }
 
-/* ===================== UI-BLOCK: Tråd-rad ===================== */
+function Widget({ title, children }) {
+  return (
+    <section className="rounded-xl border border-rift-gold/30 bg-white/80 text-rift-bg overflow-hidden">
+      <div className="px-4 py-2.5 text-xs tracking-widest uppercase border-b border-rift-gold/25 bg-white/85">
+        {title}
+      </div>
+      <div className="p-4">{children}</div>
+    </section>
+  );
+}
+
 function ThreadRow({ t, onOpen }) {
   return (
     <li>
@@ -174,7 +155,7 @@ function ThreadRow({ t, onOpen }) {
               </span>
               <span>• {new Date(t.created).toLocaleDateString()}</span>
               <span>💬 {t.replies}</span>
-              <span>👍 {t.likes}</span>
+              <span>🔥 {t.likes}</span>
             </div>
           </div>
         </div>
@@ -184,7 +165,6 @@ function ThreadRow({ t, onOpen }) {
   );
 }
 
-/* ===================== UI-BLOCK: Modal ===================== */
 function ThreadModal({ thread, onClose }) {
   useEffect(() => {
     const onKey = (e) => e.key === "Escape" && onClose();
@@ -211,7 +191,7 @@ function ThreadModal({ thread, onClose }) {
           </h3>
           <div className="mt-2 text-xs text-rift-bg/70">
             By <span className="font-medium">{thread.author}</span> •{" "}
-            {new Date(thread.created).toLocaleDateString()} • 💬 {thread.replies} • 👍{" "}
+            {new Date(thread.created).toLocaleDateString()} • 💬 {thread.replies} • 🔥{" "}
             {thread.likes}
           </div>
           <div className="rift-sep my-4"></div>
@@ -238,18 +218,6 @@ function ThreadModal({ thread, onClose }) {
   );
 }
 
-/* ===================== SID-WIDGETS ===================== */
-function Widget({ title, children }) {
-  return (
-    <section className="rounded-xl border border-rift-gold/30 bg-white/80 text-rift-bg overflow-hidden">
-      <div className="px-4 py-2.5 text-xs tracking-widest uppercase border-b border-rift-gold/25 bg-white/85">
-        {title}
-      </div>
-      <div className="p-4">{children}</div>
-    </section>
-  );
-}
-
 /* ===================== HUVUDKOMPONENT ===================== */
 export default function SummonersHall() {
   const [topic, setTopic] = useState(TOPICS[0].id);
@@ -268,85 +236,92 @@ export default function SummonersHall() {
     [topic, query]
   );
 
-return (
-  <div className="min-h-screen bg-transparent" style={{ paddingTop: navOffset }}>
-    {/* Hela forumet på pappret */}
-    <div className="parchment-wrapper">
-      <h1 className="font-display text-3xl md:text-4xl text-rift-bg text-center">
-        Summoner&apos;s Hall
-      </h1>
-      <p className="mt-2 mb-6 text-center text-rift-bg/85">
-        Forum för guider, diskussioner och nyheter. Välj ett ämne nedan för att se trådarna.
-      </p>
+  return (
+    <div className="min-h-screen bg-transparent" style={{ paddingTop: navOffset }}>
+      {/* === HELA FORUMET PÅ PAPPRET === */}
+      <div className="parchment-wrapper">
+        {/* Header på pappret */}
+        <h1 className="font-display text-3xl md:text-4xl text-rift-bg text-center">
+          Summoner&apos;s Hall
+        </h1>
+        <p className="mt-2 mb-8 text-center text-rift-bg/85">
+          Forum för guider, diskussioner och nyheter. Välj ett ämne nedan för att
+          se trådarna.
+        </p>
 
-      {/* Grid: vänster topics, mitten trådar, höger widgets */}
-      <div className="grid grid-cols-1 md:grid-cols-[260px_1fr_280px] gap-6">
-        <SideTopicList topic={topic} setTopic={setTopic} />
+        {/* Grid på pappret: vänsterkolumn staplad, trådar till höger */}
+        <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-8">
+          {/* Vänsterkolumn (staplad: Topics -> Actions -> Latest) */}
+          <div className="flex flex-col gap-6">
+            <SideTopicList topic={topic} setTopic={setTopic} />
 
-        {/* Mittkolumn */}
-        <section>
-          <div className="flex justify-between items-center mb-4">
-            <div className="text-sm uppercase tracking-widest text-rift-bg/80">
-              Threads in {TOPICS.find((t) => t.id === topic)?.name}
-            </div>
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search threads..."
-              className="hidden md:block w-72 rounded-xl border border-rift-gold/40 bg-white/85 text-rift-bg px-4 py-2 placeholder:text-rift-bg/60 focus:outline-none focus:ring-2 focus:ring-rift-gold/50"
-            />
+            <Widget title="Actions">
+              <ul className="space-y-2 text-sm">
+                <li>
+                  <button className="paper-link w-full text-left">✍️ Start new thread</button>
+                </li>
+                <li>
+                  <button className="paper-link w-full text-left">⭐ Mark as favorite</button>
+                </li>
+                <li>
+                  <button className="paper-link w-full text-left">🧭 Rules & etiquette</button>
+                </li>
+              </ul>
+            </Widget>
+
+            <Widget title="Latest">
+              <ul className="space-y-3 text-sm">
+                {THREADS.slice(0, 3).map((t) => (
+                  <li key={t.id} className="flex gap-3">
+                    <img
+                      src={t.thumb}
+                      className="w-10 h-10 rounded-md object-contain ring-1 ring-black/10 bg-white/85"
+                      alt=""
+                    />
+                    <div className="min-w-0">
+                      <div className="font-medium text-rift-bg line-clamp-2">
+                        {t.title}
+                      </div>
+                      <div className="text-xs text-rift-bg/70">
+                        {new Date(t.created).toLocaleDateString()}
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </Widget>
           </div>
 
-          <ul>
-            {list.map((t) => (
-              <ThreadRow key={t.id} t={t} onOpen={setOpen} />
-            ))}
-            {list.length === 0 && (
-              <li className="px-4 py-10 text-center text-rift-bg/70">
-                No threads found.
-              </li>
-            )}
-          </ul>
-        </section>
+          {/* Trådlistan till höger, på pappret */}
+          <section>
+            <div className="flex flex-col md:flex-row gap-3 md:items-center md:justify-between mb-4">
+              <div className="text-sm uppercase tracking-widest text-rift-bg/80">
+                Threads in {TOPICS.find((t) => t.id === topic)?.name}
+              </div>
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search threads..."
+                className="w-full md:w-80 rounded-xl border border-rift-gold/40 bg-white/85 text-rift-bg px-4 py-2 placeholder:text-rift-bg/60 focus:outline-none focus:ring-2 focus:ring-rift-gold/50"
+              />
+            </div>
 
-        {/* Höger widgets */}
-        <aside className="hidden md:flex flex-col gap-4">
-          <Widget title="Actions">
-            <ul className="space-y-2 text-sm">
-              <li><button className="paper-link">✍️ Start new thread</button></li>
-              <li><button className="paper-link">⭐ Mark as favorite</button></li>
-              <li><button className="paper-link">🧭 Rules & etiquette</button></li>
-            </ul>
-          </Widget>
-
-          <Widget title="Latest">
-            <ul className="space-y-3 text-sm">
-              {THREADS.slice(0, 3).map((t) => (
-                <li key={t.id} className="flex gap-3">
-                  <img
-                    src={t.thumb}
-                    className="w-10 h-10 rounded-md object-contain ring-1 ring-black/10 bg-white/85"
-                    alt=""
-                  />
-                  <div className="min-w-0">
-                    <div className="font-medium text-rift-bg line-clamp-2">
-                      {t.title}
-                    </div>
-                    <div className="text-xs text-rift-bg/70">
-                      {new Date(t.created).toLocaleDateString()}
-                    </div>
-                  </div>
-                </li>
+            <ul>
+              {list.map((t) => (
+                <ThreadRow key={t.id} t={t} onOpen={setOpen} />
               ))}
+              {list.length === 0 && (
+                <li className="px-4 py-10 text-center text-rift-bg/70">
+                  No threads found.
+                </li>
+              )}
             </ul>
-          </Widget>
-        </aside>
+          </section>
+        </div>
       </div>
+
+      {/* Modal för öppnad tråd */}
+      <ThreadModal thread={open} onClose={() => setOpen(null)} />
     </div>
-
-    {/* Modal för öppnad tråd */}
-    <ThreadModal thread={open} onClose={() => setOpen(null)} />
-  </div>
-);
-
+  );
 }

@@ -75,8 +75,8 @@ export default function Navbar() {
             </Link>
 
             <div className="absolute right-0 md:right-2 flex items-center gap-4 text-rift-gold">
-              <Link to="/cart" className="p-2" aria-label="Cart">🧺</Link>
-              <Link to="/account" className="p-2" aria-label="Account">👤</Link>
+              <Link to="/cart" className="p-2" aria-label="Cart"></Link>
+              <Link to="/account" className="p-2" aria-label="Account"></Link>
             </div>
           </div>
 
@@ -102,8 +102,8 @@ export default function Navbar() {
           </div>
 
           <div className="flex items-center gap-3 text-rift-gold">
-            <Link to="/cart" className="p-2" aria-label="Cart">🧺</Link>
-            <Link to="/account" className="p-2" aria-label="Account">👤</Link>
+            <Link to="/cart" className="p-2" aria-label="Cart"></Link>
+            <Link to="/account" className="p-2" aria-label="Account"></Link>
           </div>
         </div>
       </div>
