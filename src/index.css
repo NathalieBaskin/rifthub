@@ -1,0 +1,6 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* valfri baslook */
+body { @apply bg-gray-100 text-gray-900 antialiased; }
