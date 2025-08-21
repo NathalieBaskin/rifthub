@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { NavLink, Link } from "react-router-dom";
+import { NavLink, Link, useLocation } from "react-router-dom";
 import rifthubLogo from "../assets/images/rifthub.png"; // stora loggan
 import rLogo from "../assets/images/r-logo.png";        // lilla loggan
 
@@ -33,25 +33,38 @@ function NavLinks({ className = "" }) {
 }
 
 export default function Navbar() {
+  const location = useLocation();
+  const isHome = location.pathname === "/";
+
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
-    const onScroll = () => setIsScrolled(window.scrollY > 50);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+    // På startsidan: lyssna på scroll, annars: alltid scrolled
+    if (isHome) {
+      const onScroll = () => setIsScrolled(window.scrollY > 50);
+      // init direkt (om man t.ex. landar mitt i sidan via ankare)
+      onScroll();
+      window.addEventListener("scroll", onScroll, { passive: true });
+      return () => window.removeEventListener("scroll", onScroll);
+    } else {
+      setIsScrolled(true);
+      // ingen scroll-lyssnare på andra sidor
+      return () => {};
+    }
+  }, [isHome]);
 
-  // FIXED så den ligger ovanpå heron. Transparent först, solid vid scroll.
+  // FIXED så den ligger ovanpå heron på startsidan.
+  // Transparent på home innan scroll; solid på scroll/andra sidor.
   return (
     <header
+      data-nav
       className={`fixed top-0 left-0 w-full z-50 transition-colors duration-300
         ${isScrolled ? "bg-rift-bg/80 backdrop-blur border-b border-rift-gold/15" : "bg-transparent"}
       `}
     >
       <div className="max-w-7xl mx-auto px-4">
-        {/* === LÄGE 1: STOR LOGGA CENTRERAD (toppen) === */}
-        <div className={`${isScrolled ? "hidden" : "block"} py-2`}>
+        {/* === LÄGE 1: STOR LOGGA CENTRERAD (endast på home & när ej scrolled) === */}
+        <div className={`${!isHome || isScrolled ? "hidden" : "block"} py-2`}>
           <div className="relative flex items-center justify-center">
             <Link to="/" className="flex justify-center">
               <img
@@ -72,9 +85,9 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* === LÄGE 2: SCROLLAT – kompakt rad med liten logga === */}
+        {/* === LÄGE 2: KOMPAKT RAD (alltid på andra sidor, eller på home när scrolled) === */}
         <div
-          className={`${isScrolled ? "flex" : "hidden"} items-center justify-between py-2 transition-all duration-300`}
+          className={`${(!isHome || isScrolled) ? "flex" : "hidden"} items-center justify-between py-2 transition-all duration-300`}
         >
           <Link to="/" className="flex items-center gap-2 min-w-0">
             <img

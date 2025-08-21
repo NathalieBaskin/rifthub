@@ -18,8 +18,6 @@
   src: url("/fonts/Spiegel_TT_Bold.ttf") format("truetype");
   font-weight: 700; font-style: normal; font-display: swap;
 }
-
-/* Beaufort (LoL-rubrikfont) */
 @font-face {
   font-family: "Beaufort";
   src: url("/fonts/BeaufortforLOL-Regular.ttf") format("truetype");
@@ -36,44 +34,96 @@
   font-weight: 700; font-style: normal; font-display: swap;
 }
 
-/* Basregler */
+/* ===================== Bas ===================== */
 @layer base {
-  /* Säkerhetsbälte: tvinga sans på html/body */
-  html, body { @apply font-sans; }
+  html, body, #root { height: 100%; }
+  html, body { font-family: "Spiegel", sans-serif; }
 
   body {
-    @apply bg-rift-bg text-gray-200 antialiased;
-    background-image:
-      radial-gradient(1200px 600px at 50% -10%, rgba(58,169,160,.18), transparent 60%),
-      radial-gradient(800px 400px at 100% 10%, rgba(217,178,96,.12), transparent 55%),
-      radial-gradient(900px 500px at 0% 0%, rgba(58,169,160,.10), transparent 60%);
-    background-blend-mode: overlay;
-    background-size: auto;
+    background: transparent;               /* ingen egen bild – den ligger i ::before */
+    color: #e5e7eb;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
     cursor: url("/cursor-default.png") 2 2, auto;
+
+    /* Fallback-färg till CSS-var för komponenter som vill ha en bg-fallback */
+    --bg-fallback: url("/images/fantasy-bg.png");
   }
 
-  /* Rubriker = Beaufort */
-  h1, h2, h3, h4, h5, h6 { @apply font-display; }
+  h1, h2, h3, h4, h5, h6 { font-family: "Beaufort", ui-serif, Georgia, serif; }
 
   a, button, [role="button"], .cursor-pointer {
     cursor: url("/cursor-pointer.png") 6 0, pointer;
   }
 }
 
+/* === GLOBAL BAKGRUND (under allt) === */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+
+  background-image:
+    url("/images/fantasy-bg.png"),
+    radial-gradient(1200px 600px at 50% -10%, rgba(58,169,160,.18), transparent 60%),
+    radial-gradient(800px 400px at 100% 10%, rgba(217,178,96,.12), transparent 55%),
+    radial-gradient(900px 500px at 0% 0%, rgba(58,169,160,.10), transparent 60%);
+  background-position: center, center, center, center;
+  background-repeat: no-repeat, no-repeat, no-repeat, no-repeat;
+  background-size: cover, auto, auto, auto;
+  background-attachment: fixed, fixed, fixed, fixed;
+}
+
+/* === Parchment (papper) === */
+.parchment-panel {
+  position: relative;
+  border-radius: 22px;
+  background:
+    url("/images/scroll.png") center/cover no-repeat,
+    radial-gradient(1200px 700px at 30% 0%, rgba(217,178,96,.25), transparent 60%),
+    linear-gradient(180deg, rgba(255,255,255,.94), rgba(249,244,228,.94));
+  box-shadow:
+    0 10px 25px rgba(0,0,0,.35),
+    inset 0 1px 0 rgba(255,255,255,.7),
+    inset 0 -1px 0 rgba(0,0,0,.06);
+  border: 1px solid rgba(217,178,96,.28);
+}
+.parchment-panel::before,
+.parchment-panel::after {
+  content: ""; position: absolute; inset: 0; border-radius: 22px; pointer-events: none;
+}
+.parchment-panel::before { box-shadow: inset 0 0 60px rgba(0,0,0,.12); }
+.parchment-panel::after {
+  background:
+    radial-gradient(60% 12px at 50% 0%, rgba(0,0,0,.08), transparent 60%),
+    radial-gradient(60% 12px at 50% 100%, rgba(0,0,0,.06), transparent 60%);
+  mix-blend-mode: multiply; opacity: .6; border-radius: 22px;
+}
+
+/* Dekor: pins */
+.parchment-pin {
+  position: absolute; width: 16px; height: 16px;
+  background: radial-gradient(circle at 35% 35%, #f7e6b1, #d3b060 55%, #7f6a35);
+  border-radius: 50%;
+  box-shadow: 0 2px 6px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.6);
+}
+.parchment-pin.pin-tl { top: -8px; left: -8px; }
+.parchment-pin.pin-tr { top: -8px; right: -8px; }
+.parchment-pin.pin-bl { bottom: -8px; left: -8px; }
+.parchment-pin.pin-br { bottom: -8px; right: -8px; }
+
 /* Hjälpklasser */
-.play-triangle {
-  width: 0; height: 0;
-  border-left: 14px solid white;
-  border-top: 10px solid transparent;
-  border-bottom: 10px solid transparent;
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 .rift-sep { position: relative; margin: 1.25rem 0; }
 .rift-sep::before {
   content: ""; display: block; height: 1px; width: 100%;
   background: linear-gradient(90deg, transparent, rgba(217,178,96,.4), transparent);
 }
-.card-fantasy { @apply bg-rift-card/90 border border-rift-gold/20 rounded-xl2 shadow-aura; }
-@media (hover:hover) {
-  .no-scrollbar::-webkit-scrollbar { height: 8px }
-  .no-scrollbar::-webkit-scrollbar-thumb { background: #2a3447; border-radius: 9999px }
-}
+.card-fantasy { background-color: rgba(20, 28, 43, .9); border: 1px solid rgba(217,178,96,.2); border-radius: 1rem; box-shadow: 0 0 25px rgba(217,178,96,0.15); }

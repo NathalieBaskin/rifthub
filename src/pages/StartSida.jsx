@@ -11,17 +11,14 @@ export default function StartSida() {
     if (!video) return;
 
     const handleLoaded = () => {
-     try {
+       try {
   video.currentTime = 10;
-} catch (_) {
+} catch  {
   // ignore error
 }
-
       const p = video.play();
       if (p && typeof p.then === "function") {
-        p.catch(() => {
-          // ignore autoplay block (muted = true)
-        });
+        p.catch(() => {});
       }
     };
 
@@ -68,9 +65,8 @@ export default function StartSida() {
 
   return (
     <>
-      {/* HERO: fullscreen video (visas helt) med navbar ovanpå */}
-      <section className="relative h-screen">
-        {/* Själva videon fyller hela ytan */}
+      {/* HERO: fullscreen video (bakgrunden syns bakom om videon inte laddar) */}
+      <section className="relative h-screen bg-[image:var(--bg-fallback)] bg-cover bg-center">
         <video
           ref={videoRef}
           className="absolute inset-0 w-full h-full object-cover"
@@ -81,8 +77,6 @@ export default function StartSida() {
           playsInline
           preload="auto"
         />
-
-        {/* Ljudknapp på overlay-lager */}
         <div className="absolute inset-0 flex items-end justify-end p-4">
           <button
             onClick={toggleMute}
@@ -95,21 +89,19 @@ export default function StartSida() {
         </div>
       </section>
 
-      {/* FEATURED NEWS – lite top-padding så den inte ligger under den fasta navbaren i scroll-läget */}
+      {/* FEATURED NEWS */}
       <section className="max-w-7xl mx-auto px-4 pt-24 pb-6">
         <h3 className="font-display text-sm tracking-widest text-rift-gold">
           FEATURED NEWS
         </h3>
         <div className="rift-sep"></div>
 
-        {/* mobil: horisontell scroll, desktop: 3-kolumns grid */}
         <div className="flex gap-4 overflow-x-auto no-scrollbar md:grid md:grid-cols-3 md:gap-6 md:overflow-visible">
           {featured.map((n) => (
             <article
               key={n.id}
               className="card-fantasy min-w-[85%] md:min-w-0 overflow-hidden"
             >
-              {/* Media */}
               {n.image && (
                 <img
                   src={n.image}
@@ -132,7 +124,6 @@ export default function StartSida() {
                 </div>
               )}
 
-              {/* Text */}
               <div className="p-4">
                 <div className="text-[10px] tracking-widest text-gray-400 uppercase">
                   {n.tag} <span className="mx-1">•</span> {n.date}
