@@ -33,3 +33,9 @@ dist-ssr/
 # Optional cache files
 .cache/
 *.tsbuildinfo
+# Ignorera alla videofiler
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.webm

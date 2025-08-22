@@ -72,7 +72,7 @@ export default function StartSida() {
     <video
       ref={videoRef}
       className="absolute inset-0 w-full h-full object-cover object-center"
-      src="/videos/startsidaVideo.mov"
+      src="/videos/startsidaVideo.mp4"
       autoPlay
       muted={muted}
       loop
