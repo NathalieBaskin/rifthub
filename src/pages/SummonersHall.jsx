@@ -62,8 +62,7 @@ const THREADS = [
     replies: 50,
     likes: 1056,
     created: "2025-05-03",
-    excerpt:
-      "Posta klipp eller bilder – bästa playsen får guld-reaktioner.",
+    excerpt: "Posta klipp eller bilder – bästa playsen får guld-reaktioner.",
     thumb: "https://ddragon.leagueoflegends.com/cdn/14.9.1/img/item/3031.png",
     content: "Drop your clips 👇",
   },
@@ -249,6 +248,7 @@ function ThreadModal({ thread, onClose }) {
 export default function SummonersHall() {
   const [topic, setTopic] = useState(TOPICS[0].id);
   const [open, setOpen] = useState(null);
+  const [mobileOpen, setMobileOpen] = useState(null);
   const navOffset = useNavOffset();
 
   const list = useMemo(
@@ -259,27 +259,86 @@ export default function SummonersHall() {
   return (
     <div className="min-h-screen bg-transparent">
       <div
-        className="parchment-wrapper"
-        style={{ marginTop: (navOffset || 0) + 56 }}
+        className="parchment-wrapper min-h-[1100px]" // större papper
+        style={{ marginTop: (navOffset || 0) + 30 }} // dra upp pappret närmare navbaren
       >
-        {/* Rubrik + undertitel */}
-        <h1 className="font-display text-3xl md:text-4xl text-rift-bg text-center mb-2">
+        {/* Rubrik */}
+        <h1 className="font-display text-3xl md:text-4xl text-rift-bg text-center mb-14">
           Summoner&apos;s Hall
         </h1>
-        <p className="mb-8 text-center text-rift-bg/85">
-          Forum för guider, diskussioner och nyheter. Välj ett ämne nedan för
-          att se trådarna.
-        </p>
 
-        {/* === GRID: SideRail (vänster) + Threads (höger) === */}
+        {/* === MOBIL DROPDOWNS === */}
+        <div className="md:hidden mb-8 flex gap-2 justify-center relative z-40">
+          {["topics", "actions", "latest"].map((section) => (
+            <div key={section} className="relative flex-1">
+              <button
+                onClick={() =>
+                  setMobileOpen(mobileOpen === section ? null : section)
+                }
+                className="w-full rounded-lg text-rift-bg px-3 py-2 text-sm font-medium bg-transparent border border-rift-gold/50"
+              >
+                {section.toUpperCase()}
+              </button>
+              {mobileOpen === section && (
+                <div className="absolute left-0 mt-2 w-56 rounded-lg z-50 
+                                bg-white/30 backdrop-blur-md text-black shadow-lg">
+                  {section === "topics" && (
+                    <ul className="space-y-1 p-2">
+                      {TOPICS.map((t) => (
+                        <li key={t.id}>
+                          <button
+                            onClick={() => {
+                              setTopic(t.id);
+                              setMobileOpen(null);
+                            }}
+                            className={`block w-full text-left px-3 py-1 rounded ${
+                              topic === t.id
+                                ? "bg-black/20 font-medium"
+                                : "hover:bg-black/10"
+                            }`}
+                          >
+                            {t.name}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {section === "actions" && (
+                    <div className="space-y-1 p-2">
+                      <button className="block w-full text-left px-3 py-1 hover:bg-black/10">
+                        ✍️ Start new thread
+                      </button>
+                      <button className="block w-full text-left px-3 py-1 hover:bg-black/10">
+                        ⭐ Mark as favorite
+                      </button>
+                      <button className="block w-full text-left px-3 py-1 hover:bg-black/10">
+                        🧭 Rules & etiquette
+                      </button>
+                    </div>
+                  )}
+                  {section === "latest" && (
+                    <ul className="space-y-1 p-2">
+                      {THREADS.slice(0, 4).map((t) => (
+                        <li key={t.id} className="px-3 py-1 hover:bg-black/10">
+                          {t.title}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* DESKTOP/IPAD GRID */}
         <div
-          className="grid gap-6"
-          style={{ gridTemplateColumns: "420px 1fr" }} // bredare kolumner
+          className="hidden md:grid gap-5" // lite större gap mellan rubrik/rail/threads
+          style={{ gridTemplateColumns: "420px 1fr" }}
         >
           <SideRail topic={topic} setTopic={setTopic} />
 
-          <div className="flex-1 pt-12 pl-6"> {/* dra ner + mer åt höger */}
-            {/* Lista med trådar */}
+          <div className="flex-1 pt-12 pl-6">
             <ul>
               {list.map((t) => (
                 <ThreadRow key={t.id} t={t} onOpen={setOpen} />
@@ -291,6 +350,20 @@ export default function SummonersHall() {
               )}
             </ul>
           </div>
+        </div>
+
+        {/* MOBIL TRÅDAR */}
+        <div className="md:hidden">
+          <ul>
+            {list.map((t) => (
+              <ThreadRow key={t.id} t={t} onOpen={setOpen} />
+            ))}
+            {list.length === 0 && (
+              <li className="px-4 py-10 text-center text-rift-bg/70">
+                No threads found.
+              </li>
+            )}
+          </ul>
         </div>
       </div>
 
