@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ===================== FONTER (från /public/fonts) ===================== */
+/* ===================== FONTER ===================== */
 @font-face {
   font-family: "Beaufort";
   src: url("/fonts/BeaufortforLOL-Regular.ttf") format("truetype");
@@ -28,22 +28,17 @@
 /* ===================== BAS ===================== */
 @layer base {
   html, body, #root { height: 100%; }
-
-  /* Global font = Beaufort */
   html, body { font-family: "Beaufort", ui-serif, Georgia, serif; }
 
   body {
-    background: transparent;              /* global bakgrund ligger i ::before */
+    background: transparent;
     color: #e5e7eb;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     cursor: url("/cursor-default.png") 2 2, auto;
-
-    /* Fallback-bild för komponenter (används t.ex. på startsidans hero) */
     --bg-fallback: url("/images/fantasy-bg.png");
   }
 
-  /* Rubriker använder samma font (men låt Tailwind hantera viktstorlekar) */
   h1, h2, h3, h4, h5, h6 { font-family: "Beaufort", ui-serif, Georgia, serif; }
 
   a, button, [role="button"], .cursor-pointer {
@@ -51,8 +46,7 @@
   }
 }
 
-/* ===================== GLOBAL BAKGRUND (under allt) ===================== */
-/* Ligger absolut längst bak, påverkar inte layouten */
+/* ===================== GLOBAL BAKGRUND ===================== */
 body::before {
   content: "";
   position: fixed;
@@ -66,188 +60,114 @@ body::before {
     radial-gradient(800px 400px at 100% 10%, rgba(217,178,96,.12), transparent 55%),
     radial-gradient(900px 500px at 0% 0%, rgba(58,169,160,.10), transparent 60%);
   background-position: center, center, center, center;
-  background-repeat: no-repeat, no-repeat, no-repeat, no-repeat;
-  background-size: cover, auto, auto, auto;
-  background-attachment: fixed, fixed, fixed, fixed;
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-attachment: fixed;
 }
 
-/* ===================== PARCHMENT (papper/panel) ===================== */
-.parchment-panel {
-  position: relative;
-  border-radius: 22px;
-  background:
-    url("/images/scroll.png") center/cover no-repeat,
-    linear-gradient(180deg, rgba(255,255,255,.94), rgba(249,244,228,.94));
-  box-shadow:
-    0 10px 25px rgba(0,0,0,.35),
-    inset 0 1px 0 rgba(255,255,255,.7),
-    inset 0 -1px 0 rgba(0,0,0,.06);
-  border: 1px solid rgba(217,178,96,.28);
-}
-.parchment-panel::before,
-.parchment-panel::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: 22px;
-  pointer-events: none;
-}
-.parchment-panel::before { box-shadow: inset 0 0 60px rgba(0,0,0,.12); }
-.parchment-panel::after {
-  background:
-    radial-gradient(60% 12px at 50% 0%, rgba(0,0,0,.08), transparent 60%),
-    radial-gradient(60% 12px at 50% 100%, rgba(0,0,0,.06), transparent 60%);
-  mix-blend-mode: multiply;
-  opacity: .6;
-  border-radius: 22px;
-}
-
-/* Dekor: pins */
-.parchment-pin {
-  position: absolute;
-  width: 16px; height: 16px;
-  background: radial-gradient(circle at 35% 35%, #f7e6b1, #d3b060 55%, #7f6a35);
-  border-radius: 50%;
-  box-shadow: 0 2px 6px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.6);
-}
-.parchment-pin.pin-tl { top: -8px; left: -8px; }
-.parchment-pin.pin-tr { top: -8px; right: -8px; }
-.parchment-pin.pin-bl { bottom: -8px; left: -8px; }
-.parchment-pin.pin-br { bottom: -8px; right: -8px; }
-
-/* ===================== HJÄLPKLASSER ===================== */
-.line-clamp-2 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.rift-sep { position: relative; margin: 1.25rem 0; }
-.rift-sep::before {
-  content: "";
-  display: block;
-  height: 1px; width: 100%;
-  background: linear-gradient(90deg, transparent, rgba(217,178,96,.4), transparent);
-}
-
-.card-fantasy {
-  background-color: rgba(20, 28, 43, .9);
-  border: 1px solid rgba(217,178,96,.2);
-  border-radius: 1rem;
-  box-shadow: 0 0 25px rgba(217,178,96,0.15);
-}
-
-@media (hover:hover) {
-  .no-scrollbar::-webkit-scrollbar { height: 8px; width: 8px; }
-  .no-scrollbar::-webkit-scrollbar-thumb {
-    background: #2a3447;
-    border-radius: 9999px;
-  }
-}
-
-/* ===================== SUMMONER'S HALL – PAPER LAYOUT ===================== */
-/* Stora pappret som ALLT innehåll ska ligga på */
+/* ===================== PARCHMENT ===================== */
 .parchment-wrapper {
   background: url("/images/scroll.png") no-repeat center top;
   background-size: cover, auto;
   max-width: 1200px;
-  margin: 0 auto;                 /* centrerar på sidan */
-  padding: 56px 40px 48px 40px;   /* luft runt innehållet */
+  margin: 0 auto;
+  padding: 56px 40px 48px 40px;
   min-height: 80vh;
   border: 1px solid rgba(217,178,96,.28);
   border-radius: 22px;
   box-shadow:
     0 10px 25px rgba(0,0,0,.35),
-   
     inset 0 -1px 0 rgba(0,0,0,.06);
   position: relative;
-  z-index: 1;                     /* över bakgrunden, under navbaren */
+  z-index: 1;
 }
 
-/* Grid på pappret: vänster rail + innehåll */
+/* ===================== GRID ===================== */
 .paper-grid {
   display: grid;
-  grid-template-columns: 280px 1fr;
-  gap: 18px;
+  grid-template-columns: 260px 1fr; /* bredare vänster rail */
+  gap: 24px; 
 }
 @media (max-width: 980px) {
-  .paper-grid {
-    grid-template-columns: 1fr;
-  }
+  .paper-grid { grid-template-columns: 1fr; }
 }
 
-.paper-content { min-width: 0; }
-
-/* Divider mellan trådar */
-.paper-divider {
-  height: 1px;
-  margin: 8px 0;
-  background: linear-gradient(
-    90deg,
-    rgba(0,0,0,0) 0%,
-    rgba(217,178,96,.35) 50%,
-    rgba(0,0,0,0) 100%
-  );
-}
-
-/* ===== Vänster flik/accordion-rail ===== */
+/* ===================== TOPICS & ACTIONS ===================== */
 .paper-rail {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-}
-
-.paper-acc {
-  border: 1px solid rgba(217,178,96,.30);
+  gap: 12px;
+  padding: 10px;
+ margin-top: 55px;
+  margin-left: 140px; /* flytta in på pappret */
+  background: rgba(255,255,255,.03);
   border-radius: 14px;
-
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0,0,0,.05);
-}
-.paper-acc__summary {
-  list-style: none;
-  cursor: pointer;
-  padding: 10px 14px;
-  font-size: 11px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  border-bottom: 1px solid rgba(217,178,96,.25);
-  
-  user-select: none;
 }
 
-/* dölj default marker */
-.paper-acc__summary::-webkit-details-marker { display: none; }
-
-.paper-acc__body { padding: 10px; }
-
-/* Lista med flikar (topics) */
-.paper-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
 .paper-tab {
   width: 100%;
   text-align: left;
-  padding: 10px 12px;
-  border-radius: 12px;
+  font-size: 13px;
+  padding: 8px 10px;
+  border-radius: 10px;
   border: 1px solid rgba(217,178,96,.35);
   transition: filter .12s ease, transform .04s ease, background .12s ease;
 }
-.paper-tab--idle {
-
-  color: #0f1624;
-}
+.paper-tab--idle { color: #0f1624; }
 .paper-tab--idle:hover { filter: brightness(.98); }
 .paper-tab--active {
- 
   color: #0f1624;
   box-shadow: inset 0 1px 0 rgba(255,255,255,.6);
 }
 
-/* Actions-knappar */
+/* ===================== SEARCH FIELD ===================== */
+.searchbar {
+  display: block;
+  max-width: 240px;
+  margin: 0 0 24px 0; /* i linje med forumets vänsterkant */
+  padding: 8px 14px;
+  font-size: 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(217,178,96,.35);
+  background: rgba(255,255,255,.92);
+  color: #0f1624;
+  text-align: left;
+}
+
+/* ===================== THREADS ===================== */
+.thread-item {
+  display: grid;
+  grid-template-columns: 40px 1fr; 
+  gap: 10px;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(217,178,96,.25);
+  background: rgba(255,255,255,.88);
+  margin: 0 auto 10px auto; /* centrerar dem i forumkolumnen */
+  max-width: 850px;          /* gör trådarna smalare */
+}
+
+.thread-title {
+  font-weight: 600;
+  font-size: 15px;
+  color: #0f1624;
+
+  display: -webkit-box;
+  -webkit-line-clamp: 2;   /* max 2 rader */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: normal;     /* tillåter radbrytning */
+}
+
+.thread-meta {
+  font-size: 11px;                /* mindre meta-text */
+  color: rgba(15,22,36,.6);
+  margin-top: 2px;                /* mindre luft ovanför */
+}
+
+/* ===================== ACTIONS ===================== */
 .paper-actions {
   display: grid;
   gap: 8px;
@@ -259,13 +179,12 @@ body::before {
   padding: 10px 12px;
   border-radius: 12px;
   border: 1px solid rgba(217,178,96,.35);
-
   transition: filter .12s ease, transform .04s ease;
 }
 .paper-link:hover { filter: brightness(.98); }
 .paper-link:active { transform: translateY(1px); }
 
-/* Latest-listan */
+/* ===================== LATEST LIST ===================== */
 .paper-latest {
   display: flex;
   flex-direction: column;
@@ -281,7 +200,6 @@ body::before {
   width: 40px; height: 40px;
   border-radius: 8px;
   object-fit: contain;
- 
   box-shadow: 0 0 0 1px rgba(0,0,0,.08);
 }
 .paper-latest__text { min-width: 0; }

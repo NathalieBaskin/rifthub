@@ -101,7 +101,6 @@ function Accordion({ title, defaultOpen = true, children }) {
 function SideRail({ topic, setTopic }) {
   return (
     <aside className="paper-rail">
-      {/* Topics */}
       <Accordion title="TOPICS" defaultOpen>
         <ul className="paper-list">
           {TOPICS.map((t) => {
@@ -123,7 +122,6 @@ function SideRail({ topic, setTopic }) {
         </ul>
       </Accordion>
 
-      {/* Actions */}
       <Accordion title="ACTIONS" defaultOpen={false}>
         <div className="paper-actions">
           <button className="paper-link">✍️ Start new thread</button>
@@ -132,7 +130,6 @@ function SideRail({ topic, setTopic }) {
         </div>
       </Accordion>
 
-      {/* Latest */}
       <Accordion title="LATEST" defaultOpen={false}>
         <ul className="paper-latest">
           {THREADS.slice(0, 4).map((t) => (
@@ -158,13 +155,17 @@ function SideRail({ topic, setTopic }) {
 }
 
 function ThreadRow({ t, onOpen }) {
+  const shortTitle = t.title.length > 30 ? t.title.slice(0, 30) + "…" : t.title;
+  const shortExcerpt =
+    t.excerpt.length > 30 ? t.excerpt.slice(0, 30) + "…" : t.excerpt;
+
   return (
     <li>
       <button
         onClick={() => onOpen(t)}
-        className="w-full text-left px-3 md:px-4 py-4 rounded-lg hover:bg-black/5 transition"
+        className="w-full text-left px-5 md:px-6 py-5 rounded-lg hover:bg-black/5 transition"
       >
-        <div className="flex items-start gap-3 md:gap-4">
+        <div className="flex items-start gap-4">
           {t.thumb && (
             <img
               src={t.thumb}
@@ -173,10 +174,8 @@ function ThreadRow({ t, onOpen }) {
             />
           )}
           <div className="min-w-0 flex-1">
-            <h3 className="font-display text-xl text-rift-bg">{t.title}</h3>
-            <p className="mt-1 text-sm text-rift-bg/85 line-clamp-2">
-              {t.excerpt}
-            </p>
+            <h3 className="font-display text-xl text-rift-bg">{shortTitle}</h3>
+            <p className="mt-1 text-sm text-rift-bg/85">{shortExcerpt}</p>
             <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-rift-bg/70">
               <span>
                 By <span className="font-medium">{t.author}</span>
@@ -249,57 +248,38 @@ function ThreadModal({ thread, onClose }) {
 /* ===================== HUVUDKOMPONENT ===================== */
 export default function SummonersHall() {
   const [topic, setTopic] = useState(TOPICS[0].id);
-  const [query, setQuery] = useState("");
   const [open, setOpen] = useState(null);
   const navOffset = useNavOffset();
 
   const list = useMemo(
-    () =>
-      THREADS.filter(
-        (t) =>
-          t.topic === topic &&
-          (t.title.toLowerCase().includes(query.toLowerCase()) ||
-            t.excerpt.toLowerCase().includes(query.toLowerCase()))
-      ),
-    [topic, query]
+    () => THREADS.filter((t) => t.topic === topic),
+    [topic]
   );
 
   return (
     <div className="min-h-screen bg-transparent">
-      {/* Hela forumet på ett centrerat PAPPER, nedanför navbaren */}
       <div
         className="parchment-wrapper"
-        style={{ marginTop: (navOffset || 0) + 16 }}
+        style={{ marginTop: (navOffset || 0) + 56 }}
       >
-        {/* Titel & ingress på pappret */}
-        <h1 className="font-display text-3xl md:text-4xl text-rift-bg text-center">
+        {/* Rubrik + undertitel */}
+        <h1 className="font-display text-3xl md:text-4xl text-rift-bg text-center mb-2">
           Summoner&apos;s Hall
         </h1>
-        <p className="mt-1 mb-6 text-center text-rift-bg/85">
-          Forum för guider, diskussioner och nyheter. Välj ett ämne nedan för att se
-          trådarna.
+        <p className="mb-8 text-center text-rift-bg/85">
+          Forum för guider, diskussioner och nyheter. Välj ett ämne nedan för
+          att se trådarna.
         </p>
 
-        {/* Layout på pappret: vänster flik-rail + innehåll */}
-        <div className="paper-grid">
+        {/* === GRID: SideRail (vänster) + Threads (höger) === */}
+        <div
+          className="grid gap-6"
+          style={{ gridTemplateColumns: "420px 1fr" }} // bredare kolumner
+        >
           <SideRail topic={topic} setTopic={setTopic} />
 
-          {/* Innehållskolumn */}
-          <section className="paper-content">
-            {/* Sök på pappret */}
-            <div className="mb-4 flex items-center gap-3">
-              <div className="text-sm uppercase tracking-widest text-rift-bg/80">
-                Threads in {TOPICS.find((t) => t.id === topic)?.name}
-              </div>
-              <input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search threads..."
-                className="ml-auto w-full md:w-96 rounded-xl border border-rift-gold/40 bg-white/85 text-rift-bg px-4 py-2 placeholder:text-rift-bg/60 focus:outline-none focus:ring-2 focus:ring-rift-gold/50"
-              />
-            </div>
-
-            {/* Lista med trådar på pappret */}
+          <div className="flex-1 pt-12 pl-6"> {/* dra ner + mer åt höger */}
+            {/* Lista med trådar */}
             <ul>
               {list.map((t) => (
                 <ThreadRow key={t.id} t={t} onOpen={setOpen} />
@@ -310,11 +290,10 @@ export default function SummonersHall() {
                 </li>
               )}
             </ul>
-          </section>
+          </div>
         </div>
       </div>
 
-      {/* Modal */}
       <ThreadModal thread={open} onClose={() => setOpen(null)} />
     </div>
   );
