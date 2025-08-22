@@ -9,7 +9,7 @@ const active = "text-rift-gold drop-shadow-glow border-rift-gold/50";
 
 function NavLinks({ className = "" }) {
   return (
-    <nav className={`flex gap-5 ${className}`}>
+    <nav className={`flex gap-3 ${className}`}>
       <NavLink
         to="/summoners-hall"
         className={({ isActive }) => `${linkBase} ${isActive ? active : ""}`}
@@ -39,22 +39,17 @@ export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
-    // På startsidan: lyssna på scroll, annars: alltid scrolled
     if (isHome) {
       const onScroll = () => setIsScrolled(window.scrollY > 50);
-      // init direkt (om man t.ex. landar mitt i sidan via ankare)
       onScroll();
       window.addEventListener("scroll", onScroll, { passive: true });
       return () => window.removeEventListener("scroll", onScroll);
     } else {
       setIsScrolled(true);
-      // ingen scroll-lyssnare på andra sidor
       return () => {};
     }
   }, [isHome]);
 
-  // FIXED så den ligger ovanpå heron på startsidan.
-  // Transparent på home innan scroll; solid på scroll/andra sidor.
   return (
     <header
       data-nav
@@ -63,49 +58,62 @@ export default function Navbar() {
       `}
     >
       <div className="max-w-7xl mx-auto px-4">
-        {/* === LÄGE 1: STOR LOGGA CENTRERAD (endast på home & när ej scrolled) === */}
-        <div className={`${!isHome || isScrolled ? "hidden" : "block"} py-2`}>
-          <div className="relative flex items-center justify-center">
-            <Link to="/" className="flex justify-center">
-              <img
-                src={rifthubLogo}
-                alt="RiftHub Logo"
-                className="h-32 md:h-48 w-auto object-contain transition-all duration-500"
-              />
-            </Link>
 
-            <div className="absolute right-0 md:right-2 flex items-center gap-4 text-rift-gold">
-              <Link to="/cart" className="p-2" aria-label="Cart"></Link>
-              <Link to="/account" className="p-2" aria-label="Account"></Link>
-            </div>
-          </div>
-
-          <div className="mt-3 flex justify-center">
-            <NavLinks />
-          </div>
-        </div>
-
-        {/* === LÄGE 2: KOMPAKT RAD (alltid på andra sidor, eller på home när scrolled) === */}
-        <div
-          className={`${(!isHome || isScrolled) ? "flex" : "hidden"} items-center justify-between py-2 transition-all duration-500`}
-        >
+        {/* === MOBILVERSION (<640px): alltid kompakt === */}
+        <div className="flex sm:hidden items-center justify-between py-2">
           <Link to="/" className="flex items-center gap-2 min-w-0">
             <img
               src={rLogo}
               alt="RiftHub Small Logo"
-              className="h-14 md:h-16 w-auto object-contain transition-all duration-500"
+              className="h-12 w-auto object-contain transition-all duration-500"
             />
           </Link>
+          <NavLinks />
+        </div>
 
-          <div className="hidden sm:block mx-3">
-            <NavLinks />
+        {/* === TABLET/DESKTOP (>=640px) === */}
+        <div className="hidden sm:block">
+          {/* LÄGE 1: STOR LOGGA + länkar under (endast på startsidan, ej scrolled) */}
+          <div className={`${!isHome || isScrolled ? "hidden" : "block"} py-2`}>
+            <div className="relative flex items-center justify-center">
+              <Link to="/" className="flex justify-center">
+                <img
+                  src={rifthubLogo}
+                  alt="RiftHub Logo"
+                  className="h-32 md:h-48 w-auto object-contain transition-all duration-500"
+                />
+              </Link>
+              <div className="absolute right-0 md:right-2 flex items-center gap-4 text-rift-gold">
+                <Link to="/cart" className="p-2" aria-label="Cart"></Link>
+                <Link to="/account" className="p-2" aria-label="Account"></Link>
+              </div>
+            </div>
+            <div className="mt-3 flex justify-center">
+              <NavLinks />
+            </div>
           </div>
 
-          <div className="flex items-center gap-3 text-rift-gold">
-            <Link to="/cart" className="p-2" aria-label="Cart"></Link>
-            <Link to="/account" className="p-2" aria-label="Account"></Link>
+          {/* LÄGE 2: Kompakt rad (alltid på andra sidor eller när scrolled) */}
+          <div
+            className={`${(!isHome || isScrolled) ? "flex" : "hidden"} items-center justify-between py-2 transition-all duration-500`}
+          >
+            <Link to="/" className="flex items-center gap-2 min-w-0">
+              <img
+                src={rLogo}
+                alt="RiftHub Small Logo"
+                className="h-14 md:h-16 w-auto object-contain transition-all duration-500"
+              />
+            </Link>
+            <div className="mx-3">
+              <NavLinks />
+            </div>
+            <div className="flex items-center gap-3 text-rift-gold">
+              <Link to="/cart" className="p-2" aria-label="Cart"></Link>
+              <Link to="/account" className="p-2" aria-label="Account"></Link>
+            </div>
           </div>
         </div>
+
       </div>
     </header>
   );

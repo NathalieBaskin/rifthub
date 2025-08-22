@@ -11,11 +11,11 @@ export default function StartSida() {
     if (!video) return;
 
     const handleLoaded = () => {
-       try {
-  video.currentTime = 10;
-} catch  {
-  // ignore error
-}
+      try {
+        video.currentTime = 10; // starta 10 sek in
+      } catch {
+        // ignore error
+      }
       const p = video.play();
       if (p && typeof p.then === "function") {
         p.catch(() => {});
@@ -65,29 +65,34 @@ export default function StartSida() {
 
   return (
     <>
-      {/* HERO: fullscreen video (bakgrunden syns bakom om videon inte laddar) */}
-      <section className="relative h-screen bg-[image:var(--bg-fallback)] bg-cover bg-center">
-        <video
-          ref={videoRef}
-          className="absolute inset-0 w-full h-full object-cover"
-          src="/videos/startsidaVideo.mp4"
-          autoPlay
-          muted={muted}
-          loop
-          playsInline
-          preload="auto"
-        />
-        <div className="absolute inset-0 flex items-end justify-end p-4">
-          <button
-            onClick={toggleMute}
-            className="px-3 py-2 rounded-md bg-black/50 text-white border border-white/30 hover:bg-black/70 transition text-sm"
-            aria-label={muted ? "Enable sound" : "Mute"}
-            title={muted ? "Enable sound" : "Mute"}
-          >
-            {muted ? "🔇" : "🔊"}
-          </button>
-        </div>
-      </section>
+      {/* HERO VIDEO */}
+   {/* HERO: fullscreen video (bakgrunden syns bakom om videon inte laddar) */}
+<section className="relative bg-[image:var(--bg-fallback)] bg-cover bg-center">
+  <div className="relative w-full h-[50vh] sm:h-[60vh] md:h-[80vh] lg:h-screen">
+    <video
+      ref={videoRef}
+      className="absolute inset-0 w-full h-full object-cover object-center"
+      src="/videos/startsidaVideo.mov"
+      autoPlay
+      muted={muted}
+      loop
+      playsInline
+      preload="auto"
+    />
+    <div className="absolute inset-0 flex items-end justify-end p-4">
+      <button
+        onClick={toggleMute}
+        className="px-3 py-2 rounded-md bg-black/50 text-white border border-white/30 hover:bg-black/70 transition text-sm"
+        aria-label={muted ? "Enable sound" : "Mute"}
+        title={muted ? "Enable sound" : "Mute"}
+      >
+        {muted ? "🔇" : "🔊"}
+      </button>
+    </div>
+  </div>
+</section>
+
+
 
       {/* FEATURED NEWS */}
       <section className="max-w-7xl mx-auto px-4 pt-24 pb-6">

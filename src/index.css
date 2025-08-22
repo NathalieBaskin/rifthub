@@ -205,3 +205,25 @@ body::before {
 .paper-latest__text { min-width: 0; }
 .paper-latest__title { color: #0f1624; font-weight: 600; }
 .paper-latest__meta { color: rgba(15,22,36,.7); font-size: 12px; }
+/* Mobil (≤640px) – kapa topp och botten mer */
+/* 📱 Mobil */
+@media (max-width: 640px) {
+  video {
+    object-position: center 20%; /* flytta fokus lite uppåt */
+  }
+}
+
+/* 📲 iPad (mellan mobil & desktop) */
+@media (min-width: 641px) and (max-width: 1024px) {
+  video {
+    object-position: center 30%; /* lite mer kompakt på iPad */
+  }
+}
+
+
+/* Desktop (≥1025px) – normal */
+@media (min-width: 1025px) {
+  video {
+    object-position: 50% 50%; /* centrerad */
+  }
+}
