@@ -4,6 +4,7 @@ import Layout from "./components/Layout.jsx";
 import StartSida from "./pages/startsida.jsx";
 
 import SummonersHall from "./pages/SummonersHall.jsx";
+import LegendsBazaar from "./pages/LegendsBazaar.jsx";
 
 export default function App() {
   return (
@@ -15,6 +16,7 @@ export default function App() {
 
         {/* Forum / Summoners hall */}
         <Route path="/summoners-hall" element={<SummonersHall />} />
+        <Route path="/champions" element={<LegendsBazaar />} />
 
         {/* Enkla placeholders för sidor du inte byggt än */}
         <Route

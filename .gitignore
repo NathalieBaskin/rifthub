@@ -39,3 +39,5 @@ dist-ssr/
 *.avi
 *.mkv
 *.webm
+# SQLite database
+*.db
