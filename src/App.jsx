@@ -1,10 +1,11 @@
 // src/App.jsx
 import { Routes, Route } from "react-router-dom";
 import Layout from "./components/Layout.jsx";
-import StartSida from "./pages/startsida.jsx";
-
+import StartSida from "./pages/StartSida.jsx";
 import SummonersHall from "./pages/SummonersHall.jsx";
 import LegendsBazaar from "./pages/LegendsBazaar.jsx";
+import Cart from "./pages/Cart.jsx";        // 👈 importera Cart
+import Checkout from "./pages/Checkout.jsx"; // 👈 importera Checkout
 
 export default function App() {
   return (
@@ -14,11 +15,17 @@ export default function App() {
         {/* Startsida */}
         <Route path="/" element={<StartSida />} />
 
-        {/* Forum / Summoners hall */}
+        {/* Forum / Summoners Hall */}
         <Route path="/summoners-hall" element={<SummonersHall />} />
+
+        {/* Shop */}
         <Route path="/champions" element={<LegendsBazaar />} />
 
-        {/* Enkla placeholders för sidor du inte byggt än */}
+        {/* Cart + Checkout */}
+        <Route path="/cart" element={<Cart />} />
+        <Route path="/checkout" element={<Checkout />} />
+
+        {/* Placeholder för The Rift Tavern */}
         <Route
           path="/forum"
           element={<div className="p-8">Forum (kommer senare)</div>}

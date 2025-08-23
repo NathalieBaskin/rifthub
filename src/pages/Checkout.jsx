@@ -1,0 +1,164 @@
+import { useCart } from "../context/useCart.js";
+import { useState } from "react";
+
+export default function Checkout() {
+  const { cart, clearCart } = useCart();
+  const [form, setForm] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    address: "",
+    zipcode: "",
+    city: "",
+    payment: "card",
+  });
+  const [confirmation, setConfirmation] = useState(null);
+  const [error, setError] = useState(null);
+
+  function handleChange(e) {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+
+    try {
+      const res = await fetch("http://localhost:5000/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...form, items: cart }),
+      });
+
+      const text = await res.text(); // 👈 logga råsvaret för felsökning
+      console.log("Server response:", text);
+
+      const data = JSON.parse(text);
+      if (!res.ok) throw new Error(data.error || "Something went wrong");
+
+      setConfirmation(data.orderId);
+      clearCart();
+    } catch (err) {
+      console.error("Order error:", err.message);
+      setError(err.message);
+    }
+  }
+
+  if (confirmation) {
+    return (
+      <div className="max-w-xl mx-auto p-6 text-center">
+        <h1 className="text-2xl font-display mb-4">Order Confirmed 🎉</h1>
+        <p className="mb-2">Thank you for your purchase, {form.firstName}!</p>
+        <p className="mb-2">
+          Your order ID: <span className="font-mono">{confirmation}</span>
+        </p>
+        <p className="text-gray-400">
+          A confirmation has been sent to {form.email}
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-xl mx-auto p-6">
+      <h1 className="text-2xl font-display mb-6">Checkout</h1>
+
+      {cart.length === 0 ? (
+        <p className="text-gray-400">Your cart is empty.</p>
+      ) : (
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+            <div className="p-2 bg-red-600 text-white rounded">{error}</div>
+          )}
+
+          <input
+            name="firstName"
+            placeholder="First Name"
+            value={form.firstName}
+            onChange={handleChange}
+            required
+            className="w-full border border-rift-gold/40 rounded px-3 py-2"
+          />
+          <input
+            name="lastName"
+            placeholder="Last Name"
+            value={form.lastName}
+            onChange={handleChange}
+            required
+            className="w-full border border-rift-gold/40 rounded px-3 py-2"
+          />
+          <input
+            name="email"
+            type="email"
+            placeholder="Email"
+            value={form.email}
+            onChange={handleChange}
+            required
+            className="w-full border border-rift-gold/40 rounded px-3 py-2"
+          />
+
+          {/* Address */}
+          <input
+            name="address"
+            placeholder="Address (street + number)"
+            value={form.address}
+            onChange={handleChange}
+            required
+            className="w-full border border-rift-gold/40 rounded px-3 py-2"
+          />
+
+          {/* Zipcode + City */}
+          <div className="flex gap-4">
+            <input
+              name="zipcode"
+              placeholder="Postnummer"
+              value={form.zipcode}
+              onChange={handleChange}
+              required
+              className="w-1/3 border border-rift-gold/40 rounded px-3 py-2"
+            />
+            <input
+              name="city"
+              placeholder="Ort"
+              value={form.city}
+              onChange={handleChange}
+              required
+              className="flex-1 border border-rift-gold/40 rounded px-3 py-2"
+            />
+          </div>
+
+          {/* Payment */}
+          <div className="space-y-2">
+            <p className="font-semibold text-rift-gold">Payment Method</p>
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                name="payment"
+                value="card"
+                checked={form.payment === "card"}
+                onChange={handleChange}
+              />
+              Credit Card
+            </label>
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                name="payment"
+                value="invoice"
+                checked={form.payment === "invoice"}
+                onChange={handleChange}
+              />
+              Invoice
+            </label>
+          </div>
+
+          <button
+            type="submit"
+            className="px-4 py-2 bg-rift-card border border-rift-gold/40 rounded-md hover:bg-rift-card/80 transition"
+          >
+            Place Order
+          </button>
+        </form>
+      )}
+    </div>
+  );
+}

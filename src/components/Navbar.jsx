@@ -1,7 +1,10 @@
+// src/components/Navbar.jsx
 import { useEffect, useState } from "react";
 import { NavLink, Link, useLocation } from "react-router-dom";
 import rifthubLogo from "../assets/images/rifthub.png"; // stora loggan
 import rLogo from "../assets/images/r-logo.png";        // lilla loggan
+import { useCart } from "../context/useCart.js";
+
 
 const linkBase =
   "px-3 py-1.5 rounded-md border border-rift-gold/25 bg-rift-card/60 hover:bg-rift-card text-sm transition";
@@ -35,6 +38,7 @@ function NavLinks({ className = "" }) {
 export default function Navbar() {
   const location = useLocation();
   const isHome = location.pathname === "/";
+  const { count } = useCart(); // 👈 antal i varukorg
 
   const [isScrolled, setIsScrolled] = useState(false);
 
@@ -68,7 +72,18 @@ export default function Navbar() {
               className="h-12 w-auto object-contain transition-all duration-500"
             />
           </Link>
-          <NavLinks />
+          <div className="flex items-center gap-3 text-rift-gold">
+            <NavLinks />
+            <Link to="/cart" className="relative p-2" aria-label="Cart">
+              🛒
+              {count > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs px-1.5 rounded-full">
+                  {count}
+                </span>
+              )}
+            </Link>
+            <Link to="/account" className="p-2" aria-label="Account">👤</Link>
+          </div>
         </div>
 
         {/* === TABLET/DESKTOP (>=640px) === */}
@@ -84,8 +99,15 @@ export default function Navbar() {
                 />
               </Link>
               <div className="absolute right-0 md:right-2 flex items-center gap-4 text-rift-gold">
-                <Link to="/cart" className="p-2" aria-label="Cart"></Link>
-                <Link to="/account" className="p-2" aria-label="Account"></Link>
+                <Link to="/cart" className="relative p-2" aria-label="Cart">
+                  🛒
+                  {count > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs px-1.5 rounded-full">
+                      {count}
+                    </span>
+                  )}
+                </Link>
+                <Link to="/account" className="p-2" aria-label="Account">👤</Link>
               </div>
             </div>
             <div className="mt-3 flex justify-center">
@@ -93,7 +115,7 @@ export default function Navbar() {
             </div>
           </div>
 
-          {/* LÄGE 2: Kompakt rad (alltid på andra sidor eller när scrolled) */}
+          {/* LÄGE 2: Kompakt rad (andra sidor eller scrolled) */}
           <div
             className={`${(!isHome || isScrolled) ? "flex" : "hidden"} items-center justify-between py-2 transition-all duration-500`}
           >
@@ -108,8 +130,15 @@ export default function Navbar() {
               <NavLinks />
             </div>
             <div className="flex items-center gap-3 text-rift-gold">
-              <Link to="/cart" className="p-2" aria-label="Cart"></Link>
-              <Link to="/account" className="p-2" aria-label="Account"></Link>
+              <Link to="/cart" className="relative p-2" aria-label="Cart">
+                🛒
+                {count > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs px-1.5 rounded-full">
+                    {count}
+                  </span>
+                )}
+              </Link>
+              <Link to="/account" className="p-2" aria-label="Account">👤</Link>
             </div>
           </div>
         </div>
