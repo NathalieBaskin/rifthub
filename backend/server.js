@@ -2,14 +2,46 @@ import express from "express";
 import cors from "cors";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import db from "./db.js"; // 👈 central databasanslutning
+import path, { dirname } from "path";
+import multer from "multer";
+import fs from "fs";
+import { fileURLToPath } from "url";
+import db from "./db.js";
+
+// === fixa __dirname för ESM ===
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// hemlig nyckel för JWT (lägg helst i .env i framtiden)
+// ✅ se till att uploads-mappen alltid finns
+const uploadDir = path.join(__dirname, "public", "uploads");
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+  console.log("📂 Skapade mappen:", uploadDir);
+}
+
+// gör uploads-mappen publik
+app.use("/uploads", express.static(uploadDir));
+
+// hemlig nyckel för JWT
 const JWT_SECRET = "supersecretkey";
+
+// ===============================
+// MULTER (för filuppladdning)
+// ===============================
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const unique = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(null, unique + path.extname(file.originalname));
+  },
+});
+const upload = multer({ storage });
 
 // ===============================
 // REGISTER (skapa användare)
@@ -81,7 +113,7 @@ app.post("/api/auth/login", (req, res) => {
 });
 
 // ===============================
-// Hämta alla produkter
+// Produkter & Orders (oförändrat)
 // ===============================
 app.get("/api/products", (req, res) => {
   db.all("SELECT * FROM products", [], (err, rows) => {
@@ -90,9 +122,6 @@ app.get("/api/products", (req, res) => {
   });
 });
 
-// ===============================
-// Hämta en produkt via ID
-// ===============================
 app.get("/api/products/:id", (req, res) => {
   db.get("SELECT * FROM products WHERE id = ?", [req.params.id], (err, row) => {
     if (err) return res.status(500).json({ error: err.message });
@@ -101,9 +130,6 @@ app.get("/api/products/:id", (req, res) => {
   });
 });
 
-// ===============================
-// Skapa en order (gäst eller user_id)
-// ===============================
 app.post("/api/orders", (req, res) => {
   const { userId, firstName, lastName, email, address, payment, items } =
     req.body;
@@ -138,10 +164,8 @@ app.post("/api/orders", (req, res) => {
 });
 
 // ===============================
-// MY PAGE (Profil)
+// PROFILE (My Page)
 // ===============================
-
-// Hämta en profil (returnerar alltid user, även om profil saknas)
 app.get("/api/profile/:id", (req, res) => {
   const { id } = req.params;
 
@@ -154,7 +178,8 @@ app.get("/api/profile/:id", (req, res) => {
 
       db.get(
         `SELECT name, age, gender, preferred_lane, preferred_champ_id,
-                rank, level, league_tag, wildrift_tag, note, background_id
+                rank, level, league_tag, wildrift_tag, note, background_id,
+                avatar_url
          FROM user_profiles
          WHERE user_id = ?`,
         [id],
@@ -176,6 +201,7 @@ app.get("/api/profile/:id", (req, res) => {
             wildrift_tag: profile?.wildrift_tag || "",
             note: profile?.note || "",
             background_id: profile?.background_id || "",
+            avatar_url: profile?.avatar_url || "",
           });
         }
       );
@@ -183,7 +209,6 @@ app.get("/api/profile/:id", (req, res) => {
   );
 });
 
-// Uppdatera eller skapa profil
 app.put("/api/profile/:id", (req, res) => {
   const { id } = req.params;
   const {
@@ -198,12 +223,13 @@ app.put("/api/profile/:id", (req, res) => {
     wildrift_tag,
     note,
     background_id,
+    avatar_url,
   } = req.body;
 
   db.run(
     `INSERT INTO user_profiles 
-       (user_id, name, age, gender, preferred_lane, preferred_champ_id, rank, level, league_tag, wildrift_tag, note, background_id)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       (user_id, name, age, gender, preferred_lane, preferred_champ_id, rank, level, league_tag, wildrift_tag, note, background_id, avatar_url)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(user_id) DO UPDATE SET
        name = excluded.name,
        age = excluded.age,
@@ -215,7 +241,8 @@ app.put("/api/profile/:id", (req, res) => {
        league_tag = excluded.league_tag,
        wildrift_tag = excluded.wildrift_tag,
        note = excluded.note,
-       background_id = excluded.background_id`,
+       background_id = excluded.background_id,
+       avatar_url = excluded.avatar_url`,
     [
       id,
       name,
@@ -229,10 +256,40 @@ app.put("/api/profile/:id", (req, res) => {
       wildrift_tag,
       note,
       background_id,
+      avatar_url,
     ],
     function (err) {
       if (err) return res.status(500).json({ error: err.message });
       res.json({ success: true });
+    }
+  );
+});
+
+// ✅ Upload profilbild (via multer)
+app.post("/api/profile/:id/avatar", upload.single("avatar"), (req, res) => {
+  const { id } = req.params;
+
+  console.log("➡️ Upload route hit!");
+  console.log("req.file:", req.file);
+
+  if (!req.file) {
+    return res.status(400).json({ error: "No file uploaded" });
+  }
+
+  const avatarUrl = `/uploads/${req.file.filename}`;
+  console.log("✅ Avatar sparad:", avatarUrl);
+
+  db.run(
+    `INSERT INTO user_profiles (user_id, avatar_url)
+     VALUES (?, ?)
+     ON CONFLICT(user_id) DO UPDATE SET avatar_url = excluded.avatar_url`,
+    [id, avatarUrl],
+    function (err) {
+      if (err) {
+        console.error("❌ DB-fel:", err.message);
+        return res.status(500).json({ error: err.message });
+      }
+      res.json({ success: true, avatarUrl });
     }
   );
 });
