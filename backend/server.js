@@ -1,4 +1,3 @@
-// backend/server.js
 import express from "express";
 import cors from "cors";
 import bcrypt from "bcrypt";
@@ -142,20 +141,44 @@ app.post("/api/orders", (req, res) => {
 // MY PAGE (Profil)
 // ===============================
 
-// Hämta en profil
+// Hämta en profil (returnerar alltid user, även om profil saknas)
 app.get("/api/profile/:id", (req, res) => {
   const { id } = req.params;
 
   db.get(
-    `SELECT u.id, u.username, u.email, up.*
-     FROM users u
-     LEFT JOIN user_profiles up ON u.id = up.user_id
-     WHERE u.id = ?`,
+    `SELECT id, username, email FROM users WHERE id = ?`,
     [id],
-    (err, row) => {
+    (err, user) => {
       if (err) return res.status(500).json({ error: err.message });
-      if (!row) return res.status(404).json({ error: "Profile not found" });
-      res.json(row);
+      if (!user) return res.status(404).json({ error: "User not found" });
+
+      db.get(
+        `SELECT name, age, gender, preferred_lane, preferred_champ_id,
+                rank, level, league_tag, wildrift_tag, note, background_id
+         FROM user_profiles
+         WHERE user_id = ?`,
+        [id],
+        (err, profile) => {
+          if (err) return res.status(500).json({ error: err.message });
+
+          res.json({
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            name: profile?.name || "",
+            age: profile?.age || "",
+            gender: profile?.gender || "",
+            preferred_lane: profile?.preferred_lane || "",
+            preferred_champ_id: profile?.preferred_champ_id || "",
+            rank: profile?.rank || "",
+            level: profile?.level || "",
+            league_tag: profile?.league_tag || "",
+            wildrift_tag: profile?.wildrift_tag || "",
+            note: profile?.note || "",
+            background_id: profile?.background_id || "",
+          });
+        }
+      );
     }
   );
 });
