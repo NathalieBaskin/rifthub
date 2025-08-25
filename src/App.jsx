@@ -8,7 +8,7 @@ import Cart from "./pages/Cart.jsx";        // 👈 importera Cart
 import Checkout from "./pages/Checkout.jsx"; // 👈 importera Checkout
 import AuthPage from "./pages/AuthPage.jsx";
 import EditProfilePage from "./pages/EditProfilePage.jsx";
-
+import AdminDashboard from "./pages/admin/AdminDashboard.jsx";
 import ProfilePage from "./pages/ProfilePage.jsx";
 
 export default function App() {
@@ -37,6 +37,7 @@ export default function App() {
     <Route path="/auth" element={<AuthPage />} />
 
 <Route path="/profile" element={<ProfilePage />} />
+<Route path="/admin" element={<AdminDashboard />} />
 <Route path="/profile/edit" element={<EditProfilePage />} />
 
         {/* Fångar upp alla andra routes */}

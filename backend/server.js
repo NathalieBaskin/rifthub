@@ -293,6 +293,80 @@ app.post("/api/profile/:id/avatar", upload.single("avatar"), (req, res) => {
     }
   );
 });
+// ===============================
+// Middleware: kräver admin
+// ===============================
+function requireAdmin(req, res, next) {
+  const token = req.headers.authorization?.split(" ")[1];
+  if (!token) return res.status(401).json({ error: "No token" });
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    if (!decoded.is_admin) {
+      return res.status(403).json({ error: "Not authorized" });
+    }
+    req.user = decoded;
+    next();
+} catch (err) {
+  console.error("JWT verify failed:", err.message);
+  return res.status(401).json({ error: "Invalid token" });
+}
+
+
+}
+
+// ===============================
+// ADMIN: Products CRUD
+// ===============================
+app.get("/api/admin/products", requireAdmin, (req, res) => {
+  db.all("SELECT * FROM products", [], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows);
+  });
+});
+
+app.post("/api/admin/products", requireAdmin, upload.single("image"), (req, res) => {
+  const { name, description, price, categories, sku } = req.body;
+  const imageUrl = req.file
+    ? `http://localhost:5000/uploads/${req.file.filename}`
+    : null;
+
+  const skuRegex = /^[A-Z]{3}\d{3}$/;
+  if (!skuRegex.test(sku)) {
+    return res.status(400).json({ error: "Invalid SKU format (ABC123)" });
+  }
+
+  db.run(
+    "INSERT INTO products (name, description, price, image_url, categories, sku, created_at) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)",
+    [name, description, price, imageUrl, categories, sku],
+    function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ success: true, id: this.lastID });
+    }
+  );
+});
+
+
+app.put("/api/admin/products/:id", requireAdmin, (req, res) => {
+  const { name, description, price, categories, sku } = req.body;
+
+  db.run(
+    "UPDATE products SET name=?, description=?, price=?, categories=?, sku=? WHERE id=?",
+    [name, description, price, categories, sku, req.params.id],
+    function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ success: true });
+    }
+  );
+});
+
+app.delete("/api/admin/products/:id", requireAdmin, (req, res) => {
+  db.run("DELETE FROM products WHERE id=?", [req.params.id], function (err) {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ success: true });
+  });
+});
+
 
 // ===============================
 // Starta servern
