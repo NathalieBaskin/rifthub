@@ -38,8 +38,8 @@ export default function ProfilePage() {
           minHeight: "700px",
         }}
       >
-        {/* Profilbild */}
-        <div className="absolute -top-8 left-10 w-56 h-56">
+        {/* Profilbild med ram */}
+        <div className="absolute -top-0 left-0 w-56 h-56">
           <img
             src={
               profile.avatar_url
@@ -47,7 +47,7 @@ export default function ProfilePage() {
                 : "/images/default-avatar.png"
             }
             alt="Profile avatar"
-            className="w-full h-full object-cover rounded-full"
+            className="absolute inset-0 m-auto w-[57%] h-[57%] object-cover rounded-full"
           />
           <img
             src="/images/frame.png"
@@ -56,7 +56,7 @@ export default function ProfilePage() {
           />
         </div>
 
-        {/* Info */}
+        {/* Profilinfo */}
         <div className="mt-44 text-left w-full max-w-lg">
           <p><b>Name:</b> {profile.name || "—"}</p>
           <p><b>Age:</b> {profile.age || "—"}</p>

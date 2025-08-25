@@ -1,8 +1,8 @@
-// src/pages/EditMyPage.jsx
+// src/pages/EditProfilePage.jsx
 import { useEffect, useState } from "react";
 import { getUserFromToken } from "../utils/auth.js";
 
-export default function EditMyPage() {
+export default function EditProfilePage() {
   const [formData, setFormData] = useState(null);
   const [loading, setLoading] = useState(true);
   const user = getUserFromToken();
@@ -78,8 +78,8 @@ export default function EditMyPage() {
           minHeight: "700px",
         }}
       >
-        {/* Profilbild */}
-        <div className="absolute -top-8 left-10 w-56 h-56">
+        {/* Profilbild med ram */}
+        <div className="absolute -top-0 left-0 w-56 h-56">
           <img
             src={
               formData.avatar_url
@@ -87,7 +87,7 @@ export default function EditMyPage() {
                 : "/images/default-avatar.png"
             }
             alt="Profile avatar"
-            className="w-full h-full object-cover rounded-full"
+            className="absolute inset-0 m-auto w-[57%] h-[57%] object-cover rounded-full"
           />
           <img
             src="/images/frame.png"
