@@ -7,6 +7,7 @@ import LegendsBazaar from "./pages/LegendsBazaar.jsx";
 import Cart from "./pages/Cart.jsx";        // 👈 importera Cart
 import Checkout from "./pages/Checkout.jsx"; // 👈 importera Checkout
 import AuthPage from "./pages/AuthPage.jsx";
+import MyPage from "./pages/ProfilePage.jsx";
 
 export default function App() {
   return (
@@ -32,6 +33,7 @@ export default function App() {
           element={<div className="p-8">Forum (kommer senare)</div>}
         />
     <Route path="/auth" element={<AuthPage />} />
+<Route path="/profile" element={<MyPage />} />
 
         {/* Fångar upp alla andra routes */}
         <Route

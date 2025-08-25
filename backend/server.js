@@ -3,7 +3,7 @@ import express from "express";
 import cors from "cors";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import db from "./db.js"; // 👈 nu använder vi central databasanslutning
+import db from "./db.js"; // 👈 central databasanslutning
 
 const app = express();
 app.use(cors());
@@ -134,6 +134,82 @@ app.post("/api/orders", (req, res) => {
       stmt.finalize();
 
       res.json({ success: true, orderId });
+    }
+  );
+});
+
+// ===============================
+// MY PAGE (Profil)
+// ===============================
+
+// Hämta en profil
+app.get("/api/profile/:id", (req, res) => {
+  const { id } = req.params;
+
+  db.get(
+    `SELECT u.id, u.username, u.email, up.*
+     FROM users u
+     LEFT JOIN user_profiles up ON u.id = up.user_id
+     WHERE u.id = ?`,
+    [id],
+    (err, row) => {
+      if (err) return res.status(500).json({ error: err.message });
+      if (!row) return res.status(404).json({ error: "Profile not found" });
+      res.json(row);
+    }
+  );
+});
+
+// Uppdatera eller skapa profil
+app.put("/api/profile/:id", (req, res) => {
+  const { id } = req.params;
+  const {
+    name,
+    age,
+    gender,
+    preferred_lane,
+    preferred_champ_id,
+    rank,
+    level,
+    league_tag,
+    wildrift_tag,
+    note,
+    background_id,
+  } = req.body;
+
+  db.run(
+    `INSERT INTO user_profiles 
+       (user_id, name, age, gender, preferred_lane, preferred_champ_id, rank, level, league_tag, wildrift_tag, note, background_id)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT(user_id) DO UPDATE SET
+       name = excluded.name,
+       age = excluded.age,
+       gender = excluded.gender,
+       preferred_lane = excluded.preferred_lane,
+       preferred_champ_id = excluded.preferred_champ_id,
+       rank = excluded.rank,
+       level = excluded.level,
+       league_tag = excluded.league_tag,
+       wildrift_tag = excluded.wildrift_tag,
+       note = excluded.note,
+       background_id = excluded.background_id`,
+    [
+      id,
+      name,
+      age,
+      gender,
+      preferred_lane,
+      preferred_champ_id,
+      rank,
+      level,
+      league_tag,
+      wildrift_tag,
+      note,
+      background_id,
+    ],
+    function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ success: true });
     }
   );
 });
