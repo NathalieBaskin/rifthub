@@ -3,7 +3,16 @@ import { useEffect, useState } from "react";
 import { getUserFromToken } from "../utils/auth.js";
 
 export default function EditProfilePage() {
-  const [formData, setFormData] = useState(null);
+  const [formData, setFormData] = useState({
+    name: "",
+    age: "",
+    gender: "",
+    preferred_lane: "",
+    preferred_champ_id: "",
+    rank: "",
+    level: "",
+    avatar_url: ""
+  });
   const [loading, setLoading] = useState(true);
   const user = getUserFromToken();
 
@@ -12,7 +21,18 @@ export default function EditProfilePage() {
       try {
         const res = await fetch(`http://localhost:5000/api/profile/${user.id}`);
         const data = await res.json();
-        setFormData({ ...data });
+        // Initiera bara om fältet är tomt, annars låt användarens input vara kvar
+        setFormData((prev) => ({
+          ...prev,
+          name: prev.name || data.name || "",
+          age: prev.age || data.age || "",
+          gender: prev.gender || data.gender || "",
+          preferred_lane: prev.preferred_lane || data.preferred_lane || "",
+          preferred_champ_id: prev.preferred_champ_id || data.preferred_champ_id || "",
+          rank: prev.rank || data.rank || "",
+          level: prev.level || data.level || "",
+          avatar_url: prev.avatar_url || data.avatar_url || ""
+        }));
       } catch (err) {
         console.error("Failed to load profile", err);
       } finally {
@@ -64,7 +84,6 @@ export default function EditProfilePage() {
   };
 
   if (loading) return <div className="p-6">Loading...</div>;
-  if (!formData) return <div className="p-6">No profile found</div>;
 
   return (
     <div className="relative max-w-5xl mx-auto mt-10 p-6">
@@ -83,7 +102,9 @@ export default function EditProfilePage() {
           <img
             src={
               formData.avatar_url
-                ? `http://localhost:5000${formData.avatar_url}`
+                ? formData.avatar_url.startsWith("http")
+                  ? formData.avatar_url
+                  : `http://localhost:5000${formData.avatar_url}`
                 : "/images/default-avatar.png"
             }
             alt="Profile avatar"
@@ -102,26 +123,28 @@ export default function EditProfilePage() {
             Name
             <input
               name="name"
-              value={formData.name || ""}
+              value={formData.name}
               onChange={handleChange}
               className="w-full border rounded p-2 text-rift-bg"
             />
           </label>
+
           <label className="block mb-2">
             Age
             <input
               type="number"
               name="age"
-              value={formData.age || ""}
+              value={formData.age}
               onChange={handleChange}
               className="w-full border rounded p-2 text-rift-bg"
             />
           </label>
+
           <label className="block mb-2">
             Gender
             <select
               name="gender"
-              value={formData.gender || ""}
+              value={formData.gender}
               onChange={handleChange}
               className="w-full border rounded p-2 text-rift-bg"
             >
@@ -137,7 +160,7 @@ export default function EditProfilePage() {
             Preferred Lane
             <select
               name="preferred_lane"
-              value={formData.preferred_lane || ""}
+              value={formData.preferred_lane}
               onChange={handleChange}
               className="w-full border rounded p-2 text-rift-bg"
             >
@@ -154,7 +177,7 @@ export default function EditProfilePage() {
             Preferred Champion
             <input
               name="preferred_champ_id"
-              value={formData.preferred_champ_id || ""}
+              value={formData.preferred_champ_id}
               onChange={handleChange}
               className="w-full border rounded p-2 text-rift-bg"
             />
@@ -164,7 +187,7 @@ export default function EditProfilePage() {
             Rank
             <input
               name="rank"
-              value={formData.rank || ""}
+              value={formData.rank}
               onChange={handleChange}
               className="w-full border rounded p-2 text-rift-bg"
             />
@@ -175,7 +198,7 @@ export default function EditProfilePage() {
             <input
               type="number"
               name="level"
-              value={formData.level || ""}
+              value={formData.level}
               onChange={handleChange}
               className="w-full border rounded p-2 text-rift-bg"
             />
