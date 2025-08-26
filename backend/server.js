@@ -367,6 +367,70 @@ app.delete("/api/admin/products/:id", requireAdmin, (req, res) => {
   });
 });
 
+// ===============================
+// ALLIES (Friends system)
+// ===============================
+
+// 🔍 Sök användare (används i profilen när man vill hitta någon att lägga till)
+app.get("/api/users/search", (req, res) => {
+  const q = `%${req.query.q}%`;
+  db.all(
+    `SELECT u.id, u.username, p.avatar_url
+     FROM users u
+     LEFT JOIN user_profiles p ON u.id = p.user_id
+     WHERE u.username LIKE ?`,
+    [q],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(rows);
+    }
+  );
+});
+
+// ➕ Lägg till ally
+app.post("/api/allies", (req, res) => {
+  const { userId, allyId } = req.body;
+  if (!userId || !allyId) {
+    return res.status(400).json({ error: "Missing userId or allyId" });
+  }
+
+  db.run(
+    "INSERT OR IGNORE INTO allies (user_id, ally_id) VALUES (?, ?)",
+    [userId, allyId],
+    function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ success: true });
+    }
+  );
+});
+
+// 📜 Hämta en användares allies
+app.get("/api/allies/:userId", (req, res) => {
+  db.all(
+    `SELECT u.id, u.username, p.avatar_url
+     FROM allies a
+     JOIN users u ON a.ally_id = u.id
+     LEFT JOIN user_profiles p ON u.id = p.user_id
+     WHERE a.user_id = ?`,
+    [req.params.userId],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(rows);
+    }
+  );
+});
+
+// ❌ Ta bort ally
+app.delete("/api/allies/:userId/:allyId", (req, res) => {
+  db.run(
+    "DELETE FROM allies WHERE user_id=? AND ally_id=?",
+    [req.params.userId, req.params.allyId],
+    function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ success: true });
+    }
+  );
+});
 
 // ===============================
 // Starta servern

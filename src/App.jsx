@@ -4,8 +4,8 @@ import Layout from "./components/Layout.jsx";
 import StartSida from "./pages/StartSida.jsx";
 import SummonersHall from "./pages/SummonersHall.jsx";
 import LegendsBazaar from "./pages/LegendsBazaar.jsx";
-import Cart from "./pages/Cart.jsx";        // 👈 importera Cart
-import Checkout from "./pages/Checkout.jsx"; // 👈 importera Checkout
+import Cart from "./pages/Cart.jsx";
+import Checkout from "./pages/Checkout.jsx";
 import AuthPage from "./pages/AuthPage.jsx";
 import EditProfilePage from "./pages/EditProfilePage.jsx";
 import AdminDashboard from "./pages/admin/AdminDashboard.jsx";
@@ -34,13 +34,19 @@ export default function App() {
           path="/forum"
           element={<div className="p-8">Forum (kommer senare)</div>}
         />
-    <Route path="/auth" element={<AuthPage />} />
 
-<Route path="/profile" element={<ProfilePage />} />
-<Route path="/admin" element={<AdminDashboard />} />
-<Route path="/profile/edit" element={<EditProfilePage />} />
+        {/* Auth */}
+        <Route path="/auth" element={<AuthPage />} />
 
-        {/* Fångar upp alla andra routes */}
+        {/* Profiler */}
+        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/profile/:id" element={<ProfilePage />} />  {/* 👈 LÄGG TILL DENNA */}
+        <Route path="/profile/edit" element={<EditProfilePage />} />
+
+        {/* Admin */}
+        <Route path="/admin" element={<AdminDashboard />} />
+
+        {/* 404 fallback */}
         <Route
           path="*"
           element={<div className="p-8">Sidan kunde inte hittas.</div>}
