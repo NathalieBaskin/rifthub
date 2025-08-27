@@ -259,11 +259,11 @@ export default function SummonersHall() {
   return (
     <div className="min-h-screen bg-transparent">
       <div
-        className="parchment-wrapper min-h-[1100px]" // större papper
-        style={{ marginTop: (navOffset || 0) + 30 }} // dra upp pappret närmare navbaren
+        className="parchment-wrapper min-h-[1100px]"
+        style={{ marginTop: (navOffset || 0) + -90 }} // 🔧 tidigare +30
       >
         {/* Rubrik */}
-        <h1 className="font-display text-3xl md:text-4xl text-rift-bg text-center mb-14">
+        <h1 className="font-display text-3xl md:text-4xl text-rift-bg text-center mb-1">
           Summoner&apos;s Hall
         </h1>
 
@@ -333,12 +333,12 @@ export default function SummonersHall() {
 
         {/* DESKTOP/IPAD GRID */}
         <div
-          className="hidden md:grid gap-5" // lite större gap mellan rubrik/rail/threads
+          className="hidden md:grid gap-6"
           style={{ gridTemplateColumns: "420px 1fr" }}
         >
           <SideRail topic={topic} setTopic={setTopic} />
 
-          <div className="flex-1 pt-12 pl-6">
+          <div className="flex-1 pt-14 pl-1"> {/* 🔧 tidigare pt-12 */}
             <ul>
               {list.map((t) => (
                 <ThreadRow key={t.id} t={t} onOpen={setOpen} />

@@ -1,15 +1,15 @@
+// src/components/Layout.jsx
 import { Outlet } from "react-router-dom";
-import Navbar from "./Navbar.jsx";
+import Navbar from "./Navbar";
 
 export default function Layout() {
   return (
-    <>
-      <header data-nav>
-        <Navbar />
-      </header>
-      <main>
+    <div className="min-h-screen">
+      <Navbar />
+      {/* ✅ Lägg till padding-top så allt hamnar under nav-baren */}
+      <main className="pt-20">  
         <Outlet />
       </main>
-    </>
+    </div>
   );
 }

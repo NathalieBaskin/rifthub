@@ -67,8 +67,9 @@ export default function StartSida() {
     <>
       {/* HERO VIDEO */}
    {/* HERO: fullscreen video (bakgrunden syns bakom om videon inte laddar) */}
-<section className="relative bg-[image:var(--bg-fallback)] bg-cover bg-center">
+<section className="relative -mt-20 bg-[image:var(--bg-fallback)] bg-cover bg-center">
   <div className="relative w-full h-[50vh] sm:h-[60vh] md:h-[80vh] lg:h-screen">
+
     <video
       ref={videoRef}
       className="absolute inset-0 w-full h-full object-cover object-center"

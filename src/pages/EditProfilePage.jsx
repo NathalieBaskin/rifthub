@@ -16,34 +16,39 @@ export default function EditProfilePage() {
   const [loading, setLoading] = useState(true);
   const user = getUserFromToken();
 
-  useEffect(() => {
-    async function fetchProfile() {
-      try {
-        const res = await fetch(`http://localhost:5000/api/profile/${user.id}`);
-        const data = await res.json();
-        setFormData((prev) => ({
-          ...prev,
-          name: prev.name || data.name || "",
-          age: prev.age || data.age || "",
-          gender: prev.gender || data.gender || "",
-          preferred_lane: prev.preferred_lane || data.preferred_lane || "",
-          preferred_champ_id: prev.preferred_champ_id || data.preferred_champ_id || "",
-          rank: prev.rank || data.rank || "",
-          level: prev.level || data.level || "",
-          avatar_url: prev.avatar_url || data.avatar_url || ""
-        }));
-      } catch (err) {
-        console.error("Failed to load profile", err);
-      } finally {
-        setLoading(false);
-      }
+useEffect(() => {
+  async function fetchProfile() {
+    try {
+      const res = await fetch(`http://localhost:5000/api/profile/${user.id}`);
+      const data = await res.json();
+      // ✅ sätt direkt, inte baserat på prev
+      setFormData({
+        name: data.name || "",
+        age: data.age || "",
+        gender: data.gender || "",
+        preferred_lane: data.preferred_lane || "",
+        preferred_champ_id: data.preferred_champ_id || "",
+        rank: data.rank || "",
+        level: data.level || "",
+        avatar_url: data.avatar_url || ""
+      });
+    } catch (err) {
+      console.error("Failed to load profile", err);
+    } finally {
+      setLoading(false);
     }
-    if (user) fetchProfile();
-  }, [user]);
+  }
 
-  // 🔹 Hantera input-ändringar
+  if (user) {
+    fetchProfile();
+  }
+  // ⚠️ viktigt: bara kör när user.id ändras
+}, [user?.id]);
+
+
+
   const handleChange = (e) => {
-    const { name, value } = e.target; // 👈 tydligt destrukturerat
+    const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -66,7 +71,7 @@ export default function EditProfilePage() {
       if (data.success) {
         setFormData((prev) => ({
           ...prev,
-          avatar_url: `${data.avatarUrl}?t=${Date.now()}`, // 👈 cache-busting
+          avatar_url: `${data.avatarUrl}?t=${Date.now()}`,
         }));
       }
     } catch (err) {
@@ -90,7 +95,7 @@ export default function EditProfilePage() {
   if (loading) return <div className="p-6">Loading...</div>;
 
   return (
-    <div className="relative max-w-5xl mx-auto mt-10 p-6">
+    <div className="relative max-w-5xl mx-auto mt-10 p-6 text-black"> {/* ✅ text-black */}
       <div
         className="relative flex flex-col items-center p-12"
         style={{

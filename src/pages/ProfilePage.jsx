@@ -5,7 +5,7 @@ import { getUserFromToken } from "../utils/auth.js";
 import AlliesSection from "../components/AlliesSection.jsx";
 
 export default function ProfilePage() {
-  const { id } = useParams(); // så man kan besöka andras profiler via /profile/:id
+  const { id } = useParams();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const user = getUserFromToken();
@@ -13,7 +13,7 @@ export default function ProfilePage() {
   useEffect(() => {
     async function fetchProfile() {
       try {
-        const profileId = id || user.id; // 👈 använd id från URL om det finns, annars eget
+        const profileId = id || user.id;
         const res = await fetch(`http://localhost:5000/api/profile/${profileId}`);
         if (!res.ok) throw new Error("Profile fetch failed");
         const data = await res.json();
@@ -31,7 +31,7 @@ export default function ProfilePage() {
   if (!profile) return <div className="p-6">No profile found</div>;
 
   return (
-    <div className="relative max-w-6xl mx-auto mt-10 p-6">
+    <div className="relative max-w-6xl mx-auto mt-10 p-6 text-black"> {/* ✅ text-black */}
       <div className="flex gap-8">
         {/* Vänster: Profilkort */}
         <div
@@ -44,7 +44,7 @@ export default function ProfilePage() {
             minHeight: "700px",
           }}
         >
-          {/* Profilbild med ram */}
+          {/* Profilbild */}
           <div className="absolute -top-0 left-0 w-56 h-56">
             <img
               src={
