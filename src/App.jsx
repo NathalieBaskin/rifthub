@@ -10,6 +10,7 @@ import AuthPage from "./pages/AuthPage.jsx";
 import EditProfilePage from "./pages/EditProfilePage.jsx";
 import AdminDashboard from "./pages/admin/AdminDashboard.jsx";
 import ProfilePage from "./pages/ProfilePage.jsx";
+import ChatPage from "./pages/ChatPage";
 
 export default function App() {
   return (
@@ -45,6 +46,8 @@ export default function App() {
 
         {/* Admin */}
         <Route path="/admin" element={<AdminDashboard />} />
+        
+          <Route path="/chat" element={<ChatPage />} />  {/* ✅ ny route */}
 
         {/* 404 fallback */}
         <Route

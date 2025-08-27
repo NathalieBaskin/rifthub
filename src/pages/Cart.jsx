@@ -29,7 +29,7 @@ export default function Cart() {
                 </div>
                 <div className="flex items-center gap-4">
                   <span className="text-rift-gold">
-                    {item.price * item.quantity} Gold
+                    {item.price * item.quantity} SEK
                   </span>
                   <button
                     onClick={() => removeFromCart(item.id)}
@@ -44,7 +44,7 @@ export default function Cart() {
 
           <div className="mt-6 text-right">
             <p className="text-lg font-semibold">
-              Total: <span className="text-rift-gold">{total} Gold</span>
+              Total: <span className="text-rift-gold">{total} SEK</span>
             </p>
 
             <Link

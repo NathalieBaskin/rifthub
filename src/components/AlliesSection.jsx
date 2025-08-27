@@ -1,10 +1,12 @@
 // src/components/AlliesSection.jsx
 import { useEffect, useState } from "react";
 import { getUserFromToken } from "../utils/auth.js";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 export default function AlliesSection({ profileUserId }) {
   const me = getUserFromToken();
+  const navigate = useNavigate();  // ✅ här inne, inte utanför
+
   const [myFriends, setMyFriends] = useState([]);          // mina vänner
   const [profileFriends, setProfileFriends] = useState([]); // vänner för profilen jag kollar på
   const [search, setSearch] = useState("");
@@ -133,7 +135,12 @@ export default function AlliesSection({ profileUserId }) {
               </div>
               <div className="flex gap-2">
                 <button onClick={() => removeFriend(f.id)} className="text-red-500">🗑</button>
-                <button onClick={() => alert("Chat coming soon")} className="text-blue-400">💬</button>
+                <button
+                  onClick={() => navigate(`/chat?friend=${f.id}`)}
+                  className="text-blue-400"
+                >
+                  💬
+                </button>
               </div>
             </li>
           ))}

@@ -1,3 +1,4 @@
+// src/components/Navbar.jsx
 import { useEffect, useState } from "react";
 import { NavLink, Link, useLocation, useNavigate } from "react-router-dom";
 import rifthubLogo from "../assets/images/rifthub.png";
@@ -43,6 +44,25 @@ export default function Navbar() {
   const user = getUserFromToken();
   const navigate = useNavigate();
 
+  // 🔔 Olästa meddelanden
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  async function fetchUnread() {
+    if (!user) return;
+    const res = await fetch(`http://localhost:5000/api/unread-count/${user.id}`);
+    if (!res.ok) return;
+    const data = await res.json();
+    setUnreadCount(data.count);
+  }
+
+  useEffect(() => {
+    if (user) {
+      fetchUnread();
+      const interval = setInterval(fetchUnread, 5000); // poll var 5s
+      return () => clearInterval(interval);
+    }
+  }, [user]);
+
   useEffect(() => {
     if (isHome) {
       const onScroll = () => setIsScrolled(window.scrollY > 50);
@@ -70,7 +90,6 @@ export default function Navbar() {
   // Account-ikon block
   const AccountMenu = () => {
     if (!user) {
-      // Om inte inloggad → gå till login/register
       return (
         <Link to="/auth" className="p-2" aria-label="Account">
           <img
@@ -82,7 +101,6 @@ export default function Navbar() {
       );
     }
 
-    // Inloggad → dropdown
     return (
       <div className="relative">
         <button
@@ -142,7 +160,6 @@ export default function Navbar() {
       `}
     >
       <div className="max-w-7xl mx-auto px-4">
-
         {/* === MOBILVERSION === */}
         <div className="flex sm:hidden items-center justify-between py-2">
           <Link to="/" className="flex items-center gap-2 min-w-0">
@@ -167,15 +184,18 @@ export default function Navbar() {
 
             {/* Chat */}
             {user && (
-              <Link to="/chat" className="p-2" aria-label="Chat">
+              <Link to="/chat" className="relative p-2" aria-label="Chat">
                 <img src={chatIcon} alt="Chat" className="h-9 w-9 md:h-10 md:w-10" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs px-1.5 rounded-full">
+                    {unreadCount}
+                  </span>
+                )}
               </Link>
             )}
 
-            {/* Account / Dropdown */}
             <AccountMenu />
 
-            {/* Admin – mindre */}
             {user?.is_admin === 1 && (
               <Link to="/admin" className="p-2" aria-label="Admin">
                 <img src={keyIcon} alt="Admin" className="h-7 w-7 md:h-8 md:w-8" />
@@ -186,7 +206,6 @@ export default function Navbar() {
 
         {/* === DESKTOP === */}
         <div className="hidden sm:block">
-          {/* LÄGE 1: stor logga (STARTSIDAN, INNAN SCROLL) */}
           <div className={`${!isHome || isScrolled ? "hidden" : "block"} py-2`}>
             <div className="relative flex items-center justify-center">
               <Link to="/" className="flex justify-center">
@@ -202,7 +221,6 @@ export default function Navbar() {
             </div>
           </div>
 
-          {/* LÄGE 2: kompakt rad (andra sidor + efter scroll) */}
           <div
             className={`${
               !isHome || isScrolled ? "flex" : "hidden"
@@ -219,7 +237,6 @@ export default function Navbar() {
               <NavLinks />
             </div>
             <div className="flex items-center gap-4 text-rift-gold">
-              {/* Cart */}
               <Link to="/cart" className="relative p-2" aria-label="Cart">
                 <img src={cartIcon} alt="Cart" className="h-9 w-9 md:h-10 md:w-10" />
                 {count > 0 && (
@@ -229,17 +246,19 @@ export default function Navbar() {
                 )}
               </Link>
 
-              {/* Chat */}
               {user && (
-                <Link to="/chat" className="p-2" aria-label="Chat">
+                <Link to="/chat" className="relative p-2" aria-label="Chat">
                   <img src={chatIcon} alt="Chat" className="h-9 w-9 md:h-10 md:w-10" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs px-1.5 rounded-full">
+                      {unreadCount}
+                    </span>
+                  )}
                 </Link>
               )}
 
-              {/* Account / Dropdown */}
               <AccountMenu />
 
-              {/* Admin */}
               {user?.is_admin === 1 && (
                 <Link to="/admin" className="p-2" aria-label="Admin">
                   <img src={keyIcon} alt="Admin" className="h-7 w-7 md:h-8 md:w-8" />

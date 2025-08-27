@@ -31,7 +31,7 @@ export default function LegendsBazaar() {
             />
             <h2 className="text-lg font-bold">{p.name}</h2>
             <p className="text-sm text-gray-400">{p.description}</p>
-            <p className="mt-2 text-rift-gold font-semibold">{p.price} Gold</p>
+            <p className="mt-2 text-rift-gold font-semibold">{p.price} SEK</p>
 
             <button
               onClick={() => addToCart(p)}

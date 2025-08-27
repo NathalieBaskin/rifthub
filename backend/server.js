@@ -428,6 +428,109 @@ app.delete("/api/friends/:userId/:friendId", (req, res) => {
 
   res.json({ success: true });
 });
+// ===============================
+// CHAT (Messages)
+// ===============================
+
+// 📜 Hämta alla meddelanden mellan två användare
+app.get("/api/messages/:friendId", (req, res) => {
+  const token = req.headers.authorization?.split(" ")[1];
+  if (!token) return res.status(401).json({ error: "No token" });
+
+  let me;
+  try {
+    me = jwt.verify(token, JWT_SECRET);
+  } catch {
+    return res.status(401).json({ error: "Invalid token" });
+  }
+
+  const { friendId } = req.params;
+
+  db.all(
+    `SELECT m.*, u.username as sender_name
+     FROM messages m
+     JOIN users u ON m.sender_id = u.id
+     WHERE (m.sender_id = ? AND m.receiver_id = ?)
+        OR (m.sender_id = ? AND m.receiver_id = ?)
+     ORDER BY m.created_at ASC`,
+    [me.id, friendId, friendId, me.id],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+
+      // markera som lästa
+      db.run(
+        "UPDATE messages SET is_read = 1 WHERE sender_id = ? AND receiver_id = ?",
+        [friendId, me.id]
+      );
+
+      res.json(rows);
+    }
+  );
+});
+
+// ✉️ Skicka nytt meddelande
+app.post("/api/messages", (req, res) => {
+  const token = req.headers.authorization?.split(" ")[1];
+  if (!token) return res.status(401).json({ error: "No token" });
+
+  let me;
+  try {
+    me = jwt.verify(token, JWT_SECRET);
+  } catch {
+    return res.status(401).json({ error: "Invalid token" });
+  }
+
+  const { receiverId, content } = req.body;
+  if (!receiverId || !content) {
+    return res.status(400).json({ error: "Missing receiverId or content" });
+  }
+
+  db.run(
+    "INSERT INTO messages (sender_id, receiver_id, content, created_at, is_read) VALUES (?, ?, ?, CURRENT_TIMESTAMP, 0)",
+    [me.id, receiverId, content],
+    function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ success: true, id: this.lastID });
+    }
+  );
+});
+
+// 🔔 Hämta antal olästa meddelanden för användaren
+app.get("/api/unread-count/:userId", (req, res) => {
+  db.get(
+    `SELECT COUNT(*) as count FROM messages 
+     WHERE receiver_id = ? AND is_read = 0`,
+    [req.params.userId],
+    (err, row) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ count: row.count });
+    }
+  );
+});
+
+// 📩 Hämta senaste meddelandet per vän
+app.get("/api/last-messages/:userId", (req, res) => {
+  db.all(
+    `
+    SELECT m.*, u.username as sender_name, f.friend_id as friendId
+    FROM friends f
+    JOIN messages m 
+      ON (m.sender_id = f.friend_id AND m.receiver_id = f.user_id)
+      OR (m.sender_id = f.user_id AND m.receiver_id = f.friend_id)
+    JOIN users u ON u.id = m.sender_id
+    WHERE f.user_id = ?
+    GROUP BY f.friend_id
+    HAVING MAX(m.created_at)
+    ORDER BY MAX(m.created_at) DESC
+    `,
+    [req.params.userId],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(rows);
+    }
+  );
+});
+
 
 // ===============================
 // Starta servern
