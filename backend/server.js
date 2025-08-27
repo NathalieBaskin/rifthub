@@ -113,7 +113,7 @@ app.post("/api/auth/login", (req, res) => {
 });
 
 // ===============================
-// Produkter & Orders (oförändrat)
+// Produkter & Orders
 // ===============================
 app.get("/api/products", (req, res) => {
   db.all("SELECT * FROM products", [], (err, rows) => {
@@ -265,19 +265,15 @@ app.put("/api/profile/:id", (req, res) => {
   );
 });
 
-// ✅ Upload profilbild (via multer)
+// ✅ Upload profilbild
 app.post("/api/profile/:id/avatar", upload.single("avatar"), (req, res) => {
   const { id } = req.params;
-
-  console.log("➡️ Upload route hit!");
-  console.log("req.file:", req.file);
 
   if (!req.file) {
     return res.status(400).json({ error: "No file uploaded" });
   }
 
   const avatarUrl = `/uploads/${req.file.filename}`;
-  console.log("✅ Avatar sparad:", avatarUrl);
 
   db.run(
     `INSERT INTO user_profiles (user_id, avatar_url)
@@ -286,13 +282,13 @@ app.post("/api/profile/:id/avatar", upload.single("avatar"), (req, res) => {
     [id, avatarUrl],
     function (err) {
       if (err) {
-        console.error("❌ DB-fel:", err.message);
         return res.status(500).json({ error: err.message });
       }
       res.json({ success: true, avatarUrl });
     }
   );
 });
+
 // ===============================
 // Middleware: kräver admin
 // ===============================
@@ -307,12 +303,10 @@ function requireAdmin(req, res, next) {
     }
     req.user = decoded;
     next();
-} catch (err) {
-  console.error("JWT verify failed:", err.message);
-  return res.status(401).json({ error: "Invalid token" });
-}
-
-
+  } catch (err) {
+    console.error("JWT verify failed:", err.message);
+    return res.status(401).json({ error: "Invalid token" });
+  }
 }
 
 // ===============================
@@ -346,7 +340,6 @@ app.post("/api/admin/products", requireAdmin, upload.single("image"), (req, res)
   );
 });
 
-
 app.put("/api/admin/products/:id", requireAdmin, (req, res) => {
   const { name, description, price, categories, sku } = req.body;
 
@@ -368,10 +361,10 @@ app.delete("/api/admin/products/:id", requireAdmin, (req, res) => {
 });
 
 // ===============================
-// ALLIES (Friends system)
+// FRIENDS (Friends system)
 // ===============================
 
-// 🔍 Sök användare (används i profilen när man vill hitta någon att lägga till)
+// 🔍 Sök användare
 app.get("/api/users/search", (req, res) => {
   const q = `%${req.query.q}%`;
   db.all(
@@ -387,31 +380,35 @@ app.get("/api/users/search", (req, res) => {
   );
 });
 
-// ➕ Lägg till ally
-app.post("/api/allies", (req, res) => {
-  const { userId, allyId } = req.body;
-  if (!userId || !allyId) {
-    return res.status(400).json({ error: "Missing userId or allyId" });
+// ➕ Lägg till vän (ömsesidigt)
+app.post("/api/friends", (req, res) => {
+  const { userId, friendId } = req.body;
+  if (!userId || !friendId) {
+    return res.status(400).json({ error: "Missing userId or friendId" });
   }
 
-  db.run(
-    "INSERT OR IGNORE INTO allies (user_id, ally_id) VALUES (?, ?)",
-    [userId, allyId],
-    function (err) {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json({ success: true });
-    }
-  );
+  db.serialize(() => {
+    db.run(
+      "INSERT OR IGNORE INTO friends (user_id, friend_id) VALUES (?, ?)",
+      [userId, friendId]
+    );
+    db.run(
+      "INSERT OR IGNORE INTO friends (user_id, friend_id) VALUES (?, ?)",
+      [friendId, userId]
+    );
+  });
+
+  res.json({ success: true });
 });
 
-// 📜 Hämta en användares allies
-app.get("/api/allies/:userId", (req, res) => {
+// 📜 Hämta vänner för en användare
+app.get("/api/friends/:userId", (req, res) => {
   db.all(
     `SELECT u.id, u.username, p.avatar_url
-     FROM allies a
-     JOIN users u ON a.ally_id = u.id
+     FROM friends f
+     JOIN users u ON f.friend_id = u.id
      LEFT JOIN user_profiles p ON u.id = p.user_id
-     WHERE a.user_id = ?`,
+     WHERE f.user_id = ?`,
     [req.params.userId],
     (err, rows) => {
       if (err) return res.status(500).json({ error: err.message });
@@ -420,16 +417,16 @@ app.get("/api/allies/:userId", (req, res) => {
   );
 });
 
-// ❌ Ta bort ally
-app.delete("/api/allies/:userId/:allyId", (req, res) => {
-  db.run(
-    "DELETE FROM allies WHERE user_id=? AND ally_id=?",
-    [req.params.userId, req.params.allyId],
-    function (err) {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json({ success: true });
-    }
-  );
+// ❌ Ta bort vän (ömsesidigt)
+app.delete("/api/friends/:userId/:friendId", (req, res) => {
+  const { userId, friendId } = req.params;
+
+  db.serialize(() => {
+    db.run("DELETE FROM friends WHERE user_id=? AND friend_id=?", [userId, friendId]);
+    db.run("DELETE FROM friends WHERE user_id=? AND friend_id=?", [friendId, userId]);
+  });
+
+  res.json({ success: true });
 });
 
 // ===============================

@@ -21,7 +21,6 @@ export default function EditProfilePage() {
       try {
         const res = await fetch(`http://localhost:5000/api/profile/${user.id}`);
         const data = await res.json();
-        // Initiera bara om fältet är tomt, annars låt användarens input vara kvar
         setFormData((prev) => ({
           ...prev,
           name: prev.name || data.name || "",
@@ -42,10 +41,12 @@ export default function EditProfilePage() {
     if (user) fetchProfile();
   }, [user]);
 
+  // 🔹 Hantera input-ändringar
   const handleChange = (e) => {
+    const { name, value } = e.target; // 👈 tydligt destrukturerat
     setFormData((prev) => ({
       ...prev,
-      [e.target.name]: e.target.value,
+      [name]: value,
     }));
   };
 
@@ -63,7 +64,10 @@ export default function EditProfilePage() {
       );
       const data = await res.json();
       if (data.success) {
-        setFormData((prev) => ({ ...prev, avatar_url: data.avatarUrl }));
+        setFormData((prev) => ({
+          ...prev,
+          avatar_url: `${data.avatarUrl}?t=${Date.now()}`, // 👈 cache-busting
+        }));
       }
     } catch (err) {
       console.error("Upload failed", err);
@@ -97,14 +101,14 @@ export default function EditProfilePage() {
           minHeight: "700px",
         }}
       >
-        {/* Profilbild med ram */}
+        {/* Profilbild */}
         <div className="absolute -top-0 left-0 w-56 h-56">
           <img
             src={
               formData.avatar_url
                 ? formData.avatar_url.startsWith("http")
                   ? formData.avatar_url
-                  : `http://localhost:5000${formData.avatar_url}`
+                  : `http://localhost:5000${formData.avatar_url}?t=${Date.now()}`
                 : "/images/default-avatar.png"
             }
             alt="Profile avatar"

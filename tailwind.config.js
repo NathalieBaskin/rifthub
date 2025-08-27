@@ -8,7 +8,7 @@ export default {
       },
       colors: {
         "rift-bg": "#0f1624",
-        "rift-card": "#141c2b",
+        "rift-card": "#53514a8f",
         "rift-gold": "#d9b260",
       },
       borderRadius: {
