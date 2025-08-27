@@ -531,6 +531,194 @@ app.get("/api/last-messages/:userId", (req, res) => {
   );
 });
 
+// ===============================
+// THREADS (Forum + Comments + Likes)
+// ===============================
+
+// 📜 Hämta alla trådar
+app.get("/api/threads", (req, res) => {
+  db.all(
+    `SELECT t.id, t.title, t.content, t.created_at, 
+            u.username as author, t.topic_id, t.user_id,
+            IFNULL(t.thumb, '') as thumb,
+            (SELECT COUNT(*) FROM thread_likes tl WHERE tl.thread_id = t.id) as like_count
+     FROM threads t
+     JOIN users u ON t.user_id = u.id
+     ORDER BY t.created_at DESC`,
+    [],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(rows);
+    }
+  );
+});
+
+// ✍️ Skapa en ny tråd med bilduppladdning
+app.post("/api/threads", upload.single("thumb"), (req, res) => {
+  const { userId, title, content, topic_id } = req.body;
+
+  if (!userId || !title || !content || !topic_id) {
+    return res.status(400).json({ error: "Missing fields" });
+  }
+
+  const thumbUrl = req.file ? `/uploads/${req.file.filename}` : "";
+
+  db.run(
+    `INSERT INTO threads (user_id, title, content, topic_id, created_at, thumb)
+     VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, ?)`,
+    [userId, title, content, topic_id, thumbUrl],
+    function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ success: true, id: this.lastID, thumb: thumbUrl });
+    }
+  );
+});
+
+// ✏️ Uppdatera en tråd
+app.put("/api/threads/:id", (req, res) => {
+  const { title, content } = req.body;
+
+  if (!title || !content) {
+    return res.status(400).json({ error: "Missing fields" });
+  }
+
+  db.run(
+    `UPDATE threads SET title = ?, content = ? WHERE id = ?`,
+    [title, content, req.params.id],
+    function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+      if (this.changes === 0) {
+        return res.status(404).json({ error: "Thread not found" });
+      }
+      res.json({ success: true });
+    }
+  );
+});
+
+// 🗑️ Ta bort en tråd
+app.delete("/api/threads/:id", (req, res) => {
+  db.run(`DELETE FROM threads WHERE id = ?`, [req.params.id], function (err) {
+    if (err) return res.status(500).json({ error: err.message });
+    if (this.changes === 0) {
+      return res.status(404).json({ error: "Thread not found" });
+    }
+    res.json({ success: true });
+  });
+});
+
+// ===============================
+// COMMENTS (på trådar)
+// ===============================
+
+// 📜 Hämta kommentarer för en tråd
+app.get("/api/threads/:threadId/comments", (req, res) => {
+  const { threadId } = req.params;
+  db.all(
+    `SELECT c.id, c.thread_id, c.user_id, c.content, c.created_at,
+            u.username, up.avatar_url,
+            (SELECT COUNT(*) FROM comment_likes cl WHERE cl.comment_id = c.id) as like_count
+     FROM comments c
+     JOIN users u ON c.user_id = u.id
+     LEFT JOIN user_profiles up ON up.user_id = u.id
+     WHERE c.thread_id = ?
+     ORDER BY c.created_at ASC`,
+    [threadId],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(rows);
+    }
+  );
+});
+
+// ✍️ Lägg till kommentar
+app.post("/api/threads/:threadId/comments", (req, res) => {
+  const { threadId } = req.params;
+  const { userId, content } = req.body;
+
+  if (!userId || !content) {
+    return res.status(400).json({ error: "Missing fields" });
+  }
+
+  db.run(
+    "INSERT INTO comments (thread_id, user_id, content, created_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)",
+    [threadId, userId, content],
+    function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+
+      db.get(
+        `SELECT c.id, c.thread_id, c.user_id, c.content, c.created_at,
+                u.username, up.avatar_url,
+                (SELECT COUNT(*) FROM comment_likes cl WHERE cl.comment_id = c.id) as like_count
+         FROM comments c
+         JOIN users u ON c.user_id = u.id
+         LEFT JOIN user_profiles up ON up.user_id = u.id
+         WHERE c.id = ?`,
+        [this.lastID],
+        (err, row) => {
+          if (err) return res.status(500).json({ error: err.message });
+          res.status(201).json(row);
+        }
+      );
+    }
+  );
+});
+
+// ===============================
+// COMMENT LIKES
+// ===============================
+app.post("/api/comments/:commentId/like", (req, res) => {
+  const { commentId } = req.params;
+  const { userId } = req.body;
+
+  if (!userId) return res.status(400).json({ error: "Missing userId" });
+
+  db.get(
+    "SELECT * FROM comment_likes WHERE comment_id = ? AND user_id = ?",
+    [commentId, userId],
+    (err, row) => {
+      if (err) return res.status(500).json({ error: err.message });
+
+      if (row) {
+        // Ogilla
+        db.run(
+          "DELETE FROM comment_likes WHERE comment_id = ? AND user_id = ?",
+          [commentId, userId],
+          (err2) => {
+            if (err2) return res.status(500).json({ error: err2.message });
+
+            db.get(
+              "SELECT COUNT(*) as like_count FROM comment_likes WHERE comment_id = ?",
+              [commentId],
+              (err3, countRow) => {
+                if (err3) return res.status(500).json({ error: err3.message });
+                res.json({ commentId, like_count: countRow.like_count });
+              }
+            );
+          }
+        );
+      } else {
+        // Gilla
+        db.run(
+          "INSERT INTO comment_likes (comment_id, user_id) VALUES (?, ?)",
+          [commentId, userId],
+          function (err2) {
+            if (err2) return res.status(500).json({ error: err2.message });
+
+            db.get(
+              "SELECT COUNT(*) as like_count FROM comment_likes WHERE comment_id = ?",
+              [commentId],
+              (err3, countRow) => {
+                if (err3) return res.status(500).json({ error: err3.message });
+                res.json({ commentId, like_count: countRow.like_count });
+              }
+            );
+          }
+        );
+      }
+    }
+  );
+});
+
 
 // ===============================
 // Starta servern

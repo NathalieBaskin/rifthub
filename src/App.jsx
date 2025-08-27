@@ -11,6 +11,7 @@ import EditProfilePage from "./pages/EditProfilePage.jsx";
 import AdminDashboard from "./pages/admin/AdminDashboard.jsx";
 import ProfilePage from "./pages/ProfilePage.jsx";
 import ChatPage from "./pages/ChatPage";
+import ThreadPage from "./pages/ThreadPage.jsx";
 
 export default function App() {
   return (
@@ -48,6 +49,8 @@ export default function App() {
         <Route path="/admin" element={<AdminDashboard />} />
         
           <Route path="/chat" element={<ChatPage />} />  {/* ✅ ny route */}
+
+          <Route path="/thread/:id" element={<ThreadPage />} />
 
         {/* 404 fallback */}
         <Route
