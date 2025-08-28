@@ -65,6 +65,14 @@ body::before {
   background-attachment: fixed;
 }
 
+/* 🔹 ChatPage – egen bakgrund, täcker hela sidan inkl. navbar */
+body.chat-page::before {
+  display: none !important;
+}
+body.chat-page {
+  background: url("/images/chat-bg.jpg") top center / cover no-repeat fixed !important;
+}
+
 /* ===================== PARCHMENT ===================== */
 .parchment-wrapper {
   background: url("/images/scroll.png") no-repeat center top;
@@ -98,7 +106,7 @@ body::before {
   flex-direction: column;
   gap: 12px;
   padding: 10px;
- margin-top: 55px;
+  margin-top: 55px;
   margin-left: 140px; /* flytta in på pappret */
   background: rgba(255,255,255,.03);
   border-radius: 14px;
@@ -166,10 +174,6 @@ body::before {
   color: rgba(15,22,36,.6);
   margin-top: 2px;                /* mindre luft ovanför */
 }
-body.chat-page::before {
-  display: none !important;
-}
-
 
 /* ===================== ACTIONS ===================== */
 .paper-actions {
@@ -209,23 +213,18 @@ body.chat-page::before {
 .paper-latest__text { min-width: 0; }
 .paper-latest__title { color: #0f1624; font-weight: 600; }
 .paper-latest__meta { color: rgba(15,22,36,.7); font-size: 12px; }
-/* Mobil (≤640px) – kapa topp och botten mer */
-/* 📱 Mobil */
+
+/* ===================== VIDEO POSITION ===================== */
 @media (max-width: 640px) {
   video {
     object-position: center 20%; /* flytta fokus lite uppåt */
   }
 }
-
-/* 📲 iPad (mellan mobil & desktop) */
 @media (min-width: 641px) and (max-width: 1024px) {
   video {
     object-position: center 30%; /* lite mer kompakt på iPad */
   }
 }
-
-
-/* Desktop (≥1025px) – normal */
 @media (min-width: 1025px) {
   video {
     object-position: 50% 50%; /* centrerad */

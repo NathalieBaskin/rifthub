@@ -38,13 +38,13 @@ function NavLinks({ className = "" }) {
 export default function Navbar() {
   const location = useLocation();
   const isHome = location.pathname === "/";
+  const isChat = location.pathname.startsWith("/chat"); // 🔹 ChatPage
   const { count } = useCart();
   const [isScrolled, setIsScrolled] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const user = getUserFromToken();
   const navigate = useNavigate();
 
-  // 🔔 Olästa meddelanden
   const [unreadCount, setUnreadCount] = useState(0);
 
   async function fetchUnread() {
@@ -58,13 +58,13 @@ export default function Navbar() {
   useEffect(() => {
     if (user) {
       fetchUnread();
-      const interval = setInterval(fetchUnread, 5000); // poll var 5s
+      const interval = setInterval(fetchUnread, 5000);
       return () => clearInterval(interval);
     }
   }, [user]);
 
   useEffect(() => {
-    if (isHome) {
+    if (isHome && !isChat) {
       const onScroll = () => setIsScrolled(window.scrollY > 50);
       onScroll();
       window.addEventListener("scroll", onScroll, { passive: true });
@@ -73,9 +73,8 @@ export default function Navbar() {
       setIsScrolled(true);
       return () => {};
     }
-  }, [isHome]);
+  }, [isHome, isChat]);
 
-  // Ikoner (från public/images)
   const accountIcon = "/images/account-icon.png";
   const cartIcon = "/images/cart-icon.png";
   const chatIcon = "/images/chat-icon.png";
@@ -87,7 +86,6 @@ export default function Navbar() {
     window.location.reload();
   };
 
-  // Account-ikon block
   const AccountMenu = () => {
     if (!user) {
       return (
@@ -156,11 +154,17 @@ export default function Navbar() {
     <header
       data-nav
       className={`fixed top-0 left-0 w-full z-50 transition-colors duration-300
-        ${isScrolled ? "backdrop-blur border-b border-rift-gold/15" : "bg-transparent"}
+        ${
+          isChat
+            ? "bg-black/30 backdrop-blur-[2px] border-none"
+            : isScrolled
+            ? "backdrop-blur border-b border-rift-gold/15"
+            : "bg-transparent"
+        }
       `}
     >
       <div className="max-w-7xl mx-auto px-4">
-        {/* === MOBILVERSION === */}
+        {/* === MOBIL === */}
         <div className="flex sm:hidden items-center justify-between py-2">
           <Link to="/" className="flex items-center gap-2 min-w-0">
             <img
@@ -172,7 +176,6 @@ export default function Navbar() {
           <div className="flex items-center gap-3 text-rift-gold">
             <NavLinks />
 
-            {/* Cart */}
             <Link to="/cart" className="relative p-2" aria-label="Cart">
               <img src={cartIcon} alt="Cart" className="h-9 w-9 md:h-10 md:w-10" />
               {count > 0 && (
@@ -182,7 +185,6 @@ export default function Navbar() {
               )}
             </Link>
 
-            {/* Chat */}
             {user && (
               <Link to="/chat" className="relative p-2" aria-label="Chat">
                 <img src={chatIcon} alt="Chat" className="h-9 w-9 md:h-10 md:w-10" />

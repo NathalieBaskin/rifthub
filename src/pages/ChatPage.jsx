@@ -12,7 +12,14 @@ export default function ChatPage() {
   const [messages, setMessages] = useState([]);
   const [newMsg, setNewMsg] = useState("");
   const [lastMessages, setLastMessages] = useState([]);
-  const [myProfile, setMyProfile] = useState(null); // 🔹 egen profil
+  const [myProfile, setMyProfile] = useState(null);
+
+  useEffect(() => {
+    document.body.classList.add("chat-page");
+    return () => {
+      document.body.classList.remove("chat-page");
+    };
+  }, []);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -20,7 +27,6 @@ export default function ChatPage() {
     if (fid) setActiveFriend(Number(fid));
   }, [location.search]);
 
-  // 🔹 Hämta vänner
   async function fetchFriends() {
     const res = await fetch(`http://localhost:5000/api/friends/${user.id}`);
     if (!res.ok) return;
@@ -28,7 +34,6 @@ export default function ChatPage() {
     setFriends(data);
   }
 
-  // 🔹 Hämta min egen profil (för avatar_url)
   async function fetchMyProfile() {
     const res = await fetch(`http://localhost:5000/api/profile/${user.id}`);
     if (!res.ok) return;
@@ -36,7 +41,6 @@ export default function ChatPage() {
     setMyProfile(data);
   }
 
-  // 🔹 Hämta senaste meddelanden
   async function fetchLastMessages() {
     const res = await fetch(`http://localhost:5000/api/last-messages/${user.id}`);
     if (!res.ok) return;
@@ -44,7 +48,6 @@ export default function ChatPage() {
     setLastMessages(data);
   }
 
-  // 🔹 Hämta meddelanden med aktiv vän
   async function fetchMessages() {
     if (!activeFriend) return;
     const res = await fetch(`http://localhost:5000/api/messages/${activeFriend}`, {
@@ -56,7 +59,6 @@ export default function ChatPage() {
     fetchLastMessages();
   }
 
-  // 🔹 Skicka nytt meddelande
   async function sendMessage(e) {
     e.preventDefault();
     if (!newMsg.trim()) return;
@@ -76,7 +78,7 @@ export default function ChatPage() {
 
   useEffect(() => {
     fetchFriends();
-    fetchMyProfile(); // 🔹 hämta egen profil
+    fetchMyProfile();
     fetchLastMessages();
   }, []);
 
@@ -89,26 +91,17 @@ export default function ChatPage() {
   }, [activeFriend]);
 
   return (
-<div
-  className="flex h-screen text-gray-200"
-  style={{
-    backgroundImage: "url('/images/chat-bg.jpg')",
-    backgroundSize: "contain",
-    backgroundPosition: "center",
-    backgroundRepeat: "no-repeat",
-  }}
->
-
-
+    <div className="flex min-h-[calc(100vh-80px)] text-gray-200">
       {/* === SIDEBAR === */}
-      <aside className="w-64 border-r border-yellow-600/40 bg-black/50 p-4 overflow-y-auto backdrop-blur-sm">
+      <aside className="w-64 border-r border-yellow-600/40 bg-black/40 p-4 overflow-y-auto backdrop-blur-[2px]">
         <h2 className="text-lg font-bold text-yellow-400 mb-4 font-LoL">
           Allies
         </h2>
         <ul className="space-y-3">
           {friends.map((f) => {
             const last = lastMessages.find((m) => m.friendId === f.id);
-            const isUnread = last && last.receiver_id === user.id && last.is_read === 0;
+            const isUnread =
+              last && last.receiver_id === user.id && last.is_read === 0;
 
             return (
               <li
@@ -121,7 +114,6 @@ export default function ChatPage() {
                 onClick={() => setActiveFriend(f.id)}
               >
                 <div className="flex items-center gap-3">
-                  {/* Avatar med ram */}
                   <div className="relative w-10 h-10">
                     <img
                       src={
@@ -147,7 +139,9 @@ export default function ChatPage() {
                   )}
                 </div>
                 <span className="ml-12 text-xs text-gray-400 truncate italic">
-                  {last ? `${last.sender_name}: ${last.content}` : "No messages yet"}
+                  {last
+                    ? `${last.sender_name}: ${last.content}`
+                    : "No messages yet"}
                 </span>
               </li>
             );
@@ -156,23 +150,20 @@ export default function ChatPage() {
       </aside>
 
       {/* === CHAT WINDOW === */}
-      <main className="flex-1 flex flex-col bg-black/40 backdrop-blur-sm">
+      <main className="flex-1 flex flex-col bg-black/30 backdrop-blur-[2px]">
         {activeFriend ? (
           <>
-            {/* HEADER */}
-            <div className="p-4 border-b border-yellow-600/40 bg-black/50 flex items-center gap-2">
+            <div className="p-4 border-b border-yellow-600/40 bg-black/30 flex items-center gap-2">
               <span className="font-bold text-yellow-400 font-LoL text-lg">
                 {friends.find((f) => f.id === activeFriend)?.username || "Chat"}
               </span>
             </div>
 
-            {/* MESSAGES */}
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
               {messages.length === 0 ? (
                 <p className="text-gray-400 italic">No messages yet...</p>
               ) : (
                 messages.map((m) => {
-                  // 🔹 använd egen profil om det är jag
                   const sender =
                     m.sender_id === user.id
                       ? myProfile
@@ -182,10 +173,11 @@ export default function ChatPage() {
                     <div
                       key={m.id}
                       className={`flex items-start gap-3 max-w-2xl ${
-                        m.sender_id === user.id ? "ml-auto flex-row-reverse" : "mr-auto"
+                        m.sender_id === user.id
+                          ? "ml-auto flex-row-reverse"
+                          : "mr-auto"
                       }`}
                     >
-                      {/* Avatar med ram */}
                       <div className="relative w-12 h-12 flex-shrink-0">
                         <img
                           src={
@@ -205,7 +197,6 @@ export default function ChatPage() {
                         />
                       </div>
 
-                      {/* Chattbubbla */}
                       <div
                         className={`p-3 rounded-xl shadow-md ${
                           m.sender_id === user.id
@@ -224,10 +215,9 @@ export default function ChatPage() {
               )}
             </div>
 
-            {/* INPUT */}
             <form
               onSubmit={sendMessage}
-              className="p-4 border-t border-yellow-600/40 bg-black/50 flex gap-3"
+              className="p-4 border-t border-yellow-600/40 bg-black/30 flex gap-3"
             >
               <input
                 value={newMsg}
@@ -245,7 +235,9 @@ export default function ChatPage() {
           </>
         ) : (
           <div className="flex items-center justify-center flex-1">
-            <p className="text-gray-300 italic">Select a friend to start chatting 💬</p>
+            <p className="text-gray-300 italic">
+              Select a friend to start chatting 💬
+            </p>
           </div>
         )}
       </main>
