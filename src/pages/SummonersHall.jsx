@@ -144,6 +144,12 @@ function ThreadModal({ thread, onClose, user, onCommentCountChange }) {
   const [replyText, setReplyText] = useState({});
   const [text, setText] = useState("");
 
+  // 🔹 trådredigering
+  const [isEditingThread, setIsEditingThread] = useState(false);
+  const [threadTitle, setThreadTitle] = useState(thread.title);
+  const [threadContent, setThreadContent] = useState(thread.content);
+  const [threadFile, setThreadFile] = useState(null);
+
   useEffect(() => {
     if (!thread) return;
     const uid = user?.id ? `?userId=${user.id}` : "";
@@ -157,6 +163,26 @@ function ThreadModal({ thread, onClose, user, onCommentCountChange }) {
 
   const resolveAvatar = (path) =>
     !path ? "/default-avatar.png" : path.startsWith("/uploads") ? `${API_URL}${path}` : path;
+
+  // --- THREAD EDIT SAVE ---
+  async function handleSaveThreadEdit() {
+    if (!user) return;
+    const formData = new FormData();
+    formData.append("userId", user.id);
+    formData.append("title", threadTitle);
+    formData.append("content", threadContent);
+    if (threadFile) formData.append("thumb", threadFile);
+
+    const res = await fetch(`${API_URL}/api/threads/${thread.id}`, {
+      method: "PUT",
+      body: formData,
+    });
+
+    if (res.ok) {
+      setIsEditingThread(false);
+      onClose(); // stäng för att refetcha, enklast
+    }
+  }
 
   // --- COMMENT ACTIONS ---
   async function handlePostComment(parentId = null) {
@@ -336,16 +362,66 @@ function ThreadModal({ thread, onClose, user, onCommentCountChange }) {
       >
         <div className="p-0 bg-white/90 text-rift-bg rounded-lg">
           {/* sticky header */}
-          <div className="p-6 border-b sticky top-0 bg-white/90 z-10">
-            <h3 className="font-display text-2xl">{thread.title}</h3>
-            <div className="text-xs">
-              By {thread.author} • {new Date(thread.created_at).toLocaleDateString()}
-            </div>
+          <div className="p-6 border-b sticky top-0 bg-white/90 z-10 flex justify-between items-center">
+            {!isEditingThread ? (
+              <div>
+                <h3 className="font-display text-2xl">{thread.title}</h3>
+                <div className="text-xs">
+                  By {thread.author} • {new Date(thread.created_at).toLocaleDateString()}
+                </div>
+              </div>
+            ) : (
+              <div className="w-full">
+                <input
+                  className="w-full border p-2 rounded mb-2"
+                  value={threadTitle}
+                  onChange={(e) => setThreadTitle(e.target.value)}
+                />
+                <textarea
+                  className="w-full border p-2 rounded"
+                  rows={4}
+                  value={threadContent}
+                  onChange={(e) => setThreadContent(e.target.value)}
+                />
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setThreadFile(e.target.files[0])}
+                  className="mt-2"
+                />
+              </div>
+            )}
+
+            {user && user.id === thread.user_id && !isEditingThread && (
+              <button
+                className="px-3 py-1 bg-blue-600 text-white rounded ml-4"
+                onClick={() => setIsEditingThread(true)}
+              >
+                Edit
+              </button>
+            )}
           </div>
 
           {/* scrollable body */}
           <div className="p-6 max-h-[70vh] overflow-y-auto">
-            <pre className="whitespace-pre-wrap">{thread.content}</pre>
+            {!isEditingThread ? (
+              <pre className="whitespace-pre-wrap">{thread.content}</pre>
+            ) : (
+              <div className="flex gap-2 mt-2">
+                <button
+                  className="px-4 py-2 bg-gray-300 rounded"
+                  onClick={() => setIsEditingThread(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="px-4 py-2 bg-rift-card text-rift-gold rounded"
+                  onClick={handleSaveThreadEdit}
+                >
+                  Save
+                </button>
+              </div>
+            )}
 
             <h4 className="font-semibold mt-6 mb-2">Comments</h4>
             {tree.map((c) => (
