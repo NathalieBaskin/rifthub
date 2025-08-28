@@ -711,6 +711,90 @@ app.delete("/api/threads/:id", (req, res) => {
     });
   });
 });
+// ✏️ Uppdatera en tråd (endast ägaren, inkl ev. ny bild)
+app.put("/api/threads/:id", upload.single("thumb"), (req, res) => {
+  const threadId = Number(req.params.id);
+  const { userId, title, content } = req.body;
+
+  if (!userId || !title || !content) {
+    return res.status(400).json({ error: "Missing fields" });
+  }
+
+  db.get("SELECT * FROM threads WHERE id = ?", [threadId], (err, thr) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!thr) return res.status(404).json({ error: "Thread not found" });
+    if (thr.user_id !== Number(userId)) {
+      return res.status(403).json({ error: "Not allowed" });
+    }
+
+    let thumb = thr.thumb;
+    if (req.file) {
+      thumb = `/uploads/${req.file.filename}`;
+    }
+
+    db.run(
+      "UPDATE threads SET title = ?, content = ?, thumb = ? WHERE id = ?",
+      [title, content, thumb, threadId],
+      function (err2) {
+        if (err2) return res.status(500).json({ error: err2.message });
+
+        db.get(
+          `SELECT t.id, t.title, t.content, t.created_at,
+                  u.username AS author, t.topic_id, t.user_id,
+                  IFNULL(t.thumb, '') AS thumb
+           FROM threads t
+           JOIN users u ON u.id = t.user_id
+           WHERE t.id = ?`,
+          [threadId],
+          (err3, row) => {
+            if (err3) return res.status(500).json({ error: err3.message });
+            res.json(row);
+          }
+        );
+      }
+    );
+  });
+});
+
+// ✏️ Uppdatera en kommentar (endast ägaren)
+app.put("/api/comments/:id", (req, res) => {
+  const commentId = Number(req.params.id);
+  const { userId, content } = req.body;
+
+  if (!userId || !content) {
+    return res.status(400).json({ error: "Missing fields" });
+  }
+
+  db.get("SELECT * FROM comments WHERE id = ?", [commentId], (err, com) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!com) return res.status(404).json({ error: "Comment not found" });
+    if (com.user_id !== Number(userId)) {
+      return res.status(403).json({ error: "Not allowed" });
+    }
+
+    db.run(
+      "UPDATE comments SET content = ? WHERE id = ?",
+      [content, commentId],
+      function (err2) {
+        if (err2) return res.status(500).json({ error: err2.message });
+
+        db.get(
+          `SELECT c.id, c.thread_id, c.user_id, c.content, c.created_at, c.parent_id,
+                  u.username, up.avatar_url
+           FROM comments c
+           JOIN users u ON u.id = c.user_id
+           LEFT JOIN user_profiles up ON up.user_id = u.id
+           WHERE c.id = ?`,
+          [commentId],
+          (err3, row) => {
+            if (err3) return res.status(500).json({ error: err3.message });
+            res.json(row);
+          }
+        );
+      }
+    );
+  });
+});
 
 // ===============================
 // THREAD LIKES (toggle)

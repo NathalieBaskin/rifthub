@@ -37,7 +37,7 @@ function useNavOffset() {
 function SideRail({ topic, setTopic, onNewThread }) {
   return (
     <aside className="paper-rail">
-      <div className="flex justify-end mb-4">
+      <div className="flex justify-start mb-4">
         <button
           onClick={onNewThread}
           className="px-4 py-2 rounded bg-rift-card text-rift-gold hover:bg-rift-card/80"
@@ -45,7 +45,6 @@ function SideRail({ topic, setTopic, onNewThread }) {
           + Create
         </button>
       </div>
-
       <details className="paper-acc" open>
         <summary className="paper-acc__summary">TOPICS</summary>
         <ul className="paper-list">
@@ -71,9 +70,8 @@ function SideRail({ topic, setTopic, onNewThread }) {
   );
 }
 
-function ThreadRow({ t, onOpen, onLike, onEdit, onDelete, user }) {
+function ThreadRow({ t, onOpen, onLike, onDelete, user }) {
   const hasLiked = !!t.liked_by_me;
-
   return (
     <li>
       <div
@@ -92,7 +90,7 @@ function ThreadRow({ t, onOpen, onLike, onEdit, onDelete, user }) {
             <h3 className="font-display text-xl text-rift-bg line-clamp-1">
               {t.title}
             </h3>
-            <p className="mt-1 text-sm text-rift-bg/85 line-clamp-2">
+            <p className="mt-1 text-sm text-rift-bg/70 line-clamp-2">
               {t.content}
             </p>
             <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-rift-bg/70">
@@ -104,7 +102,6 @@ function ThreadRow({ t, onOpen, onLike, onEdit, onDelete, user }) {
           </div>
         </div>
       </div>
-
       <div className="flex items-center gap-4 px-6 py-2 text-sm text-rift-bg/70">
         <button
           className="flex items-center gap-1 hover:text-rift-gold"
@@ -113,10 +110,8 @@ function ThreadRow({ t, onOpen, onLike, onEdit, onDelete, user }) {
             onLike(t);
           }}
         >
-          {hasLiked ? <AiFillLike /> : <AiOutlineLike />}
-          {t.like_count || 0}
+          {hasLiked ? <AiFillLike /> : <AiOutlineLike />} {t.like_count || 0}
         </button>
-
         <button
           className="flex items-center gap-1 hover:text-rift-gold"
           onClick={(e) => {
@@ -124,111 +119,65 @@ function ThreadRow({ t, onOpen, onLike, onEdit, onDelete, user }) {
             onOpen(t);
           }}
         >
-          <AiOutlineComment />
-          {t.comment_count || 0}
+          <AiOutlineComment /> {t.comment_count || 0}
         </button>
-
         {user && user.id === t.user_id && (
-          <>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onEdit(t);
-              }}
-              className="text-blue-600 hover:text-blue-800 flex items-center gap-1"
-            >
-              <FaEdit /> Edit
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(t);
-              }}
-              className="text-red-600 hover:text-red-800 flex items-center gap-1"
-            >
-              <FaTrash /> Delete
-            </button>
-          </>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(t);
+            }}
+            className="text-red-600 hover:text-red-800 flex items-center gap-1"
+          >
+            <FaTrash /> Delete
+          </button>
         )}
       </div>
-
       <div className="paper-divider" />
     </li>
   );
 }
 
-function ThreadModal({
-  thread,
-  onClose,
-  user,
-  onCommentCountChange,
-  onThreadEdited,
-  onThreadDeleted,
-}) {
+function ThreadModal({ thread, onClose, user, onCommentCountChange }) {
   const [comments, setComments] = useState([]);
   const [replyOpen, setReplyOpen] = useState({});
   const [replyText, setReplyText] = useState({});
   const [text, setText] = useState("");
-  const [editingComment, setEditingComment] = useState(null);
-  const [editText, setEditText] = useState("");
 
   useEffect(() => {
     if (!thread) return;
     const uid = user?.id ? `?userId=${user.id}` : "";
     fetch(`${API_URL}/api/threads/${thread.id}/comments${uid}`)
       .then((res) => res.json())
-      .then((data) => {
-        if (Array.isArray(data)) setComments(data);
-        else setComments([]);
-      })
-      .catch((err) => {
-        console.error("Failed to load comments:", err);
-        setComments([]);
-      });
+      .then((data) => setComments(Array.isArray(data) ? data : []))
+      .catch(() => setComments([]));
   }, [thread, user?.id]);
 
   if (!thread) return null;
 
-  const resolveAvatar = (path) => {
-    if (!path) return "/default-avatar.png";
-    return path.startsWith("/uploads") ? `${API_URL}${path}` : path;
-  };
+  const resolveAvatar = (path) =>
+    !path ? "/default-avatar.png" : path.startsWith("/uploads") ? `${API_URL}${path}` : path;
 
-  const toggleReply = (cid) =>
-    setReplyOpen((p) => ({ ...p, [cid]: !p[cid] }));
-
-  const onReplyChange = (cid, val) =>
-    setReplyText((p) => ({ ...p, [cid]: val }));
-
-  async function handlePostComment(parentId = null, contentOverride = null) {
+  // --- COMMENT ACTIONS ---
+  async function handlePostComment(parentId = null) {
     if (!user) return alert("Log in to comment");
-    const content = contentOverride ?? (parentId ? replyText[parentId] : text);
-    if (!content || !content.trim()) return;
+    const content = parentId ? replyText[parentId] : text;
+    if (!content?.trim()) return;
 
     const res = await fetch(`${API_URL}/api/threads/${thread.id}/comments`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        userId: user.id,
-        content,
-        parent_id: parentId || null,
-      }),
+      body: JSON.stringify({ userId: user.id, content, parent_id: parentId }),
     });
     if (!res.ok) return;
     const newComment = await res.json();
     setComments((prev) => [...prev, newComment]);
     onCommentCountChange?.(thread.id, +1);
-
-    if (parentId) {
-      setReplyText((p) => ({ ...p, [parentId]: "" }));
-      setReplyOpen((p) => ({ ...p, [parentId]: false }));
-    } else {
-      setText("");
-    }
+    parentId ? setReplyText((p) => ({ ...p, [parentId]: "" })) : setText("");
   }
 
   async function handleToggleLikeComment(commentId) {
-    if (!user) return alert("Log in to like");
+    if (!user) return;
     const res = await fetch(`${API_URL}/api/comments/${commentId}/like`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -250,80 +199,72 @@ function ThreadModal({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userId: user.id }),
     });
-    if (!res.ok) return;
-    setComments((prev) => prev.filter((c) => c.id !== commentId));
-    onCommentCountChange?.(thread.id, -1);
+    if (res.ok) {
+      setComments((prev) => prev.filter((c) => c.id !== commentId));
+      onCommentCountChange?.(thread.id, -1);
+    }
   }
 
-  async function handleEditCommentSave() {
-    if (!editingComment) return;
-    const res = await fetch(`${API_URL}/api/comments/${editingComment.id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: user.id, content: editText }),
-    });
-    if (!res.ok) return;
-    setComments((prev) =>
-      prev.map((c) => (c.id === editingComment.id ? { ...c, content: editText } : c))
-    );
-    setEditingComment(null);
-    setEditText("");
-  }
-
+  // build comment tree
   const tree = (() => {
     const byId = new Map();
     comments.forEach((c) => byId.set(c.id, { ...c, children: [] }));
     const roots = [];
     byId.forEach((c) => {
-      if (c.parent_id) {
-        const parent = byId.get(c.parent_id);
-        if (parent) parent.children.push(c);
-        else roots.push(c);
-      } else roots.push(c);
+      if (c.parent_id && byId.has(c.parent_id)) byId.get(c.parent_id).children.push(c);
+      else roots.push(c);
     });
     return roots;
   })();
 
   function CommentItem({ c, depth = 0 }) {
+    const canEdit = user?.id === c.user_id;
     const liked = !!c.liked_by_me;
-    const canEdit = user && user.id === c.user_id;
+    const [isEditing, setIsEditing] = useState(false);
+    const [localText, setLocalText] = useState(c.content);
+
+    async function saveEdit() {
+      if (!localText.trim()) return;
+      const res = await fetch(`${API_URL}/api/comments/${c.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id, content: localText }),
+      });
+      if (res.ok) {
+        setComments((prev) =>
+          prev.map((x) => (x.id === c.id ? { ...x, content: localText } : x))
+        );
+        setIsEditing(false);
+      }
+    }
 
     return (
-      <div className="mb-3" style={{ marginLeft: depth ? depth * 16 : 0 }}>
+      <div className="mb-3" style={{ marginLeft: depth * 16 }}>
         <div className="flex items-start gap-3">
-          <img
-            src={resolveAvatar(c.avatar_url)}
-            alt="avatar"
-            className="w-8 h-8 rounded-full"
-          />
+          <img src={resolveAvatar(c.avatar_url)} className="w-8 h-8 rounded-full" />
           <div className="flex-1">
-            <a
-              href={`/profile/${c.user_id}`}
-              className="font-medium text-rift-gold hover:underline"
-            >
-              {c.username}
-            </a>
+            <span className="font-medium text-rift-gold">{c.username}</span>
 
-            {editingComment?.id === c.id ? (
+            {isEditing ? (
               <div className="mt-1">
                 <textarea
                   className="w-full border rounded p-2 text-sm"
                   rows={3}
-                  value={editText}
-                  onChange={(e) => setEditText(e.target.value)}
+                  value={localText}
+                  onChange={(e) => setLocalText(e.target.value)}
                 />
-                <div className="mt-1 flex gap-2 text-xs">
+                <div className="flex gap-2 mt-1 text-xs">
                   <button
-                    className="px-3 py-1 rounded bg-rift-card text-rift-gold"
-                    onClick={handleEditCommentSave}
+                    className="px-3 py-1 bg-rift-card text-rift-gold rounded"
+                    onClick={saveEdit}
                   >
                     Save
                   </button>
                   <button
-                    className="px-3 py-1 rounded bg-gray-200"
+                    className="px-3 py-1 bg-gray-200 rounded"
                     onClick={() => {
-                      setEditingComment(null);
-                      setEditText("");
+                      setIsEditing(false);
+                      setLocalText(c.content);
                     }}
                   >
                     Cancel
@@ -334,35 +275,23 @@ function ThreadModal({
               <p className="text-sm">{c.content}</p>
             )}
 
-            <div className="flex items-center gap-3 text-xs text-rift-bg/70 mt-1">
-              <button
-                onClick={() => handleToggleLikeComment(c.id)}
-                className="flex items-center gap-1 hover:text-rift-gold"
-              >
+            <div className="flex gap-3 text-xs mt-1">
+              <button onClick={() => handleToggleLikeComment(c.id)}>
                 {liked ? <AiFillLike /> : <AiOutlineLike />} {c.like_count || 0}
               </button>
-              <button
-                className="hover:underline"
-                onClick={() => toggleReply(c.id)}
-              >
+              <button onClick={() => setReplyOpen((p) => ({ ...p, [c.id]: !p[c.id] }))}>
                 Reply
               </button>
-              {canEdit && editingComment?.id !== c.id && (
+              {canEdit && !isEditing && (
                 <button
-                  className="hover:underline text-blue-600"
-                  onClick={() => {
-                    setEditingComment(c);
-                    setEditText(c.content); // ✅ initiera lokalt state
-                  }}
+                  onClick={() => setIsEditing(true)}
+                  className="text-blue-600"
                 >
                   Edit
                 </button>
               )}
               {canEdit && (
-                <button
-                  onClick={() => handleDeleteComment(c.id)}
-                  className="hover:underline text-red-600"
-                >
+                <button onClick={() => handleDeleteComment(c.id)} className="text-red-600">
                   Delete
                 </button>
               )}
@@ -372,12 +301,14 @@ function ThreadModal({
               <div className="mt-2 flex gap-2">
                 <input
                   className="flex-1 border rounded p-2 text-sm"
-                  placeholder={`Reply to ${c.username}...`}
                   value={replyText[c.id] || ""}
-                  onChange={(e) => onReplyChange(c.id, e.target.value)}
+                  onChange={(e) =>
+                    setReplyText((p) => ({ ...p, [c.id]: e.target.value }))
+                  }
+                  placeholder={`Reply to ${c.username}`}
                 />
                 <button
-                  className="bg-rift-card text-rift-gold px-3 py-2 rounded"
+                  className="px-3 py-1 bg-rift-card text-rift-gold rounded"
                   onClick={() => handlePostComment(c.id)}
                 >
                   Reply
@@ -385,10 +316,9 @@ function ThreadModal({
               </div>
             )}
 
-            {c.children?.length > 0 &&
-              c.children.map((child) => (
-                <CommentItem key={child.id} c={child} depth={depth + 1} />
-              ))}
+            {c.children?.map((child) => (
+              <CommentItem key={child.id} c={child} depth={depth + 1} />
+            ))}
           </div>
         </div>
       </div>
@@ -405,61 +335,47 @@ function ThreadModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-0 bg-white/90 text-rift-bg rounded-lg">
-          <div className="p-6 border-b sticky top-0 bg-white/90 flex items-start gap-2 z-10">
-            <div className="flex-1">
-              <h3 className="font-display text-2xl md:text-3xl">{thread.title}</h3>
-              <div className="mt-2 text-xs">
-                By <span className="font-medium">{thread.author}</span> •{" "}
-                {new Date(thread.created_at).toLocaleDateString()}
-              </div>
+          {/* sticky header */}
+          <div className="p-6 border-b sticky top-0 bg-white/90 z-10">
+            <h3 className="font-display text-2xl">{thread.title}</h3>
+            <div className="text-xs">
+              By {thread.author} • {new Date(thread.created_at).toLocaleDateString()}
             </div>
           </div>
 
-          <div className="p-6 md:p-8 max-h-[70vh] overflow-y-auto">
-            <pre className="whitespace-pre-wrap font-sans text-[15px]">
-              {thread.content}
-            </pre>
+          {/* scrollable body */}
+          <div className="p-6 max-h-[70vh] overflow-y-auto">
+            <pre className="whitespace-pre-wrap">{thread.content}</pre>
 
-            <div className="mt-6">
-              <h4 className="font-semibold mb-2">Comments</h4>
-              {tree.map((c) => (
-                <CommentItem key={c.id} c={c} />
-              ))}
+            <h4 className="font-semibold mt-6 mb-2">Comments</h4>
+            {tree.map((c) => (
+              <CommentItem key={c.id} c={c} />
+            ))}
 
-              {user ? (
-                <div className="mt-2 flex gap-2">
-                  <input
-                    className="flex-1 border rounded p-2"
-                    placeholder="Write a comment..."
-                    value={text}
-                    onChange={(e) => setText(e.target.value)}
-                  />
-                  <button
-                    className="bg-rift-card text-rift-gold px-4 py-2 rounded"
-                    onClick={() => handlePostComment(null)}
-                  >
-                    Post
-                  </button>
-                </div>
-              ) : (
-                <p className="text-sm text-rift-bg/70 mt-2">
-                  You must{" "}
-                  <a href="/auth" className="text-rift-gold underline">
-                    log in
-                  </a>{" "}
-                  to comment.
-                </p>
-              )}
-            </div>
+            {user ? (
+              <div className="mt-2 flex gap-2">
+                <input
+                  className="flex-1 border rounded p-2"
+                  placeholder="Write a comment..."
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                />
+                <button
+                  className="px-4 py-2 bg-rift-card text-rift-gold rounded"
+                  onClick={() => handlePostComment()}
+                >
+                  Post
+                </button>
+              </div>
+            ) : (
+              <p className="text-sm text-rift-bg/70">Log in to comment</p>
+            )}
+          </div>
 
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                className="px-4 py-2 rounded-md border border-gray-400 bg-gray-200 hover:bg-gray-300"
-                onClick={onClose}
-              >
-                Close
-              </button>
-            </div>
+          <div className="p-4 flex justify-end">
+            <button className="px-4 py-2 bg-gray-200 rounded" onClick={onClose}>
+              Close
+            </button>
           </div>
         </div>
       </div>
@@ -611,18 +527,15 @@ export default function SummonersHall() {
     if (open?.id === thread.id) setOpen(null);
   }
 
-  function handleThreadEdited(id, patch) {
-    setThreads((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch } : t)));
-    if (open?.id === id) setOpen({ ...open, ...patch });
-  }
-
   function handleCommentCountChange(threadId, delta) {
     setThreads((prev) =>
       prev.map((t) =>
         t.id === threadId ? { ...t, comment_count: (t.comment_count || 0) + delta } : t
       )
     );
-    if (open?.id === threadId) setOpen((o) => ({ ...o, comment_count: (o.comment_count || 0) + delta }));
+    if (open?.id === threadId) {
+      setOpen((o) => ({ ...o, comment_count: (o.comment_count || 0) + delta }));
+    }
   }
 
   return (
@@ -654,9 +567,6 @@ export default function SummonersHall() {
                   user={user}
                   onOpen={setOpen}
                   onLike={handleLike}
-                  onEdit={(thr) => {
-                    setOpen(thr);
-                  }}
                   onDelete={handleDeleteThread}
                 />
               ))}
@@ -676,10 +586,6 @@ export default function SummonersHall() {
           onClose={() => setOpen(null)}
           user={user}
           onCommentCountChange={handleCommentCountChange}
-          onThreadEdited={handleThreadEdited}
-          onThreadDeleted={(id) => {
-            setThreads((prev) => prev.filter((t) => t.id !== id));
-          }}
         />
       )}
 
