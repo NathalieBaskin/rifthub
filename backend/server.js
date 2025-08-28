@@ -535,28 +535,96 @@ app.get("/api/last-messages/:userId", (req, res) => {
 // THREADS (Forum + Comments + Likes)
 // ===============================
 
-// 📜 Hämta alla trådar
-app.get("/api/threads", (req, res) => {
-  db.all(
-    `SELECT t.id, t.title, t.content, t.created_at, 
-            u.username as author, t.topic_id, t.user_id,
-            IFNULL(t.thumb, '') as thumb,
-            (SELECT COUNT(*) FROM thread_likes tl WHERE tl.thread_id = t.id) as like_count
-     FROM threads t
-     JOIN users u ON t.user_id = u.id
-     ORDER BY t.created_at DESC`,
-    [],
-    (err, rows) => {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json(rows);
-    }
+// --- självläkning: se till att tabeller/kolumner finns ---
+db.serialize(() => {
+  db.run(
+    `CREATE TABLE IF NOT EXISTS threads (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      title TEXT NOT NULL,
+      content TEXT NOT NULL,
+      topic_id INTEGER NOT NULL,
+      thumb TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`
   );
+
+  db.run(
+    `CREATE TABLE IF NOT EXISTS comments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      thread_id INTEGER NOT NULL,
+      user_id INTEGER NOT NULL,
+      content TEXT NOT NULL,
+      parent_id INTEGER,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY(thread_id) REFERENCES threads(id),
+      FOREIGN KEY(user_id) REFERENCES users(id)
+    )`
+  );
+
+  db.run(
+    `CREATE TABLE IF NOT EXISTS thread_likes (
+      thread_id INTEGER NOT NULL,
+      user_id INTEGER NOT NULL,
+      UNIQUE(thread_id, user_id)
+    )`
+  );
+
+  db.run(
+    `CREATE TABLE IF NOT EXISTS comment_likes (
+      comment_id INTEGER NOT NULL,
+      user_id INTEGER NOT NULL,
+      UNIQUE(comment_id, user_id)
+    )`
+  );
+
+
+
+
+  // Försök lägga till parent_id – om den redan finns ignoreras felet
+  db.run(`ALTER TABLE comments ADD COLUMN parent_id INTEGER`, (err) => {
+    if (err && !String(err.message).includes("duplicate column name")) {
+      console.warn("Could not add parent_id to comments:", err.message);
+    }
+  });
 });
 
-// ✍️ Skapa en ny tråd med bilduppladdning
+// 📜 Hämta alla trådar (inkl likes + kommentarer + liked_by_me)
+app.get("/api/threads", (req, res) => {
+  const userId = Number(req.query.userId) || null;
+
+  const likedCol = userId
+    ? `CASE WHEN EXISTS (
+         SELECT 1 FROM thread_likes tl
+         WHERE tl.thread_id = t.id AND tl.user_id = ?
+       ) THEN 1 ELSE 0 END AS liked_by_me`
+    : `0 AS liked_by_me`;
+
+  const params = [];
+  if (userId) params.push(userId);
+
+  const sql = `
+    SELECT
+      t.id, t.title, t.content, t.created_at,
+      u.username AS author, t.topic_id, t.user_id,
+      IFNULL(t.thumb, '') AS thumb,
+      (SELECT COUNT(*) FROM thread_likes tl WHERE tl.thread_id = t.id) AS like_count,
+      (SELECT COUNT(*) FROM comments c WHERE c.thread_id = t.id) AS comment_count,
+      ${likedCol}
+    FROM threads t
+    JOIN users u ON u.id = t.user_id
+    ORDER BY t.created_at DESC
+  `;
+
+  db.all(sql, params, (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows);
+  });
+});
+
+// ✍️ Skapa ny tråd (bilden syns enbart i listan)
 app.post("/api/threads", upload.single("thumb"), (req, res) => {
   const { userId, title, content, topic_id } = req.body;
-
   if (!userId || !title || !content || !topic_id) {
     return res.status(400).json({ error: "Missing fields" });
   }
@@ -566,96 +634,205 @@ app.post("/api/threads", upload.single("thumb"), (req, res) => {
   db.run(
     `INSERT INTO threads (user_id, title, content, topic_id, created_at, thumb)
      VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, ?)`,
-    [userId, title, content, topic_id, thumbUrl],
+    [userId, title, content, Number(topic_id), thumbUrl],
     function (err) {
       if (err) return res.status(500).json({ error: err.message });
-      res.json({ success: true, id: this.lastID, thumb: thumbUrl });
+
+      db.get(
+        `SELECT t.id, t.title, t.content, t.created_at,
+                u.username AS author, t.topic_id, t.user_id,
+                IFNULL(t.thumb, '') AS thumb,
+                0 AS like_count, 0 AS comment_count, 0 AS liked_by_me
+         FROM threads t
+         JOIN users u ON u.id = t.user_id
+         WHERE t.id = ?`,
+        [this.lastID],
+        (err2, row) => {
+          if (err2) return res.status(500).json({ error: err2.message });
+          res.json(row);
+        }
+      );
     }
   );
 });
 
-// ✏️ Uppdatera en tråd
+// ✏️ Uppdatera en tråd (endast ägaren)
 app.put("/api/threads/:id", (req, res) => {
-  const { title, content } = req.body;
+  const { title, content, userId } = req.body;
+  const threadId = Number(req.params.id);
 
-  if (!title || !content) {
+  if (!userId || !title || !content) {
     return res.status(400).json({ error: "Missing fields" });
   }
 
-  db.run(
-    `UPDATE threads SET title = ?, content = ? WHERE id = ?`,
-    [title, content, req.params.id],
-    function (err) {
-      if (err) return res.status(500).json({ error: err.message });
-      if (this.changes === 0) {
-        return res.status(404).json({ error: "Thread not found" });
-      }
-      res.json({ success: true });
+  db.get("SELECT user_id FROM threads WHERE id = ?", [threadId], (err, thr) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!thr) return res.status(404).json({ error: "Thread not found" });
+    if (thr.user_id !== Number(userId)) {
+      return res.status(403).json({ error: "Not allowed" });
     }
-  );
+
+    db.run(
+      "UPDATE threads SET title = ?, content = ? WHERE id = ?",
+      [title, content, threadId],
+      function (err2) {
+        if (err2) return res.status(500).json({ error: err2.message });
+        res.json({ success: true });
+      }
+    );
+  });
 });
 
-// 🗑️ Ta bort en tråd
+// 🗑️ Ta bort en tråd (endast ägaren) + allt som hör till
 app.delete("/api/threads/:id", (req, res) => {
-  db.run(`DELETE FROM threads WHERE id = ?`, [req.params.id], function (err) {
+  const threadId = Number(req.params.id);
+  const { userId } = req.body;
+
+  if (!userId) return res.status(400).json({ error: "Missing userId" });
+
+  db.get("SELECT user_id FROM threads WHERE id = ?", [threadId], (err, thr) => {
     if (err) return res.status(500).json({ error: err.message });
-    if (this.changes === 0) {
-      return res.status(404).json({ error: "Thread not found" });
+    if (!thr) return res.status(404).json({ error: "Thread not found" });
+    if (thr.user_id !== Number(userId)) {
+      return res.status(403).json({ error: "Not allowed" });
     }
-    res.json({ success: true });
+
+    db.serialize(() => {
+      db.run("DELETE FROM thread_likes WHERE thread_id = ?", [threadId]);
+      db.run(
+        "DELETE FROM comment_likes WHERE comment_id IN (SELECT id FROM comments WHERE thread_id = ?)",
+        [threadId]
+      );
+      db.run("DELETE FROM comments WHERE thread_id = ?", [threadId]);
+      db.run("DELETE FROM threads WHERE id = ?", [threadId], function (err2) {
+        if (err2) return res.status(500).json({ error: err2.message });
+        res.json({ success: true });
+      });
+    });
   });
 });
 
 // ===============================
-// COMMENTS (på trådar)
+// THREAD LIKES (toggle)
 // ===============================
+app.post("/api/threads/:id/like", (req, res) => {
+  const { userId } = req.body;
+  const threadId = Number(req.params.id);
 
-// 📜 Hämta kommentarer för en tråd
-app.get("/api/threads/:threadId/comments", (req, res) => {
-  const { threadId } = req.params;
-  db.all(
-    `SELECT c.id, c.thread_id, c.user_id, c.content, c.created_at,
-            u.username, up.avatar_url,
-            (SELECT COUNT(*) FROM comment_likes cl WHERE cl.comment_id = c.id) as like_count
-     FROM comments c
-     JOIN users u ON c.user_id = u.id
-     LEFT JOIN user_profiles up ON up.user_id = u.id
-     WHERE c.thread_id = ?
-     ORDER BY c.created_at ASC`,
-    [threadId],
-    (err, rows) => {
+  if (!userId) return res.status(400).json({ error: "Missing userId" });
+
+  db.get(
+    "SELECT 1 FROM thread_likes WHERE thread_id = ? AND user_id = ?",
+    [threadId, Number(userId)],
+    (err, row) => {
       if (err) return res.status(500).json({ error: err.message });
-      res.json(rows);
+
+      const finish = (liked) => {
+        db.get(
+          "SELECT COUNT(*) AS like_count FROM thread_likes WHERE thread_id = ?",
+          [threadId],
+          (err2, r) => {
+            if (err2) return res.status(500).json({ error: err2.message });
+            res.json({ threadId, like_count: r.like_count, liked });
+          }
+        );
+      };
+
+      if (row) {
+        db.run(
+          "DELETE FROM thread_likes WHERE thread_id = ? AND user_id = ?",
+          [threadId, Number(userId)],
+          (err2) => {
+            if (err2) return res.status(500).json({ error: err2.message });
+            finish(false);
+          }
+        );
+      } else {
+        db.run(
+          "INSERT INTO thread_likes (thread_id, user_id) VALUES (?, ?)",
+          [threadId, Number(userId)],
+          (err2) => {
+            if (err2) return res.status(500).json({ error: err2.message });
+            finish(true);
+          }
+        );
+      }
     }
   );
 });
 
-// ✍️ Lägg till kommentar
+// 📜 Hämta kommentarer (inkl. likes och avatar)
+app.get("/api/threads/:threadId/comments", (req, res) => {
+  const threadId = Number(req.params.threadId);
+  const userId = Number(req.query.userId) || null;
+
+  const likedCol = userId
+    ? `CASE WHEN EXISTS (
+         SELECT 1 FROM comment_likes cl
+         WHERE cl.comment_id = c.id AND cl.user_id = ?
+       ) THEN 1 ELSE 0 END AS liked_by_me`
+    : `0 AS liked_by_me`;
+
+  const sql = `
+    SELECT
+      c.id, c.thread_id, c.user_id, c.content, c.created_at, c.parent_id,
+      u.username, up.avatar_url,
+      (SELECT COUNT(*) FROM comment_likes cl WHERE cl.comment_id = c.id) AS like_count,
+      ${likedCol}
+    FROM comments c
+    JOIN users u ON u.id = c.user_id
+    LEFT JOIN user_profiles up ON up.user_id = u.id
+    WHERE c.thread_id = ?
+    ORDER BY c.created_at ASC
+  `;
+
+  const params = userId ? [userId, threadId] : [threadId];
+
+  db.all(sql, params, (err, rows) => {
+    if (err) {
+      console.error("❌ DB select error:", err.message);
+      return res.status(500).json({ error: err.message });
+    }
+    res.json(rows || []);
+  });
+});
+
+// ✍️ Skapa kommentar eller reply
 app.post("/api/threads/:threadId/comments", (req, res) => {
-  const { threadId } = req.params;
-  const { userId, content } = req.body;
+  const threadId = Number(req.params.threadId);
+  const { userId, content, parent_id } = req.body;
 
   if (!userId || !content) {
     return res.status(400).json({ error: "Missing fields" });
   }
 
+  console.log("👉 Inserting comment", { threadId, userId, content, parent_id });
+
   db.run(
-    "INSERT INTO comments (thread_id, user_id, content, created_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)",
-    [threadId, userId, content],
+    `INSERT INTO comments (thread_id, user_id, content, parent_id, created_at)
+     VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+    [threadId, Number(userId), content, parent_id || null],
     function (err) {
-      if (err) return res.status(500).json({ error: err.message });
+      if (err) {
+        console.error("❌ DB insert error:", err.message);
+        return res.status(500).json({ error: err.message });
+      }
 
       db.get(
-        `SELECT c.id, c.thread_id, c.user_id, c.content, c.created_at,
-                u.username, up.avatar_url,
-                (SELECT COUNT(*) FROM comment_likes cl WHERE cl.comment_id = c.id) as like_count
+        `SELECT
+            c.id, c.thread_id, c.user_id, c.content, c.created_at, c.parent_id,
+            u.username, up.avatar_url,
+            0 AS like_count, 0 AS liked_by_me
          FROM comments c
-         JOIN users u ON c.user_id = u.id
+         JOIN users u ON u.id = c.user_id
          LEFT JOIN user_profiles up ON up.user_id = u.id
          WHERE c.id = ?`,
         [this.lastID],
-        (err, row) => {
-          if (err) return res.status(500).json({ error: err.message });
+        (err2, row) => {
+          if (err2) {
+            console.error("❌ DB select error:", err2.message);
+            return res.status(500).json({ error: err2.message });
+          }
           res.status(201).json(row);
         }
       );
@@ -663,60 +840,78 @@ app.post("/api/threads/:threadId/comments", (req, res) => {
   );
 });
 
-// ===============================
-// COMMENT LIKES
-// ===============================
-app.post("/api/comments/:commentId/like", (req, res) => {
-  const { commentId } = req.params;
+
+// ❤️ Like/unlike kommentar
+app.post("/api/comments/:id/like", (req, res) => {
   const { userId } = req.body;
+  const commentId = Number(req.params.id);
 
   if (!userId) return res.status(400).json({ error: "Missing userId" });
 
   db.get(
-    "SELECT * FROM comment_likes WHERE comment_id = ? AND user_id = ?",
-    [commentId, userId],
+    "SELECT 1 FROM comment_likes WHERE comment_id = ? AND user_id = ?",
+    [commentId, Number(userId)],
     (err, row) => {
       if (err) return res.status(500).json({ error: err.message });
 
+      const finish = (liked) => {
+        db.get(
+          "SELECT COUNT(*) AS like_count FROM comment_likes WHERE comment_id = ?",
+          [commentId],
+          (err2, r) => {
+            if (err2) return res.status(500).json({ error: err2.message });
+            res.json({ commentId, like_count: r.like_count, liked });
+          }
+        );
+      };
+
       if (row) {
-        // Ogilla
+        // Redan gillat → ta bort
         db.run(
           "DELETE FROM comment_likes WHERE comment_id = ? AND user_id = ?",
-          [commentId, userId],
+          [commentId, Number(userId)],
           (err2) => {
             if (err2) return res.status(500).json({ error: err2.message });
-
-            db.get(
-              "SELECT COUNT(*) as like_count FROM comment_likes WHERE comment_id = ?",
-              [commentId],
-              (err3, countRow) => {
-                if (err3) return res.status(500).json({ error: err3.message });
-                res.json({ commentId, like_count: countRow.like_count });
-              }
-            );
+            finish(false);
           }
         );
       } else {
         // Gilla
         db.run(
           "INSERT INTO comment_likes (comment_id, user_id) VALUES (?, ?)",
-          [commentId, userId],
-          function (err2) {
+          [commentId, Number(userId)],
+          (err2) => {
             if (err2) return res.status(500).json({ error: err2.message });
-
-            db.get(
-              "SELECT COUNT(*) as like_count FROM comment_likes WHERE comment_id = ?",
-              [commentId],
-              (err3, countRow) => {
-                if (err3) return res.status(500).json({ error: err3.message });
-                res.json({ commentId, like_count: countRow.like_count });
-              }
-            );
+            finish(true);
           }
         );
       }
     }
   );
+});
+
+// ❌ Ta bort kommentar (endast ägare)
+app.delete("/api/comments/:id", (req, res) => {
+  const commentId = Number(req.params.id);
+  const { userId } = req.body;
+
+  if (!userId) return res.status(400).json({ error: "Missing userId" });
+
+  db.get("SELECT user_id FROM comments WHERE id = ?", [commentId], (err, com) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!com) return res.status(404).json({ error: "Comment not found" });
+    if (com.user_id !== Number(userId)) {
+      return res.status(403).json({ error: "Not allowed" });
+    }
+
+    db.serialize(() => {
+      db.run("DELETE FROM comment_likes WHERE comment_id = ?", [commentId]);
+      db.run("DELETE FROM comments WHERE id = ?", [commentId], function (err2) {
+        if (err2) return res.status(500).json({ error: err2.message });
+        res.json({ success: true });
+      });
+    });
+  });
 });
 
 

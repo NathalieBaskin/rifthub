@@ -97,7 +97,7 @@ useEffect(() => {
   return (
     <div className="relative max-w-5xl mx-auto mt-10 p-6 text-black"> {/* ✅ text-black */}
       <div
-        className="relative flex flex-col items-center p-12"
+        className="relative flex flex-col items-center p-0"
         style={{
           backgroundImage: "url('/images/mypage-paper.png')",
           backgroundSize: "contain",

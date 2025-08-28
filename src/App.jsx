@@ -1,5 +1,6 @@
 // src/App.jsx
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useLocation } from "react-router-dom";
+import { useEffect } from "react";
 import Layout from "./components/Layout.jsx";
 import StartSida from "./pages/StartSida.jsx";
 import SummonersHall from "./pages/SummonersHall.jsx";
@@ -10,10 +11,21 @@ import AuthPage from "./pages/AuthPage.jsx";
 import EditProfilePage from "./pages/EditProfilePage.jsx";
 import AdminDashboard from "./pages/admin/AdminDashboard.jsx";
 import ProfilePage from "./pages/ProfilePage.jsx";
-import ChatPage from "./pages/ChatPage";
+import ChatPage from "./pages/ChatPage.jsx";
 import ThreadPage from "./pages/ThreadPage.jsx";
 
 export default function App() {
+  const location = useLocation();
+
+  // 🔹 Lägg till/ta bort klasser på <body> beroende på route
+  useEffect(() => {
+    if (location.pathname.startsWith("/chat")) {
+      document.body.classList.add("chat-page");
+    } else {
+      document.body.classList.remove("chat-page");
+    }
+  }, [location]);
+
   return (
     <Routes>
       {/* Allt innehåll använder Layout som wrapper (Navbar + ev. Footer där) */}
@@ -42,15 +54,17 @@ export default function App() {
 
         {/* Profiler */}
         <Route path="/profile" element={<ProfilePage />} />
-        <Route path="/profile/:id" element={<ProfilePage />} />  {/* 👈 LÄGG TILL DENNA */}
+        <Route path="/profile/:id" element={<ProfilePage />} /> {/* 👈 viktig */}
         <Route path="/profile/edit" element={<EditProfilePage />} />
 
         {/* Admin */}
         <Route path="/admin" element={<AdminDashboard />} />
-        
-          <Route path="/chat" element={<ChatPage />} />  {/* ✅ ny route */}
 
-          <Route path="/thread/:id" element={<ThreadPage />} />
+        {/* Chat */}
+        <Route path="/chat" element={<ChatPage />} /> {/* ✅ ny route */}
+
+        {/* Threads */}
+        <Route path="/thread/:id" element={<ThreadPage />} />
 
         {/* 404 fallback */}
         <Route
