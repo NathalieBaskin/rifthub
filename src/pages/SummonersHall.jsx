@@ -87,12 +87,12 @@ function ThreadRow({ t, onOpen, onLike, onDelete, user }) {
             />
           )}
           <div className="min-w-0 flex-1">
-            <h3 className="font-display text-xl text-rift-bg line-clamp-1">
-              {t.title}
-            </h3>
-            <p className="mt-1 text-sm text-rift-bg/70 line-clamp-2">
-              {t.content}
-            </p>
+         <h3 className="font-display text-xl text-rift-bg line-clamp-1 truncate max-w-[20ch]">
+  {t.title}
+</h3>
+           <p className="mt-1 text-sm text-rift-bg/70 line-clamp-2 truncate max-w-[20ch]">
+  {t.content}
+</p>
             <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-rift-bg/70">
               <span>
                 By <span className="font-medium">{t.author}</span>
@@ -164,25 +164,31 @@ function ThreadModal({ thread, onClose, user, onCommentCountChange }) {
   const resolveAvatar = (path) =>
     !path ? "/default-avatar.png" : path.startsWith("/uploads") ? `${API_URL}${path}` : path;
 
-  // --- THREAD EDIT SAVE ---
-  async function handleSaveThreadEdit() {
-    if (!user) return;
-    const formData = new FormData();
-    formData.append("userId", user.id);
-    formData.append("title", threadTitle);
-    formData.append("content", threadContent);
-    if (threadFile) formData.append("thumb", threadFile);
+// --- THREAD EDIT SAVE ---
+async function handleSaveThreadEdit() {
+  if (!user) return;
+  const formData = new FormData();
+  formData.append("id", thread.id); // 🔹 vissa backends kräver id i body
+  formData.append("userId", user.id);
+  formData.append("title", threadTitle);
+  formData.append("content", threadContent);
+  formData.append("topic_id", thread.topic_id); // 🔹 fix
+  if (threadFile) formData.append("thumb", threadFile);
 
-    const res = await fetch(`${API_URL}/api/threads/${thread.id}`, {
-      method: "PUT",
-      body: formData,
-    });
+  const res = await fetch(`${API_URL}/api/threads/${thread.id}`, {
+    method: "PUT",
+    body: formData,
+  });
 
-    if (res.ok) {
-      setIsEditingThread(false);
-      onClose(); // stäng för att refetcha, enklast
-    }
+  if (res.ok) {
+    setIsEditingThread(false);
+    onClose(); // stäng för att refetcha
+  } else {
+    console.error("Failed to save edit", await res.text());
   }
+}
+
+
 
   // --- COMMENT ACTIONS ---
   async function handlePostComment(parentId = null) {

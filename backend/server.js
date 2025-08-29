@@ -657,27 +657,36 @@ app.post("/api/threads", upload.single("thumb"), (req, res) => {
 });
 
 // ✏️ Uppdatera en tråd (endast ägaren)
-app.put("/api/threads/:id", (req, res) => {
-  const { title, content, userId } = req.body;
+app.put("/api/threads/:id", upload.single("thumb"), (req, res) => {
   const threadId = Number(req.params.id);
+  const { title, content, userId, removeThumb } = req.body;
+  const file = req.file;
 
   if (!userId || !title || !content) {
     return res.status(400).json({ error: "Missing fields" });
   }
 
-  db.get("SELECT user_id FROM threads WHERE id = ?", [threadId], (err, thr) => {
+  db.get("SELECT * FROM threads WHERE id = ?", [threadId], (err, thr) => {
     if (err) return res.status(500).json({ error: err.message });
     if (!thr) return res.status(404).json({ error: "Thread not found" });
     if (thr.user_id !== Number(userId)) {
       return res.status(403).json({ error: "Not allowed" });
     }
 
+    // 👇 bestäm vilken thumb som ska sparas
+    let newThumb = thr.thumb;
+    if (removeThumb === "1") {
+      newThumb = null;
+    } else if (file) {
+      newThumb = `/uploads/${file.filename}`;
+    }
+
     db.run(
-      "UPDATE threads SET title = ?, content = ? WHERE id = ?",
-      [title, content, threadId],
+      "UPDATE threads SET title = ?, content = ?, thumb = ? WHERE id = ?",
+      [title, content, newThumb, threadId],
       function (err2) {
         if (err2) return res.status(500).json({ error: err2.message });
-        res.json({ success: true });
+        res.json({ success: true, thumb: newThumb });
       }
     );
   });
