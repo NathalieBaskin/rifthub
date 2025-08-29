@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 
+const API_URL = "http://localhost:5000";
+
 export default function AdminProducts() {
   const [products, setProducts] = useState([]);
   const [form, setForm] = useState({
@@ -7,72 +9,76 @@ export default function AdminProducts() {
     description: "",
     price: "",
     categories: "",
-    sku: ""
+    sku: "",
   });
   const [image, setImage] = useState(null);
 
   async function fetchProducts() {
     const token = localStorage.getItem("token");
-    const res = await fetch("http://localhost:5000/api/admin/products", {
-      headers: { Authorization: `Bearer ${token}` }
+    if (!token) {
+      console.error("❌ No token found, cannot fetch products");
+      setProducts([]);
+      return;
+    }
+
+    const res = await fetch(`${API_URL}/api/admin/products`, {
+      headers: { Authorization: `Bearer ${token}` },
     });
-    const data = await res.json();
-    setProducts(data);
+
+    if (res.ok) {
+      const data = await res.json();
+      setProducts(Array.isArray(data) ? data : []);
+    } else {
+      console.error("❌ Failed to load products", await res.text());
+      setProducts([]); // undvik krasch
+    }
   }
 
   useEffect(() => {
     fetchProducts();
   }, []);
 
-async function handleAdd(e) {
-  e.preventDefault();
-  console.log("🚀 handleAdd triggered!");
-
-  const token = localStorage.getItem("token");
-  if (!token) {
-    console.error("❌ No token found!");
-    return;
-  }
-
-  const fd = new FormData();
-  Object.entries(form).forEach(([k, v]) => {
-    console.log(`append ${k}:`, v);
-    fd.append(k, v);
-  });
-  if (image) {
-    console.log("append image:", image.name);
-    fd.append("image", image);
-  }
-
-  try {
-    const res = await fetch("http://localhost:5000/api/admin/products", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
-      body: fd
-    });
-
-    console.log("Response status:", res.status);
-    const data = await res.json();
-    console.log("Response data:", data);
-
-    if (data.success) {
-      fetchProducts();
-      setForm({ name: "", description: "", price: "", categories: "", sku: "" });
-      setImage(null);
-    } else {
-      alert(data.error);
+  async function handleAdd(e) {
+    e.preventDefault();
+    const token = localStorage.getItem("token");
+    if (!token) {
+      console.error("❌ No token found!");
+      return;
     }
-  } catch (err) {
-    console.error("❌ Fetch error:", err);
-  }
-}
 
+    const fd = new FormData();
+    Object.entries(form).forEach(([k, v]) => fd.append(k, v));
+    if (image) {
+      fd.append("image", image);
+    }
+
+    try {
+      const res = await fetch(`${API_URL}/api/admin/products`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: fd,
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        fetchProducts();
+        setForm({ name: "", description: "", price: "", categories: "", sku: "" });
+        setImage(null);
+      } else {
+        alert(data.error || "Failed to add product");
+      }
+    } catch (err) {
+      console.error("❌ Fetch error:", err);
+    }
+  }
 
   async function handleDelete(id) {
     const token = localStorage.getItem("token");
-    await fetch(`http://localhost:5000/api/admin/products/${id}`, {
+    if (!token) return;
+
+    await fetch(`${API_URL}/api/admin/products/${id}`, {
       method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` }
+      headers: { Authorization: `Bearer ${token}` },
     });
     fetchProducts();
   }
@@ -81,17 +87,26 @@ async function handleAdd(e) {
     <div>
       <h2 className="text-xl font-bold mb-4">All Products</h2>
       <ul className="space-y-2 mb-6">
-        {products.map((p) => (
-          <li key={p.id} className="flex justify-between items-center border border-rift-gold/30 p-2 rounded">
-            <span>{p.name} – {p.price} Gold</span>
-            <button
-              onClick={() => handleDelete(p.id)}
-              className="text-red-500 hover:underline"
+        {Array.isArray(products) && products.length > 0 ? (
+          products.map((p) => (
+            <li
+              key={p.id}
+              className="flex justify-between items-center border border-rift-gold/30 p-2 rounded"
             >
-              🗑 Delete
-            </button>
-          </li>
-        ))}
+              <span>
+                {p.name} – {p.price} Gold
+              </span>
+              <button
+                onClick={() => handleDelete(p.id)}
+                className="text-red-500 hover:underline"
+              >
+                🗑 Delete
+              </button>
+            </li>
+          ))
+        ) : (
+          <li className="text-rift-gold/70">No products found.</li>
+        )}
       </ul>
 
       <h2 className="text-xl font-bold mb-4">Add New Product</h2>
