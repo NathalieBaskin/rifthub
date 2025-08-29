@@ -1,5 +1,7 @@
 import { useState } from "react";
 import AdminProducts from "./AdminProducts.jsx";
+import AdminChampions from "./AdminChampions.jsx";
+
 // Sen kan vi importera fler: AdminProfile, AdminChampions osv
 
 export default function AdminDashboard() {
@@ -36,7 +38,8 @@ export default function AdminDashboard() {
       <div>
         {tab === "profile" && <div>Här kommer admin kunna ändra sin egen profil (sen).</div>}
         {tab === "products" && <AdminProducts />}
-        {tab === "champions" && <div>Här kommer admin kunna hantera champions (sen).</div>}
+        {tab === "champions" && <AdminChampions />}
+
       </div>
     </div>
   );

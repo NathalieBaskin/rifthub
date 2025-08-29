@@ -163,6 +163,8 @@ app.post("/api/orders", (req, res) => {
   );
 });
 
+
+
 // ===============================
 // PROFILE (My Page)
 // ===============================
@@ -319,26 +321,31 @@ app.get("/api/admin/products", requireAdmin, (req, res) => {
   });
 });
 
-app.post("/api/admin/products", requireAdmin, upload.single("image"), (req, res) => {
-  const { name, description, price, categories, sku } = req.body;
-  const imageUrl = req.file
-    ? `http://localhost:5000/uploads/${req.file.filename}`
-    : null;
+app.post(
+  "/api/admin/products",
+  requireAdmin,
+  upload.single("image"),
+  (req, res) => {
+    const { name, description, price, categories, sku } = req.body;
+    const imageUrl = req.file
+      ? `http://localhost:5000/uploads/${req.file.filename}`
+      : null;
 
-  const skuRegex = /^[A-Z]{3}\d{3}$/;
-  if (!skuRegex.test(sku)) {
-    return res.status(400).json({ error: "Invalid SKU format (ABC123)" });
-  }
-
-  db.run(
-    "INSERT INTO products (name, description, price, image_url, categories, sku, created_at) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)",
-    [name, description, price, imageUrl, categories, sku],
-    function (err) {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json({ success: true, id: this.lastID });
+    const skuRegex = /^[A-Z]{3}\d{3}$/;
+    if (!skuRegex.test(sku)) {
+      return res.status(400).json({ error: "Invalid SKU format (ABC123)" });
     }
-  );
-});
+
+    db.run(
+      "INSERT INTO products (name, description, price, image_url, categories, sku, created_at) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)",
+      [name, description, price, imageUrl, categories, sku],
+      function (err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true, id: this.lastID });
+      }
+    );
+  }
+);
 
 app.put("/api/admin/products/:id", requireAdmin, (req, res) => {
   const { name, description, price, categories, sku } = req.body;
@@ -359,6 +366,53 @@ app.delete("/api/admin/products/:id", requireAdmin, (req, res) => {
     res.json({ success: true });
   });
 });
+
+// ===============================
+// ADMIN: Champions CRUD
+// ===============================
+const champsDir = path.join(__dirname, "public", "champs");
+if (!fs.existsSync(champsDir)) {
+  fs.mkdirSync(champsDir, { recursive: true });
+  console.log("📂 Skapade champions-mappen:", champsDir);
+}
+app.use("/champs", express.static(champsDir));
+
+app.get("/api/admin/champions", requireAdmin, (req, res) => {
+  fs.readdir(champsDir, (err, files) => {
+    if (err) return res.status(500).json({ error: err.message });
+
+    const champs = files
+      .filter((f) => /\.(png|jpg|jpeg|webp)$/i.test(f))
+      .map((f) => ({
+        name: path.parse(f).name, // filnamn utan .png/.jpg
+        file: `/champs/${f}`,     // URL till bilden
+      }));
+
+    res.json(champs);
+  });
+});
+
+const champStorage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, champsDir),
+  filename: (req, file, cb) => cb(null, file.originalname), // behåll originalnamn (t.ex. Zeri.png)
+});
+const champUpload = multer({ storage: champStorage });
+
+app.post(
+  "/api/admin/champions",
+  requireAdmin,
+  champUpload.single("champ"),
+  (req, res) => {
+    if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+
+    res.json({
+      success: true,
+      name: path.parse(req.file.originalname).name,
+      file: `/champs/${req.file.filename}`,
+    });
+  }
+);
+
 
 // ===============================
 // FRIENDS (Friends system)
