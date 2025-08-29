@@ -94,7 +94,7 @@ export default function AdminProducts() {
               className="flex justify-between items-center border border-rift-gold/30 p-2 rounded"
             >
               <span>
-                {p.name} – {p.price} Gold
+                {p.name} – {p.price} SEK
               </span>
               <button
                 onClick={() => handleDelete(p.id)}
