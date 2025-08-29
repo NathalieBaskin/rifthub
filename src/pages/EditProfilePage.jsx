@@ -9,49 +9,93 @@ export default function EditProfilePage() {
     gender: "",
     preferred_lane: "",
     preferred_champ_id: "",
+    game: "",
     rank: "",
     level: "",
-    avatar_url: ""
+    avatar_url: "",
+    socials: {
+      facebook: "",
+      instagram: "",
+      twitch: "",
+      youtube: "",
+      discord: ""
+    }
   });
+
   const [loading, setLoading] = useState(true);
+  const [champs, setChamps] = useState([]);
+  const [search, setSearch] = useState("");
+  const [showChampModal, setShowChampModal] = useState(false);
+
   const user = getUserFromToken();
 
-useEffect(() => {
-  async function fetchProfile() {
-    try {
-      const res = await fetch(`http://localhost:5000/api/profile/${user.id}`);
-      const data = await res.json();
-      // ✅ sätt direkt, inte baserat på prev
-      setFormData({
-        name: data.name || "",
-        age: data.age || "",
-        gender: data.gender || "",
-        preferred_lane: data.preferred_lane || "",
-        preferred_champ_id: data.preferred_champ_id || "",
-        rank: data.rank || "",
-        level: data.level || "",
-        avatar_url: data.avatar_url || ""
-      });
-    } catch (err) {
-      console.error("Failed to load profile", err);
-    } finally {
-      setLoading(false);
+  /* ===== Fetch Profile ===== */
+  useEffect(() => {
+    async function fetchProfile() {
+      try {
+        const res = await fetch(`http://localhost:5000/api/profile/${user.id}`);
+        const data = await res.json();
+
+        setFormData({
+          name: data.name || "",
+          age: data.age || "",
+          gender: data.gender || "",
+          preferred_lane: data.preferred_lane || "",
+          preferred_champ_id: data.preferred_champ_id || "",
+          game: data.game || "",
+          rank: data.rank || "",
+          level: data.level || "",
+          avatar_url: data.avatar_url || "",
+          socials: data.socials
+            ? typeof data.socials === "string"
+              ? JSON.parse(data.socials)
+              : data.socials
+            : {
+                facebook: "",
+                instagram: "",
+                twitch: "",
+                youtube: "",
+                discord: ""
+              }
+        });
+      } catch (err) {
+        console.error("Failed to load profile", err);
+      } finally {
+        setLoading(false);
+      }
     }
-  }
 
-  if (user) {
-    fetchProfile();
-  }
-  // ⚠️ viktigt: bara kör när user.id ändras
-}, [user?.id]);
+    if (user) fetchProfile();
+  }, [user?.id]);
 
+  /* ===== Fetch Champs (public endpoint) ===== */
+  useEffect(() => {
+    async function fetchChamps() {
+      try {
+        const res = await fetch("http://localhost:5000/api/champions");
+        const data = await res.json();
+        setChamps(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error("Failed to load champs", err);
+      }
+    }
+    fetchChamps();
+  }, []);
 
-
+  /* ===== Handlers ===== */
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: value
+    }));
+  };
+
+  const handleSocialChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      socials: { ...prev.socials, [name]: value }
     }));
   };
 
@@ -71,7 +115,7 @@ useEffect(() => {
       if (data.success) {
         setFormData((prev) => ({
           ...prev,
-          avatar_url: `${data.avatarUrl}?t=${Date.now()}`,
+          avatar_url: `${data.avatarUrl}?t=${Date.now()}`
         }));
       }
     } catch (err) {
@@ -84,7 +128,7 @@ useEffect(() => {
       await fetch(`http://localhost:5000/api/profile/${user.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(formData)
       });
       alert("Profile saved!");
     } catch (err) {
@@ -94,8 +138,32 @@ useEffect(() => {
 
   if (loading) return <div className="p-6">Loading...</div>;
 
+  const filteredChamps = champs.filter((c) =>
+    c.name.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const selectedChamp = champs.find(
+    (c) => c.name === formData.preferred_champ_id
+  );
+
+  const rankOptions = [
+    "unranked",
+    "iron",
+    "bronze",
+    "silver",
+    "gold",
+    "platinum",
+    "emerald",
+    "diamond",
+    "master",
+    "grandmaster",
+    "challenger"
+  ];
+
+  const roleOptions = ["top", "jungle", "mid", "adc", "support"];
+
   return (
-    <div className="relative max-w-5xl mx-auto mt-10 p-6 text-black"> {/* ✅ text-black */}
+    <div className="relative max-w-5xl mx-auto mt-10 p-6 text-black">
       <div
         className="relative flex flex-col items-center p-0"
         style={{
@@ -103,10 +171,10 @@ useEffect(() => {
           backgroundSize: "contain",
           backgroundRepeat: "no-repeat",
           backgroundPosition: "center top",
-          minHeight: "700px",
+          minHeight: "700px"
         }}
       >
-        {/* Profilbild */}
+        {/* Avatar */}
         <div className="absolute -top-0 left-0 w-56 h-56">
           <img
             src={
@@ -126,8 +194,9 @@ useEffect(() => {
           />
         </div>
 
-        {/* Formulär */}
+        {/* Form */}
         <div className="mt-44 text-left w-full max-w-lg">
+          {/* Basic info */}
           <label className="block mb-2">
             Name
             <input
@@ -165,43 +234,108 @@ useEffect(() => {
             </select>
           </label>
 
-          <label className="block mb-2">
-            Preferred Lane
-            <select
-              name="preferred_lane"
-              value={formData.preferred_lane}
-              onChange={handleChange}
-              className="w-full border rounded p-2 text-rift-bg"
-            >
-              <option value="">Select</option>
-              <option value="top">Top</option>
-              <option value="jungle">Jungle</option>
-              <option value="mid">Mid</option>
-              <option value="adc">ADC</option>
-              <option value="support">Support</option>
-            </select>
-          </label>
+          {/* Game */}
+          <div className="mb-4">
+            <span className="block mb-2 font-semibold">Game</span>
+            <div className="flex gap-4">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={formData.game === "league"}
+                  onChange={() =>
+                    setFormData((prev) => ({ ...prev, game: "league" }))
+                  }
+                />{" "}
+                League of Legends
+              </label>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={formData.game === "wildrift"}
+                  onChange={() =>
+                    setFormData((prev) => ({ ...prev, game: "wildrift" }))
+                  }
+                />{" "}
+                Wild Rift
+              </label>
+            </div>
+          </div>
 
+          {/* Role */}
+          <div className="mb-4">
+            <span className="block mb-2 font-semibold">Preferred Role</span>
+            <div className="flex gap-3 flex-wrap">
+              {roleOptions.map((role) => (
+                <label key={role}>
+                  <input
+                    type="checkbox"
+                    checked={formData.preferred_lane === role}
+                    onChange={() =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        preferred_lane: role
+                      }))
+                    }
+                  />{" "}
+                  {role}
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Champ */}
           <label className="block mb-2">
             Preferred Champion
-            <input
-              name="preferred_champ_id"
-              value={formData.preferred_champ_id}
-              onChange={handleChange}
-              className="w-full border rounded p-2 text-rift-bg"
-            />
+            <div className="flex items-center gap-3">
+              <input
+                name="preferred_champ_id"
+                value={formData.preferred_champ_id}
+                readOnly
+                className="w-full border rounded p-2 text-rift-bg bg-gray-100 cursor-pointer"
+                onClick={() => setShowChampModal(true)}
+              />
+              <button
+                type="button"
+                onClick={() => setShowChampModal(true)}
+                className="px-3 py-2 bg-rift-card text-rift-gold border border-rift-gold/50 rounded"
+              >
+                Choose
+              </button>
+              {selectedChamp && (
+                <div className="relative group">
+                  <img
+                    src={`http://localhost:5000${selectedChamp.file}`}
+                    alt={selectedChamp.name}
+                    className="w-12 h-12 rounded object-cover border border-rift-gold"
+                  />
+                  <span className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100">
+                    {selectedChamp.name}
+                  </span>
+                </div>
+              )}
+            </div>
           </label>
 
-          <label className="block mb-2">
-            Rank
-            <input
-              name="rank"
-              value={formData.rank}
-              onChange={handleChange}
-              className="w-full border rounded p-2 text-rift-bg"
-            />
-          </label>
+          {/* Rank */}
+          <div className="mb-4">
+            <span className="block mb-2 font-semibold">Rank</span>
+            <div className="flex gap-3 flex-wrap">
+              {rankOptions.map((r) => (
+                <label key={r} className="capitalize">
+                  <input
+                    type="checkbox"
+                    checked={formData.rank === r}
+                    onChange={() =>
+                      setFormData((prev) => ({ ...prev, rank: r }))
+                    }
+                  />{" "}
+                  {r}
+                </label>
+              ))}
+            </div>
+          </div>
 
+          {/* Level */}
           <label className="block mb-2">
             Level
             <input
@@ -213,11 +347,33 @@ useEffect(() => {
             />
           </label>
 
+          {/* Avatar */}
           <label className="block mb-2">
             Avatar
             <input type="file" accept="image/*" onChange={handleAvatarUpload} />
           </label>
 
+          {/* ✅ Social Media Links */}
+          <div className="mt-6">
+            <h3 className="font-semibold mb-2">Social Media Links</h3>
+            {["facebook", "instagram", "twitch", "youtube", "discord"].map(
+              (key) => (
+                <label key={key} className="block mb-2 capitalize">
+                  {key}
+                  <input
+                    type="url"
+                    name={key}
+                    value={formData.socials?.[key] || ""}
+                    onChange={handleSocialChange}
+                    className="w-full border rounded p-2 text-rift-bg"
+                    placeholder={`Enter your ${key} link`}
+                  />
+                </label>
+              )
+            )}
+          </div>
+
+          {/* Save */}
           <div className="flex gap-3 mt-4">
             <button
               onClick={handleSave}
@@ -228,6 +384,49 @@ useEffect(() => {
           </div>
         </div>
       </div>
+
+      {/* Champ Modal */}
+      {showChampModal && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg max-w-3xl w-full max-h-[80vh] overflow-y-auto">
+            <div className="flex justify-between mb-4">
+              <h2 className="text-xl font-bold">Choose Preferred Champion</h2>
+              <button onClick={() => setShowChampModal(false)}>❌</button>
+            </div>
+
+            <input
+              type="text"
+              placeholder="Search champion..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full border rounded p-2 mb-4"
+            />
+
+            <div className="grid grid-cols-4 gap-4">
+              {filteredChamps.map((champ) => (
+                <div
+                  key={champ.name}
+                  className="flex flex-col items-center cursor-pointer hover:scale-105 transition"
+                  onClick={() => {
+                    setFormData((prev) => ({
+                      ...prev,
+                      preferred_champ_id: champ.name
+                    }));
+                    setShowChampModal(false);
+                  }}
+                >
+                  <img
+                    src={`http://localhost:5000${champ.file}`}
+                    alt={champ.name}
+                    className="w-20 h-20 object-cover rounded border border-rift-gold"
+                  />
+                  <span className="text-sm mt-1">{champ.name}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

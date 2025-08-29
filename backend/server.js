@@ -178,32 +178,34 @@ app.get("/api/profile/:id", (req, res) => {
       if (err) return res.status(500).json({ error: err.message });
       if (!user) return res.status(404).json({ error: "User not found" });
 
-      db.get(
-        `SELECT name, age, gender, preferred_lane, preferred_champ_id,
-                rank, level, league_tag, wildrift_tag, note, background_id,
-                avatar_url
-         FROM user_profiles
-         WHERE user_id = ?`,
-        [id],
-        (err, profile) => {
-          if (err) return res.status(500).json({ error: err.message });
+    db.get(
+  `SELECT name, age, gender, preferred_lane, preferred_champ_id,
+          rank, level, league_tag, wildrift_tag, note, background_id,
+          avatar_url, game, socials
+   FROM user_profiles
+   WHERE user_id = ?`,
+  [id],
+  (err, profile) => {
+    if (err) return res.status(500).json({ error: err.message });
 
-          res.json({
-            id: user.id,
-            username: user.username,
-            email: user.email,
-            name: profile?.name || "",
-            age: profile?.age || "",
-            gender: profile?.gender || "",
-            preferred_lane: profile?.preferred_lane || "",
-            preferred_champ_id: profile?.preferred_champ_id || "",
-            rank: profile?.rank || "",
-            level: profile?.level || "",
-            league_tag: profile?.league_tag || "",
-            wildrift_tag: profile?.wildrift_tag || "",
-            note: profile?.note || "",
-            background_id: profile?.background_id || "",
-            avatar_url: profile?.avatar_url || "",
+           res.json({
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      name: profile?.name || "",
+      age: profile?.age || "",
+      gender: profile?.gender || "",
+      preferred_lane: profile?.preferred_lane || "",
+      preferred_champ_id: profile?.preferred_champ_id || "",
+      rank: profile?.rank || "",
+      level: profile?.level || "",
+      league_tag: profile?.league_tag || "",
+      wildrift_tag: profile?.wildrift_tag || "",
+      note: profile?.note || "",
+      background_id: profile?.background_id || "",
+      avatar_url: profile?.avatar_url || "",
+      game: profile?.game || "",
+      socials: profile?.socials ? JSON.parse(profile.socials) : {}
           });
         }
       );
@@ -226,46 +228,54 @@ app.put("/api/profile/:id", (req, res) => {
     note,
     background_id,
     avatar_url,
+    game,
+    socials
   } = req.body;
 
-  db.run(
-    `INSERT INTO user_profiles 
-       (user_id, name, age, gender, preferred_lane, preferred_champ_id, rank, level, league_tag, wildrift_tag, note, background_id, avatar_url)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-     ON CONFLICT(user_id) DO UPDATE SET
-       name = excluded.name,
-       age = excluded.age,
-       gender = excluded.gender,
-       preferred_lane = excluded.preferred_lane,
-       preferred_champ_id = excluded.preferred_champ_id,
-       rank = excluded.rank,
-       level = excluded.level,
-       league_tag = excluded.league_tag,
-       wildrift_tag = excluded.wildrift_tag,
-       note = excluded.note,
-       background_id = excluded.background_id,
-       avatar_url = excluded.avatar_url`,
-    [
-      id,
-      name,
-      age,
-      gender,
-      preferred_lane,
-      preferred_champ_id,
-      rank,
-      level,
-      league_tag,
-      wildrift_tag,
-      note,
-      background_id,
-      avatar_url,
-    ],
-    function (err) {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json({ success: true });
-    }
-  );
+db.run(
+  `INSERT INTO user_profiles 
+     (user_id, name, age, gender, preferred_lane, preferred_champ_id, rank, level, league_tag, wildrift_tag, note, background_id, avatar_url, game, socials)
+   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+   ON CONFLICT(user_id) DO UPDATE SET
+     name = excluded.name,
+     age = excluded.age,
+     gender = excluded.gender,
+     preferred_lane = excluded.preferred_lane,
+     preferred_champ_id = excluded.preferred_champ_id,
+     rank = excluded.rank,
+     level = excluded.level,
+     league_tag = excluded.league_tag,
+     wildrift_tag = excluded.wildrift_tag,
+     note = excluded.note,
+     background_id = excluded.background_id,
+     avatar_url = excluded.avatar_url,
+     game = excluded.game,
+     socials = excluded.socials`,
+  [
+    id,
+    name,
+    age,
+    gender,
+    preferred_lane,
+    preferred_champ_id,
+    rank,
+    level,
+    league_tag,
+    wildrift_tag,
+    note,
+    background_id,
+    avatar_url,
+    game,
+    JSON.stringify(socials || {})
+  ],
+  function (err) {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ success: true });
+  }
+);
+
 });
+
 
 // ✅ Upload profilbild
 app.post("/api/profile/:id/avatar", upload.single("avatar"), (req, res) => {
@@ -412,6 +422,22 @@ app.post(
     });
   }
 );
+// ✅ Public champions list (no admin required)
+app.get("/api/champions", (req, res) => {
+  fs.readdir(champsDir, (err, files) => {
+    if (err) return res.status(500).json({ error: err.message });
+
+    const champs = files
+      .filter((f) => /\.(png|jpg|jpeg|webp)$/i.test(f))
+      .map((f) => ({
+        name: path.parse(f).name,
+        file: `/champs/${f}`,
+      }));
+
+    res.json(champs);
+  });
+});
+
 
 
 // ===============================
@@ -584,6 +610,55 @@ app.get("/api/last-messages/:userId", (req, res) => {
     }
   );
 });
+
+// === Roles folder ===
+const rolesDir = path.join(__dirname, "public", "role");
+if (!fs.existsSync(rolesDir)) {
+  fs.mkdirSync(rolesDir, { recursive: true });
+  console.log("📂 Skapade role-mappen:", rolesDir);
+}
+app.use("/role", express.static(rolesDir));
+
+app.get("/api/roles", (req, res) => {
+  fs.readdir(rolesDir, (err, files) => {
+    if (err) return res.status(500).json({ error: err.message });
+
+    const roles = files
+      .filter((f) => /\.(png|jpg|jpeg|webp)$/i.test(f))
+      .map((f) => ({
+        name: path.parse(f).name, // t.ex. "Top"
+        file: `/role/${f}`,
+      }));
+
+    res.json(roles);
+  });
+});
+// === Rank folder ===
+const ranksDir = path.join(__dirname, "public", "rank");
+if (!fs.existsSync(ranksDir)) {
+  fs.mkdirSync(ranksDir, { recursive: true });
+  console.log("📂 Skapade rank-mappen:", ranksDir);
+}
+app.use("/rank", express.static(ranksDir));
+
+// === Images folder ===
+const imagesDir = path.join(__dirname, "public", "images");
+if (!fs.existsSync(imagesDir)) {
+  fs.mkdirSync(imagesDir, { recursive: true });
+  console.log("📂 Skapade images-mappen:", imagesDir);
+}
+app.use("/images", express.static(imagesDir));
+
+// === Social media icons folder ===
+const socialsDir = path.join(__dirname, "public", "socials");
+if (!fs.existsSync(socialsDir)) {
+  fs.mkdirSync(socialsDir, { recursive: true });
+  console.log("📂 Skapade socials-mappen:", socialsDir);
+}
+app.use("/socials", express.static(socialsDir));
+
+
+
 
 // ===============================
 // THREADS (Forum + Comments + Likes)
