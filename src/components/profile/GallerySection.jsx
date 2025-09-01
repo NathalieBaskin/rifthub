@@ -28,7 +28,7 @@ export default function GallerySection({ profileUserId, me }) {
   }, [profileUserId, me]);
 
   async function handleLikeAlbum(albumId) {
-    if (!me) return alert("Logga in för att gilla album");
+    if (!me) return alert("Log in to like");
     const res = await fetch(`${API_URL}/api/albums/${albumId}/like`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -46,7 +46,7 @@ export default function GallerySection({ profileUserId, me }) {
   }
 
   async function handleCreateAlbum(formData) {
-    if (!me) return alert("Logga in för att skapa album");
+    if (!me) return alert("Log in to create");
     const res = await fetch(`${API_URL}/api/albums`, {
       method: "POST",
       body: formData,
@@ -60,7 +60,7 @@ export default function GallerySection({ profileUserId, me }) {
     setShowForm(false);
   }
 
-  if (loading) return <p className="text-gray-600">Laddar album...</p>;
+  if (loading) return <p className="text-gray-600">Loading album...</p>;
 
   return (
     <div>
@@ -77,7 +77,7 @@ export default function GallerySection({ profileUserId, me }) {
         {albums.map((album) => (
           <div
             key={album.id}
-            className="bg-white rounded shadow cursor-pointer overflow-hidden"
+            className="bg-green-950 rounded shadow cursor-pointer overflow-hidden"
             onClick={() => setOpenAlbum(album)}
           >
             {album.cover && (
@@ -88,12 +88,12 @@ export default function GallerySection({ profileUserId, me }) {
               />
             )}
             <div className="p-3">
-              <h3 className="font-bold text-lg">{album.title}</h3>
-              <div className="text-sm text-gray-600">
+              <h3 className="font-bold text-white">{album.title}</h3>
+              <div className="text-sm text-white">
                 {album.author} •{" "}
                 {new Date(album.created_at).toLocaleDateString()}
               </div>
-              <div className="flex gap-4 text-sm text-gray-700 mt-2">
+              <div className="flex gap-4 text-sm text-white mt-2">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -110,7 +110,7 @@ export default function GallerySection({ profileUserId, me }) {
         ))}
         {albums.length === 0 && (
           <p className="col-span-full text-center text-gray-500">
-            Inga album än.
+            No albums yet
           </p>
         )}
       </div>
