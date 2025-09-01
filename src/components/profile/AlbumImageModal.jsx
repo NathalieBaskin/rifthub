@@ -99,7 +99,7 @@ export default function AlbumImageModal({ itemId, onClose, me }) {
               <input
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
-                placeholder="Skriv en kommentar..."
+                placeholder="Write a comment..."
                 className="flex-1 border p-2 rounded"
               />
               <button

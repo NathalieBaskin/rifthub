@@ -67,7 +67,7 @@ export default function PostCard({ post, me, refresh }) {
             onClick={handleDelete}
             className="text-red-600 text-sm hover:underline"
           >
-            Ta bort
+            Delete
           </button>
         )}
       </div>
