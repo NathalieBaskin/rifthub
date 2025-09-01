@@ -76,7 +76,7 @@ export default function AlbumModal({ album, onClose, me }) {
         <div className="p-4 border-b flex justify-between items-center">
           <h2 className="text-xl font-bold">{details.title}</h2>
           <button onClick={onClose} className="px-3 py-1 bg-gray-200 rounded">
-            Stäng
+            Close
           </button>
         </div>
 
@@ -106,7 +106,7 @@ export default function AlbumModal({ album, onClose, me }) {
 
         {/* Kommentarer */}
         <div className="p-4">
-          <h3 className="font-semibold mb-2">Kommentarer</h3>
+          <h3 className="font-semibold mb-2">Comments</h3>
           {comments.map((c) => (
             <div key={c.id} className="mb-3 border-b pb-2">
               <div className="flex items-center gap-2">
@@ -139,7 +139,7 @@ export default function AlbumModal({ album, onClose, me }) {
                 type="submit"
                 className="px-3 py-1 bg-rift-card text-rift-gold rounded"
               >
-                Skicka
+                Send
               </button>
             </form>
           ) : (

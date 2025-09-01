@@ -76,7 +76,7 @@ export default function AlbumImageModal({ itemId, onClose, me }) {
           >
             {details.liked_by_me ? "👍" : "👍"} {details.like_count || 0}
           </button>
-          <h3 className="mt-3 font-semibold">Kommentarer</h3>
+          <h3 className="mt-3 font-semibold">Comments</h3>
           {details.comments?.map((c) => (
             <div key={c.id} className="mt-2 border-b pb-2">
               <div className="flex items-center gap-2">
@@ -106,7 +106,7 @@ export default function AlbumImageModal({ itemId, onClose, me }) {
                 type="submit"
                 className="px-3 py-1 bg-rift-card text-rift-gold rounded"
               >
-                Skicka
+                Send
               </button>
             </form>
           ) : (

@@ -69,7 +69,7 @@ export default function GallerySection({ profileUserId, me }) {
           onClick={() => setShowForm(true)}
           className="mb-4 px-4 py-2 bg-rift-card text-rift-gold rounded"
         >
-          + Skapa album
+          + Create album
         </button>
       )}
 

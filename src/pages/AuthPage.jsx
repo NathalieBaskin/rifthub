@@ -42,7 +42,7 @@ export default function AuthPage() {
 
       localStorage.setItem("token", data.token);
 
-      // 🔹 Skicka tillbaka till redirect (ex: /summoners-hall?open=new)
+      // 🔹  tillbaka till redirect (ex: /summoners-hall?open=new)
       navigate(redirect + (open ? `?open=${open}` : ""));
     } catch (err) {
       console.error(err);
