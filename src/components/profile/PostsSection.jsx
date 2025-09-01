@@ -66,15 +66,15 @@ export default function PostsSection({ profileUserId, me }) {
         <textarea
           value={newPost}
           onChange={(e) => setNewPost(e.target.value)}
-          placeholder="Skriv ett inlägg..."
+          placeholder="What's on your mind?"
           className="w-full border rounded p-2"
         />
         <button
           type="submit"
           className="mt-2 bg-blue-500 text-white px-4 py-1 rounded"
         >
-          Posta
-        </button>
+          Post
+                  </button>
       </form>
 
       {/* Lista av inlägg */}
