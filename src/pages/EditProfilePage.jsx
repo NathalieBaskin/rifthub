@@ -1,5 +1,6 @@
 // src/pages/EditProfilePage.jsx
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { getUserFromToken } from "../utils/auth.js";
 
 export default function EditProfilePage() {
@@ -28,6 +29,7 @@ export default function EditProfilePage() {
   const [showChampModal, setShowChampModal] = useState(false);
 
   const user = getUserFromToken();
+  const navigate = useNavigate();
 
   /* ===== Fetch Profile ===== */
   useEffect(() => {
@@ -125,12 +127,19 @@ export default function EditProfilePage() {
 
   const handleSave = async () => {
     try {
-      await fetch(`http://localhost:5000/api/profile/${user.id}`, {
+      const res = await fetch(`http://localhost:5000/api/profile/${user.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData)
       });
-      alert("Profile saved!");
+
+      if (!res.ok) {
+        console.error("Failed to save profile", await res.text());
+        return;
+      }
+
+      // ✅ När profilen är sparad → gå till användarens profilsida
+      navigate(`/profile/${user.id}`);
     } catch (err) {
       console.error("Failed to save profile", err);
     }
@@ -163,19 +172,13 @@ export default function EditProfilePage() {
   const roleOptions = ["top", "jungle", "mid", "adc", "support"];
 
   return (
-    <div className="relative max-w-5xl mx-auto mt-10 p-6 text-black">
-      <div
-        className="relative flex flex-col items-center p-0"
-        style={{
-          backgroundImage: "url('/images/mypage-paper.png')",
-          backgroundSize: "contain",
-          backgroundRepeat: "no-repeat",
-          backgroundPosition: "center top",
-          minHeight: "700px"
-        }}
-      >
-        {/* Avatar */}
-        <div className="absolute -top-0 left-0 w-56 h-56">
+    <div className="max-w-3xl mx-auto mt-10 p-6 bg-white text-black rounded shadow">
+      <h1 className="text-2xl font-bold mb-6">Edit Profile</h1>
+
+      {/* Avatar */}
+      <div className="mb-6">
+        <label className="block font-semibold mb-2">Avatar</label>
+        <div className="flex items-center gap-4">
           <img
             src={
               formData.avatar_url
@@ -185,204 +188,181 @@ export default function EditProfilePage() {
                 : "/images/default-avatar.png"
             }
             alt="Profile avatar"
-            className="absolute inset-0 m-auto w-[57%] h-[57%] object-cover rounded-full"
+            className="w-24 h-24 rounded-full object-cover border"
           />
-          <img
-            src="/images/frame.png"
-            alt="Frame"
-            className="absolute inset-0 w-full h-full pointer-events-none"
-          />
+          <input type="file" accept="image/*" onChange={handleAvatarUpload} />
         </div>
+      </div>
 
-        {/* Form */}
-        <div className="mt-44 text-left w-full max-w-lg">
-          {/* Basic info */}
-          <label className="block mb-2">
-            Name
+      {/* Name */}
+      <label className="block mb-4">
+        Name
+        <input
+          name="name"
+          value={formData.name}
+          onChange={handleChange}
+          className="w-full border rounded p-2"
+        />
+      </label>
+
+      {/* Age */}
+      <label className="block mb-4">
+        Age
+        <input
+          type="number"
+          name="age"
+          value={formData.age}
+          onChange={handleChange}
+          className="w-full border rounded p-2"
+        />
+      </label>
+
+      {/* Gender */}
+      <label className="block mb-4">
+        Gender
+        <select
+          name="gender"
+          value={formData.gender}
+          onChange={handleChange}
+          className="w-full border rounded p-2"
+        >
+          <option value="">Select</option>
+          <option value="female">Female</option>
+          <option value="male">Male</option>
+          <option value="other">Other</option>
+          <option value="rather not say">Rather not say</option>
+        </select>
+      </label>
+
+      {/* Game */}
+      <div className="mb-6">
+        <span className="block mb-2 font-semibold">Game</span>
+        <div className="flex gap-4">
+          <label>
             <input
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              className="w-full border rounded p-2 text-rift-bg"
-            />
+              type="checkbox"
+              checked={formData.game === "league"}
+              onChange={() =>
+                setFormData((prev) => ({ ...prev, game: "league" }))
+              }
+            />{" "}
+            League of Legends
           </label>
-
-          <label className="block mb-2">
-            Age
+          <label>
             <input
-              type="number"
-              name="age"
-              value={formData.age}
-              onChange={handleChange}
-              className="w-full border rounded p-2 text-rift-bg"
-            />
+              type="checkbox"
+              checked={formData.game === "wildrift"}
+              onChange={() =>
+                setFormData((prev) => ({ ...prev, game: "wildrift" }))
+              }
+            />{" "}
+            Wild Rift
           </label>
+        </div>
+      </div>
 
-          <label className="block mb-2">
-            Gender
-            <select
-              name="gender"
-              value={formData.gender}
-              onChange={handleChange}
-              className="w-full border rounded p-2 text-rift-bg"
-            >
-              <option value="">Select</option>
-              <option value="female">Female</option>
-              <option value="male">Male</option>
-              <option value="other">Other</option>
-              <option value="rather not say">Rather not say</option>
-            </select>
-          </label>
-
-          {/* Game */}
-          <div className="mb-4">
-            <span className="block mb-2 font-semibold">Game</span>
-            <div className="flex gap-4">
-              <label>
-                <input
-                  type="checkbox"
-                  checked={formData.game === "league"}
-                  onChange={() =>
-                    setFormData((prev) => ({ ...prev, game: "league" }))
-                  }
-                />{" "}
-                League of Legends
-              </label>
-              <label>
-                <input
-                  type="checkbox"
-                  checked={formData.game === "wildrift"}
-                  onChange={() =>
-                    setFormData((prev) => ({ ...prev, game: "wildrift" }))
-                  }
-                />{" "}
-                Wild Rift
-              </label>
-            </div>
-          </div>
-
-          {/* Role */}
-          <div className="mb-4">
-            <span className="block mb-2 font-semibold">Preferred Role</span>
-            <div className="flex gap-3 flex-wrap">
-              {roleOptions.map((role) => (
-                <label key={role}>
-                  <input
-                    type="checkbox"
-                    checked={formData.preferred_lane === role}
-                    onChange={() =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        preferred_lane: role
-                      }))
-                    }
-                  />{" "}
-                  {role}
-                </label>
-              ))}
-            </div>
-          </div>
-
-          {/* Champ */}
-          <label className="block mb-2">
-            Preferred Champion
-            <div className="flex items-center gap-3">
+      {/* Role */}
+      <div className="mb-6">
+        <span className="block mb-2 font-semibold">Preferred Role</span>
+        <div className="flex gap-3 flex-wrap">
+          {roleOptions.map((role) => (
+            <label key={role}>
               <input
-                name="preferred_champ_id"
-                value={formData.preferred_champ_id}
-                readOnly
-                className="w-full border rounded p-2 text-rift-bg bg-gray-100 cursor-pointer"
-                onClick={() => setShowChampModal(true)}
-              />
-              <button
-                type="button"
-                onClick={() => setShowChampModal(true)}
-                className="px-3 py-2 bg-rift-card text-rift-gold border border-rift-gold/50 rounded"
-              >
-                Choose
-              </button>
-              {selectedChamp && (
-                <div className="relative group">
-                  <img
-                    src={`http://localhost:5000${selectedChamp.file}`}
-                    alt={selectedChamp.name}
-                    className="w-12 h-12 rounded object-cover border border-rift-gold"
-                  />
-                  <span className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100">
-                    {selectedChamp.name}
-                  </span>
-                </div>
-              )}
-            </div>
-          </label>
+                type="checkbox"
+                checked={formData.preferred_lane === role}
+                onChange={() =>
+                  setFormData((prev) => ({ ...prev, preferred_lane: role }))
+                }
+              />{" "}
+              {role}
+            </label>
+          ))}
+        </div>
+      </div>
 
-          {/* Rank */}
-          <div className="mb-4">
-            <span className="block mb-2 font-semibold">Rank</span>
-            <div className="flex gap-3 flex-wrap">
-              {rankOptions.map((r) => (
-                <label key={r} className="capitalize">
-                  <input
-                    type="checkbox"
-                    checked={formData.rank === r}
-                    onChange={() =>
-                      setFormData((prev) => ({ ...prev, rank: r }))
-                    }
-                  />{" "}
-                  {r}
-                </label>
-              ))}
-            </div>
-          </div>
+      {/* Champ */}
+      <label className="block mb-6">
+        Preferred Champion
+        <div className="flex items-center gap-3">
+          <input
+            name="preferred_champ_id"
+            value={formData.preferred_champ_id}
+            readOnly
+            className="w-full border rounded p-2 bg-gray-100 cursor-pointer"
+            onClick={() => setShowChampModal(true)}
+          />
+          <button
+            type="button"
+            onClick={() => setShowChampModal(true)}
+            className="px-3 py-2 bg-gray-800 text-white rounded"
+          >
+            Choose
+          </button>
+          {selectedChamp && (
+            <img
+              src={`http://localhost:5000${selectedChamp.file}`}
+              alt={selectedChamp.name}
+              className="w-12 h-12 rounded border"
+            />
+          )}
+        </div>
+      </label>
 
-          {/* Level */}
-          <label className="block mb-2">
-            Level
+      {/* Rank */}
+      <div className="mb-6">
+        <span className="block mb-2 font-semibold">Rank</span>
+        <div className="flex gap-3 flex-wrap">
+          {rankOptions.map((r) => (
+            <label key={r} className="capitalize">
+              <input
+                type="checkbox"
+                checked={formData.rank === r}
+                onChange={() => setFormData((prev) => ({ ...prev, rank: r }))}
+              />{" "}
+              {r}
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* Level */}
+      <label className="block mb-6">
+        Level
+        <input
+          type="number"
+          name="level"
+          value={formData.level}
+          onChange={handleChange}
+          className="w-full border rounded p-2"
+        />
+      </label>
+
+      {/* Social Media Links */}
+      <div className="mb-6">
+        <h3 className="font-semibold mb-2">Social Media Links</h3>
+        {["facebook", "instagram", "twitch", "youtube", "discord"].map((key) => (
+          <label key={key} className="block mb-2 capitalize">
+            {key}
             <input
-              type="number"
-              name="level"
-              value={formData.level}
-              onChange={handleChange}
-              className="w-full border rounded p-2 text-rift-bg"
+              type="url"
+              name={key}
+              value={formData.socials?.[key] || ""}
+              onChange={handleSocialChange}
+              className="w-full border rounded p-2"
+              placeholder={`Enter your ${key} link`}
             />
           </label>
+        ))}
+      </div>
 
-          {/* Avatar */}
-          <label className="block mb-2">
-            Avatar
-            <input type="file" accept="image/*" onChange={handleAvatarUpload} />
-          </label>
-
-          {/* ✅ Social Media Links */}
-          <div className="mt-6">
-            <h3 className="font-semibold mb-2">Social Media Links</h3>
-            {["facebook", "instagram", "twitch", "youtube", "discord"].map(
-              (key) => (
-                <label key={key} className="block mb-2 capitalize">
-                  {key}
-                  <input
-                    type="url"
-                    name={key}
-                    value={formData.socials?.[key] || ""}
-                    onChange={handleSocialChange}
-                    className="w-full border rounded p-2 text-rift-bg"
-                    placeholder={`Enter your ${key} link`}
-                  />
-                </label>
-              )
-            )}
-          </div>
-
-          {/* Save */}
-          <div className="flex gap-3 mt-4">
-            <button
-              onClick={handleSave}
-              className="px-6 py-2 bg-rift-card text-rift-gold border border-rift-gold/50 rounded"
-            >
-              Save Profile
-            </button>
-          </div>
-        </div>
+      {/* Save */}
+      <div className="flex gap-3 mt-4">
+        <button
+          onClick={handleSave}
+          className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+        >
+          Save Profile
+        </button>
       </div>
 
       {/* Champ Modal */}
@@ -418,7 +398,7 @@ export default function EditProfilePage() {
                   <img
                     src={`http://localhost:5000${champ.file}`}
                     alt={champ.name}
-                    className="w-20 h-20 object-cover rounded border border-rift-gold"
+                    className="w-20 h-20 object-cover rounded border"
                   />
                   <span className="text-sm mt-1">{champ.name}</span>
                 </div>

@@ -4,11 +4,15 @@ import { useParams } from "react-router-dom";
 import { getUserFromToken } from "../utils/auth.js";
 import AlliesSection from "../components/AlliesSection.jsx";
 
+// 👇 importera våra nya components
+import PostsSection from "../components/profile/PostsSection.jsx";
+
 export default function ProfilePage() {
   const { id } = useParams();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [champs, setChamps] = useState([]);
+  const [activeTab, setActiveTab] = useState("posts"); // 🔹 ny state för flikar
   const user = getUserFromToken();
 
   useEffect(() => {
@@ -207,6 +211,36 @@ export default function ProfilePage() {
                 )}
               </div>
             )}
+          </div>
+
+          {/* 🔹 Flikar */}
+          <div className="flex justify-center gap-6 mt-6">
+            <button
+              className={`px-4 py-2 ${activeTab === "posts" ? "bg-rift-gold text-black" : "bg-gray-200"}`}
+              onClick={() => setActiveTab("posts")}
+            >
+              POSTS
+            </button>
+            <button
+              className={`px-4 py-2 ${activeTab === "gallery" ? "bg-rift-gold text-black" : "bg-gray-200"}`}
+              onClick={() => setActiveTab("gallery")}
+            >
+              GALLERY
+            </button>
+            <button
+              className={`px-4 py-2 ${activeTab === "history" ? "bg-rift-gold text-black" : "bg-gray-200"}`}
+              onClick={() => setActiveTab("history")}
+            >
+              MATCH HISTORY
+            </button>
+          </div>
+
+          {/* 🔹 Innehållet beroende på flik */}
+          <div className="mt-6 w-full">
+          {activeTab === "posts" && <PostsSection profileUserId={profile.id} me={user} />}
+
+            {activeTab === "gallery" && <div>📷 Gallery kommer snart...</div>}
+            {activeTab === "history" && <div>⚔️ Match history kommer snart...</div>}
           </div>
         </div>
 

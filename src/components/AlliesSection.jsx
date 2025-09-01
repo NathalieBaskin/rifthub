@@ -5,14 +5,13 @@ import { Link, useNavigate } from "react-router-dom";
 
 export default function AlliesSection({ profileUserId }) {
   const me = getUserFromToken();
-  const navigate = useNavigate();  // ✅ här inne, inte utanför
+  const navigate = useNavigate();
 
-  const [myFriends, setMyFriends] = useState([]);          // mina vänner
-  const [profileFriends, setProfileFriends] = useState([]); // vänner för profilen jag kollar på
+  const [myFriends, setMyFriends] = useState([]);
+  const [profileFriends, setProfileFriends] = useState([]);
   const [search, setSearch] = useState("");
   const [results, setResults] = useState([]);
 
-  // 🔹 Hämta mina vänner
   async function fetchMyFriends() {
     const res = await fetch(`http://localhost:5000/api/friends/${me.id}`);
     if (!res.ok) return;
@@ -20,7 +19,6 @@ export default function AlliesSection({ profileUserId }) {
     setMyFriends(data);
   }
 
-  // 🔹 Hämta vänner för den profil jag kollar på
   async function fetchProfileFriends() {
     const res = await fetch(`http://localhost:5000/api/friends/${profileUserId}`);
     if (!res.ok) return;
@@ -28,7 +26,6 @@ export default function AlliesSection({ profileUserId }) {
     setProfileFriends(data);
   }
 
-  // 🔹 Sök användare
   async function handleSearch(e) {
     e.preventDefault();
     if (!search.trim()) return;
@@ -40,7 +37,6 @@ export default function AlliesSection({ profileUserId }) {
     setResults(data);
   }
 
-  // 🔹 Lägg till vän (ömsesidigt)
   async function addFriend(friendId) {
     await fetch("http://localhost:5000/api/friends", {
       method: "POST",
@@ -53,7 +49,6 @@ export default function AlliesSection({ profileUserId }) {
     fetchProfileFriends();
   }
 
-  // 🔹 Ta bort vän
   async function removeFriend(friendId) {
     if (!window.confirm("Delete? YES / NO")) return;
     await fetch(`http://localhost:5000/api/friends/${me.id}/${friendId}`, {
@@ -63,7 +58,6 @@ export default function AlliesSection({ profileUserId }) {
     fetchProfileFriends();
   }
 
-  // === useEffects ===
   useEffect(() => {
     if (me) {
       fetchMyFriends();
@@ -76,7 +70,6 @@ export default function AlliesSection({ profileUserId }) {
     }
   }, [profileUserId]);
 
-  // === Om jag kollar på MIN egen profil
   if (me.id === profileUserId) {
     return (
       <div className="p-4 bg-rift-card border border-rift-gold/40 rounded-md w-80">
@@ -90,7 +83,10 @@ export default function AlliesSection({ profileUserId }) {
             placeholder="Search username..."
             className="flex-1 border border-rift-gold/40 p-2 rounded bg-white text-rift-bg"
           />
-          <button type="submit" className="px-3 py-1 bg-rift-card border border-rift-gold/40 rounded text-rift-gold">
+          <button
+            type="submit"
+            className="px-3 py-1 bg-rift-card border border-rift-gold/40 rounded text-rift-gold"
+          >
             Search
           </button>
         </form>
@@ -101,17 +97,39 @@ export default function AlliesSection({ profileUserId }) {
             {results.map((u) => {
               const alreadyFriend = myFriends.some((f) => f.id === u.id);
               return (
-                <li key={u.id} className="flex justify-between items-center p-2 border rounded">
-                  <div className="flex items-center gap-2">
+                <li
+                  key={u.id}
+                  className="flex justify-between items-center p-2 border rounded hover:bg-rift-bg/40 cursor-pointer"
+                >
+                  {/* Klicka på hela vänstra delen → gå till profil */}
+                  <div
+                    className="flex items-center gap-2 flex-1"
+                    onClick={() => navigate(`/profile/${u.id}`)}
+                  >
                     <img
-                      src={u.avatar_url ? `http://localhost:5000${u.avatar_url}` : "/images/account-icon.png"}
+                      src={
+                        u.avatar_url
+                          ? `http://localhost:5000${u.avatar_url}`
+                          : "/images/account-icon.png"
+                      }
                       alt={u.username}
                       className="h-8 w-8 rounded-full"
                     />
-                    <span>{u.username}</span>
+                    <span className="text-rift-gold hover:underline">
+                      {u.username}
+                    </span>
                   </div>
+
                   {!alreadyFriend && (
-                    <button onClick={() => addFriend(u.id)} className="text-green-400">➕</button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation(); // förhindra att klicket triggar navigation
+                        addFriend(u.id);
+                      }}
+                      className="text-green-400"
+                    >
+                      ➕
+                    </button>
                   )}
                 </li>
               );
@@ -122,19 +140,34 @@ export default function AlliesSection({ profileUserId }) {
         {/* 👥 Vänner listan */}
         <ul className="space-y-2">
           {myFriends.map((f) => (
-            <li key={f.id} className="flex items-center justify-between p-2 border rounded">
+            <li
+              key={f.id}
+              className="flex items-center justify-between p-2 border rounded"
+            >
               <div className="flex items-center gap-2">
                 <img
-                  src={f.avatar_url ? `http://localhost:5000${f.avatar_url}` : "/images/account-icon.png"}
+                  src={
+                    f.avatar_url
+                      ? `http://localhost:5000${f.avatar_url}`
+                      : "/images/account-icon.png"
+                  }
                   alt={f.username}
                   className="h-10 w-10 rounded-full"
                 />
-                <Link to={`/profile/${f.id}`} className="text-rift-gold hover:underline">
+                <Link
+                  to={`/profile/${f.id}`}
+                  className="text-rift-gold hover:underline"
+                >
                   {f.username}
                 </Link>
               </div>
               <div className="flex gap-2">
-                <button onClick={() => removeFriend(f.id)} className="text-red-500">🗑</button>
+                <button
+                  onClick={() => removeFriend(f.id)}
+                  className="text-red-500"
+                >
+                  🗑
+                </button>
                 <button
                   onClick={() => navigate(`/chat?friend=${f.id}`)}
                   className="text-blue-400"
@@ -149,7 +182,7 @@ export default function AlliesSection({ profileUserId }) {
     );
   }
 
-  // === Om jag kollar på NÅGON ANNANS profil
+  // === Om jag kollar på någon annans profil
   const alreadyFriend = profileFriends.some((f) => f.id === me.id);
 
   return (
@@ -162,7 +195,7 @@ export default function AlliesSection({ profileUserId }) {
           onClick={() => addFriend(profileUserId)}
           className="px-4 py-2 bg-rift-card border border-rift-gold/40 rounded text-rift-gold"
         >
-          ➕ Lägg till som vän
+          ➕ Add to allies
         </button>
       )}
 
@@ -171,11 +204,18 @@ export default function AlliesSection({ profileUserId }) {
         {profileFriends.map((f) => (
           <li key={f.id} className="flex items-center gap-2 p-2 border rounded">
             <img
-              src={f.avatar_url ? `http://localhost:5000${f.avatar_url}` : "/images/account-icon.png"}
+              src={
+                f.avatar_url
+                  ? `http://localhost:5000${f.avatar_url}`
+                  : "/images/account-icon.png"
+              }
               alt={f.username}
               className="h-10 w-10 rounded-full"
             />
-            <Link to={`/profile/${f.id}`} className="text-rift-gold hover:underline">
+            <Link
+              to={`/profile/${f.id}`}
+              className="text-rift-gold hover:underline"
+            >
               {f.username}
             </Link>
           </li>

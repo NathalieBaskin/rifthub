@@ -1135,6 +1135,284 @@ app.delete("/api/comments/:id", (req, res) => {
     });
   });
 });
+// ===============================
+// USER POSTS (profilflik "Posts")
+// ===============================
+
+// 🗄️ Se till att tabellerna finns
+db.serialize(() => {
+  db.run(
+    `CREATE TABLE IF NOT EXISTS user_posts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      content TEXT NOT NULL,
+      image TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY(user_id) REFERENCES users(id)
+    )`
+  );
+
+  db.run(
+    `CREATE TABLE IF NOT EXISTS user_post_comments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      post_id INTEGER NOT NULL,
+      user_id INTEGER NOT NULL,
+      content TEXT NOT NULL,
+      parent_id INTEGER,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY(post_id) REFERENCES user_posts(id),
+      FOREIGN KEY(user_id) REFERENCES users(id)
+    )`
+  );
+
+  db.run(
+    `CREATE TABLE IF NOT EXISTS user_post_likes (
+      post_id INTEGER NOT NULL,
+      user_id INTEGER NOT NULL,
+      UNIQUE(post_id, user_id)
+    )`
+  );
+
+  db.run(
+    `CREATE TABLE IF NOT EXISTS user_post_comment_likes (
+      comment_id INTEGER NOT NULL,
+      user_id INTEGER NOT NULL,
+      UNIQUE(comment_id, user_id)
+    )`
+  );
+});
+
+/// 📜 Hämta alla posts för en användare
+app.get("/api/user-posts/:userId", (req, res) => {
+  const userId = Number(req.params.userId);
+  const meId = req.query.meId ? Number(req.query.meId) : null;
+
+  let sql;
+  let params;
+
+  if (meId) {
+    sql = `
+      SELECT up.id, up.content, up.image, up.created_at,
+             u.username AS author, u.id AS user_id,
+             (SELECT COUNT(*) FROM user_post_likes WHERE post_id = up.id) AS like_count,
+             (SELECT COUNT(*) FROM user_post_comments WHERE post_id = up.id) AS comment_count,
+             CASE WHEN EXISTS (
+               SELECT 1 FROM user_post_likes upl
+               WHERE upl.post_id = up.id AND upl.user_id = ?
+             ) THEN 1 ELSE 0 END AS liked_by_me
+      FROM user_posts up
+      JOIN users u ON u.id = up.user_id
+      WHERE up.user_id = ?
+      ORDER BY up.created_at DESC
+    `;
+    params = [meId, userId];
+  } else {
+    sql = `
+      SELECT up.id, up.content, up.image, up.created_at,
+             u.username AS author, u.id AS user_id,
+             (SELECT COUNT(*) FROM user_post_likes WHERE post_id = up.id) AS like_count,
+             (SELECT COUNT(*) FROM user_post_comments WHERE post_id = up.id) AS comment_count,
+             0 AS liked_by_me
+      FROM user_posts up
+      JOIN users u ON u.id = up.user_id
+      WHERE up.user_id = ?
+      ORDER BY up.created_at DESC
+    `;
+    params = [userId];
+  }
+
+  db.all(sql, params, (err, rows) => {
+    if (err) {
+      console.error("❌ Error in /api/user-posts:", err.message);
+      return res.status(500).json({ error: err.message });
+    }
+    res.json(rows || []);
+  });
+});
+
+
+// ✍️ Skapa nytt inlägg
+app.post("/api/user-posts", upload.single("image"), (req, res) => {
+  const { userId, content } = req.body;
+  if (!userId || !content) return res.status(400).json({ error: "Missing fields" });
+
+  const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
+
+  db.run(
+    `INSERT INTO user_posts (user_id, content, image)
+     VALUES (?, ?, ?)`,
+    [userId, content, imageUrl],
+    function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+
+      res.status(201).json({
+        id: this.lastID,
+        userId,
+        content,
+        image: imageUrl,
+        created_at: new Date().toISOString(),
+      });
+    }
+  );
+});
+
+// ❤️ Like/unlike post
+app.post("/api/user-posts/:id/like", (req, res) => {
+  const postId = Number(req.params.id);
+  const { userId } = req.body;
+  if (!userId) return res.status(400).json({ error: "Missing userId" });
+
+  db.get(
+    "SELECT 1 FROM user_post_likes WHERE post_id = ? AND user_id = ?",
+    [postId, userId],
+    (err, row) => {
+      if (err) return res.status(500).json({ error: err.message });
+
+      const finish = (liked) => {
+        db.get(
+          "SELECT COUNT(*) AS like_count FROM user_post_likes WHERE post_id = ?",
+          [postId],
+          (err2, r) => {
+            if (err2) return res.status(500).json({ error: err2.message });
+            res.json({ postId, like_count: r.like_count, liked });
+          }
+        );
+      };
+
+      if (row) {
+        db.run(
+          "DELETE FROM user_post_likes WHERE post_id = ? AND user_id = ?",
+          [postId, userId],
+          (err2) => {
+            if (err2) return res.status(500).json({ error: err2.message });
+            finish(false);
+          }
+        );
+      } else {
+        db.run(
+          "INSERT INTO user_post_likes (post_id, user_id) VALUES (?, ?)",
+          [postId, userId],
+          (err2) => {
+            if (err2) return res.status(500).json({ error: err2.message });
+            finish(true);
+          }
+        );
+      }
+    }
+  );
+});
+
+// 📜 Hämta kommentarer för en post
+app.get("/api/user-posts/:postId/comments", (req, res) => {
+  const postId = Number(req.params.postId);
+  const meId = req.query.meId ? Number(req.query.meId) : null;
+
+  const likedCol = meId
+    ? `CASE WHEN EXISTS (
+         SELECT 1 FROM user_post_comment_likes upl
+         WHERE upl.comment_id = c.id AND upl.user_id = ?
+       ) THEN 1 ELSE 0 END AS liked_by_me`
+    : `0 AS liked_by_me`;
+
+  const sql = `
+    SELECT c.id, c.post_id, c.user_id, c.content, c.parent_id, c.created_at,
+           u.username, up.avatar_url,
+           (SELECT COUNT(*) FROM user_post_comment_likes WHERE comment_id = c.id) AS like_count,
+           ${likedCol}
+    FROM user_post_comments c
+    JOIN users u ON u.id = c.user_id
+    LEFT JOIN user_profiles up ON up.user_id = u.id
+    WHERE c.post_id = ?
+    ORDER BY c.created_at ASC
+  `;
+
+  const params = meId ? [meId, postId] : [postId];
+
+  db.all(sql, params, (err, rows) => {
+    if (err) {
+      console.error("❌ Error in /api/user-posts/:postId/comments:", err.message);
+      return res.status(500).json({ error: err.message });
+    }
+    res.json(rows || []);
+  });
+});
+
+// ✍️ Skapa kommentar
+app.post("/api/user-posts/:postId/comments", (req, res) => {
+  const postId = Number(req.params.postId);
+  const { userId, content, parent_id } = req.body;
+  if (!userId || !content) return res.status(400).json({ error: "Missing fields" });
+
+  db.run(
+    `INSERT INTO user_post_comments (post_id, user_id, content, parent_id)
+     VALUES (?, ?, ?, ?)`,
+    [postId, userId, content, parent_id || null],
+    function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+
+      db.get(
+        `SELECT c.id, c.post_id, c.user_id, c.content, c.parent_id, c.created_at,
+                u.username, up.avatar_url,
+                0 AS like_count, 0 AS liked_by_me
+         FROM user_post_comments c
+         JOIN users u ON u.id = c.user_id
+         LEFT JOIN user_profiles up ON up.user_id = u.id
+         WHERE c.id = ?`,
+        [this.lastID],
+        (err2, row) => {
+          if (err2) return res.status(500).json({ error: err2.message });
+          res.status(201).json(row);
+        }
+      );
+    }
+  );
+});
+
+// ❤️ Like/unlike kommentar
+app.post("/api/user-post-comments/:id/like", (req, res) => {
+  const commentId = Number(req.params.id);
+  const { userId } = req.body;
+  if (!userId) return res.status(400).json({ error: "Missing userId" });
+
+  db.get(
+    "SELECT 1 FROM user_post_comment_likes WHERE comment_id = ? AND user_id = ?",
+    [commentId, userId],
+    (err, row) => {
+      if (err) return res.status(500).json({ error: err.message });
+
+      const finish = (liked) => {
+        db.get(
+          "SELECT COUNT(*) AS like_count FROM user_post_comment_likes WHERE comment_id = ?",
+          [commentId],
+          (err2, r) => {
+            if (err2) return res.status(500).json({ error: err2.message });
+            res.json({ commentId, like_count: r.like_count, liked });
+          }
+        );
+      };
+
+      if (row) {
+        db.run(
+          "DELETE FROM user_post_comment_likes WHERE comment_id = ? AND user_id = ?",
+          [commentId, userId],
+          (err2) => {
+            if (err2) return res.status(500).json({ error: err2.message });
+            finish(false);
+          }
+        );
+      } else {
+        db.run(
+          "INSERT INTO user_post_comment_likes (comment_id, user_id) VALUES (?, ?)",
+          [commentId, userId],
+          (err2) => {
+            if (err2) return res.status(500).json({ error: err2.message });
+            finish(true);
+          }
+        );
+      }
+    }
+  );
+});
 
 
 // ===============================

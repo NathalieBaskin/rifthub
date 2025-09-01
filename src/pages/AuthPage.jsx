@@ -1,6 +1,6 @@
 // src/pages/AuthPage.jsx
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 export default function AuthPage() {
   const [loginUsername, setLoginUsername] = useState("");
@@ -11,7 +11,14 @@ export default function AuthPage() {
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // 🔹 Hämta query-parametrar (t.ex. ?redirect=/summoners-hall&open=new)
+  const queryParams = new URLSearchParams(location.search);
+  const redirect = queryParams.get("redirect") || "/";
+  const open = queryParams.get("open") || null;
 
   // ===== LOGIN =====
   const handleLogin = async (e) => {
@@ -34,7 +41,9 @@ export default function AuthPage() {
       }
 
       localStorage.setItem("token", data.token);
-      navigate("/"); // gå till startsidan
+
+      // 🔹 Skicka tillbaka till redirect (ex: /summoners-hall?open=new)
+      navigate(redirect + (open ? `?open=${open}` : ""));
     } catch (err) {
       console.error(err);
       setError("Server error");
@@ -65,10 +74,16 @@ export default function AuthPage() {
         return;
       }
 
-      setSuccess("Account created successfully! You can now log in.");
-      setRegUsername("");
-      setRegEmail("");
-      setRegPassword("");
+      // 🔹 Spara token direkt så att man är inloggad efter registrering
+      if (data.token) {
+        localStorage.setItem("token", data.token);
+        navigate(redirect + (open ? `?open=${open}` : ""));
+      } else {
+        setSuccess("Account created successfully! You can now log in.");
+        setRegUsername("");
+        setRegEmail("");
+        setRegPassword("");
+      }
     } catch (err) {
       console.error(err);
       setError("Server error");
@@ -76,19 +91,19 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-rift-bg text-gray-100">
-      <div className="w-full max-w-md bg-rift-card/80 p-6 rounded-xl shadow-lg space-y-6">
+    <div className="min-h-screen flex items-center justify-center text-black">
+      <div className="w-full max-w-md bg-white p-6 rounded-xl shadow-lg space-y-6">
         <h2 className="text-2xl font-display text-rift-gold text-center mb-2">
-          Logga in
+          Login
         </h2>
 
         {error && (
-          <p className="bg-red-500/20 text-red-400 p-2 rounded mb-3 text-center">
+          <p className="bg-red-500/20 text-red-600 p-2 rounded mb-3 text-center">
             {error}
           </p>
         )}
         {success && (
-          <p className="bg-green-500/20 text-green-400 p-2 rounded mb-3 text-center">
+          <p className="bg-green-500/20 text-green-600 p-2 rounded mb-3 text-center">
             {success}
           </p>
         )}
@@ -96,23 +111,23 @@ export default function AuthPage() {
         {/* LOGIN FORM */}
         <form onSubmit={handleLogin} className="space-y-3">
           <div>
-            <label className="block text-sm mb-1">Användarnamn eller Email</label>
+            <label className="block text-sm mb-1">Username or Email</label>
             <input
               type="text"
               value={loginUsername}
               onChange={(e) => setLoginUsername(e.target.value)}
-              className="w-full px-3 py-2 rounded-md bg-white/90 text-rift-bg border border-rift-gold/40 focus:outline-none focus:ring-2 focus:ring-rift-gold"
+              className="w-full px-3 py-2 rounded-md bg-white text-black border border-rift-gold/40 focus:outline-none focus:ring-2 focus:ring-rift-gold"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm mb-1">Lösenord</label>
+            <label className="block text-sm mb-1">Password</label>
             <input
               type="password"
               value={loginPassword}
               onChange={(e) => setLoginPassword(e.target.value)}
-              className="w-full px-3 py-2 rounded-md bg-white/90 text-rift-bg border border-rift-gold/40 focus:outline-none focus:ring-2 focus:ring-rift-gold"
+              className="w-full px-3 py-2 rounded-md bg-white text-rift-bg border border-rift-gold/40 focus:outline-none focus:ring-gold"
               required
             />
           </div>
@@ -121,7 +136,7 @@ export default function AuthPage() {
             type="submit"
             className="w-full py-2 bg-rift-gold text-rift-bg font-semibold rounded-md hover:brightness-105 transition"
           >
-            Logga in
+            Login
           </button>
         </form>
 
@@ -129,17 +144,17 @@ export default function AuthPage() {
 
         {/* REGISTER FORM */}
         <h3 className="text-xl font-display text-rift-gold text-center mb-2">
-          Är du inte medlem? Registrera dig
+          Not a member yet? Register
         </h3>
 
         <form onSubmit={handleRegister} className="space-y-3">
           <div>
-            <label className="block text-sm mb-1">Användarnamn</label>
+            <label className="block text-sm mb-1">Username</label>
             <input
               type="text"
               value={regUsername}
               onChange={(e) => setRegUsername(e.target.value)}
-              className="w-full px-3 py-2 rounded-md bg-white/90 text-rift-bg border border-rift-gold/40 focus:outline-none focus:ring-2 focus:ring-rift-gold"
+              className="w-full px-3 py-2 rounded"
               required
             />
           </div>
@@ -150,27 +165,27 @@ export default function AuthPage() {
               type="email"
               value={regEmail}
               onChange={(e) => setRegEmail(e.target.value)}
-              className="w-full px-3 py-2 rounded-md bg-white/90 text-rift-bg border border-rift-gold/40 focus:outline-none focus:ring-2 focus:ring-rift-gold"
+              className="w-full border p-2 rounded"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm mb-1">Lösenord</label>
+            <label className="block text-sm mb-1">Password</label>
             <input
               type="password"
               value={regPassword}
               onChange={(e) => setRegPassword(e.target.value)}
-              className="w-full px-3 py-2 rounded-md bg-white/90 text-rift-bg border border-rift-gold/40 focus:outline-none focus:ring-2 focus:ring-rift-gold"
+              className="w-full border p-2 rounded"
               required
             />
           </div>
 
           <button
             type="submit"
-            className="w-full py-2 bg-rift-gold text-rift-bg font-semibold rounded-md hover:brightness-105 transition"
+            className="w-full py-2 bg-rift-card text-rift-bg font-semibold rounded-md hover:brightness-105 transition"
           >
-            Skapa konto
+            Register
           </button>
         </form>
       </div>
