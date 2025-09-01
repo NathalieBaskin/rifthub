@@ -216,19 +216,19 @@ export default function ProfilePage() {
           {/* 🔹 Flikar */}
           <div className="flex justify-center gap-6 mt-6">
             <button
-              className={`px-4 py-2 ${activeTab === "posts" ? "bg-rift-gold text-black" : "bg-gray-200"}`}
+              className={`px-4 py-2 ${activeTab === "posts" ? "bg-green-950 text-white" : "bg-green-950"}`}
               onClick={() => setActiveTab("posts")}
             >
               POSTS
             </button>
             <button
-              className={`px-4 py-2 ${activeTab === "gallery" ? "bg-rift-gold text-black" : "bg-gray-200"}`}
+              className={`px-4 py-2 ${activeTab === "gallery" ? "bg-green-950 text-white" : "bg-green-950"}`}
               onClick={() => setActiveTab("gallery")}
             >
               GALLERY
             </button>
             <button
-              className={`px-4 py-2 ${activeTab === "history" ? "bg-rift-gold text-black" : "bg-gray-200"}`}
+              className={`px-4 py-2 ${activeTab === "history" ? "bg-green-950 text-white" : "bg-green-950"}`}
               onClick={() => setActiveTab("history")}
             >
               MATCH HISTORY
