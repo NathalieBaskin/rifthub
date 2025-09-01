@@ -1677,6 +1677,299 @@ app.post("/api/albums/:id/comments", (req, res) => {
     }
   );
 });
+// ===============================
+// ALBUM ITEMS (bilder i album)
+// ===============================
+
+// se till att tabellerna finns
+db.serialize(() => {
+  db.run(`
+    CREATE TABLE IF NOT EXISTS album_item_likes (
+      item_id INTEGER NOT NULL,
+      user_id INTEGER NOT NULL,
+      UNIQUE(item_id, user_id),
+      FOREIGN KEY(item_id) REFERENCES album_items(id) ON DELETE CASCADE,
+      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+    )
+  `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS album_item_comments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      item_id INTEGER NOT NULL,
+      user_id INTEGER NOT NULL,
+      content TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY(item_id) REFERENCES album_items(id) ON DELETE CASCADE,
+      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+    )
+  `);
+});
+
+// 📜 Hämta en specifik bild (inkl likes & kommentarer)
+app.get("/api/album-items/:id", (req, res) => {
+  const itemId = Number(req.params.id);
+  const meId = req.query.meId ? Number(req.query.meId) : null;
+
+  db.get(
+    `SELECT ai.id, ai.media_url, ai.created_at,
+            (SELECT COUNT(*) FROM album_item_likes WHERE item_id = ai.id) AS like_count,
+            ${
+              meId
+                ? `CASE WHEN EXISTS (
+                     SELECT 1 FROM album_item_likes 
+                     WHERE item_id = ai.id AND user_id = ?
+                   ) THEN 1 ELSE 0 END`
+                : `0`
+            } AS liked_by_me
+     FROM album_items ai
+     WHERE ai.id = ?`,
+    [meId || -1, itemId],
+    (err, item) => {
+      if (err) return res.status(500).json({ error: err.message });
+      if (!item) return res.status(404).json({ error: "Image not found" });
+
+      db.all(
+        `SELECT c.id, c.item_id, c.user_id, c.content, c.created_at,
+                u.username, up.avatar_url
+         FROM album_item_comments c
+         JOIN users u ON u.id = c.user_id
+         LEFT JOIN user_profiles up ON up.user_id = u.id
+         WHERE c.item_id = ?
+         ORDER BY c.created_at ASC`,
+        [itemId],
+        (err2, comments) => {
+          if (err2) return res.status(500).json({ error: err2.message });
+          res.json({ ...item, comments });
+        }
+      );
+    }
+  );
+});
+
+// ❤️ Like/unlike en bild
+app.post("/api/album-items/:id/like", (req, res) => {
+  const itemId = Number(req.params.id);
+  const { userId } = req.body;
+  if (!userId) return res.status(400).json({ error: "Missing userId" });
+
+  db.get(
+    "SELECT 1 FROM album_item_likes WHERE item_id = ? AND user_id = ?",
+    [itemId, userId],
+    (err, row) => {
+      if (err) return res.status(500).json({ error: err.message });
+
+      const finish = (liked) => {
+        db.get(
+          "SELECT COUNT(*) AS count FROM album_item_likes WHERE item_id = ?",
+          [itemId],
+          (err2, r) => {
+            if (err2) return res.status(500).json({ error: err2.message });
+            res.json({ itemId, like_count: r.count, liked });
+          }
+        );
+      };
+
+      if (row) {
+        db.run(
+          "DELETE FROM album_item_likes WHERE item_id = ? AND user_id = ?",
+          [itemId, userId],
+          (err2) => {
+            if (err2) return res.status(500).json({ error: err2.message });
+            finish(false);
+          }
+        );
+      } else {
+        db.run(
+          "INSERT INTO album_item_likes (item_id, user_id) VALUES (?, ?)",
+          [itemId, userId],
+          (err2) => {
+            if (err2) return res.status(500).json({ error: err2.message });
+            finish(true);
+          }
+        );
+      }
+    }
+  );
+});
+
+// ✍️ Kommentera en bild
+app.post("/api/album-items/:id/comments", (req, res) => {
+  const itemId = Number(req.params.id);
+  const { userId, content } = req.body;
+  if (!userId || !content)
+    return res.status(400).json({ error: "Missing fields" });
+
+  db.run(
+    `INSERT INTO album_item_comments (item_id, user_id, content)
+     VALUES (?, ?, ?)`,
+    [itemId, userId, content],
+    function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+
+      db.get(
+        `SELECT c.id, c.item_id, c.user_id, c.content, c.created_at,
+                u.username, up.avatar_url
+         FROM album_item_comments c
+         JOIN users u ON u.id = c.user_id
+         LEFT JOIN user_profiles up ON up.user_id = u.id
+         WHERE c.id = ?`,
+        [this.lastID],
+        (err2, row) => {
+          if (err2) return res.status(500).json({ error: err2.message });
+          res.status(201).json(row);
+        }
+      );
+    }
+  );
+});
+
+// ===============================
+// ALBUM ITEMS (bilder i album)
+// ===============================
+
+// se till att tabellerna finns
+db.serialize(() => {
+  db.run(`
+    CREATE TABLE IF NOT EXISTS album_item_likes (
+      item_id INTEGER NOT NULL,
+      user_id INTEGER NOT NULL,
+      UNIQUE(item_id, user_id),
+      FOREIGN KEY(item_id) REFERENCES album_items(id) ON DELETE CASCADE,
+      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+    )
+  `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS album_item_comments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      item_id INTEGER NOT NULL,
+      user_id INTEGER NOT NULL,
+      content TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY(item_id) REFERENCES album_items(id) ON DELETE CASCADE,
+      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+    )
+  `);
+});
+
+// 📜 Hämta en specifik bild (inkl likes & kommentarer)
+app.get("/api/album-items/:id", (req, res) => {
+  const itemId = Number(req.params.id);
+  const meId = req.query.meId ? Number(req.query.meId) : null;
+
+  db.get(
+    `SELECT ai.id, ai.media_url, ai.created_at,
+            (SELECT COUNT(*) FROM album_item_likes WHERE item_id = ai.id) AS like_count,
+            ${
+              meId
+                ? `CASE WHEN EXISTS (
+                     SELECT 1 FROM album_item_likes 
+                     WHERE item_id = ai.id AND user_id = ?
+                   ) THEN 1 ELSE 0 END`
+                : `0`
+            } AS liked_by_me
+     FROM album_items ai
+     WHERE ai.id = ?`,
+    [meId || -1, itemId],
+    (err, item) => {
+      if (err) return res.status(500).json({ error: err.message });
+      if (!item) return res.status(404).json({ error: "Image not found" });
+
+      db.all(
+        `SELECT c.id, c.item_id, c.user_id, c.content, c.created_at,
+                u.username, up.avatar_url
+         FROM album_item_comments c
+         JOIN users u ON u.id = c.user_id
+         LEFT JOIN user_profiles up ON up.user_id = u.id
+         WHERE c.item_id = ?
+         ORDER BY c.created_at ASC`,
+        [itemId],
+        (err2, comments) => {
+          if (err2) return res.status(500).json({ error: err2.message });
+          res.json({ ...item, comments });
+        }
+      );
+    }
+  );
+});
+
+// ❤️ Like/unlike en bild
+app.post("/api/album-items/:id/like", (req, res) => {
+  const itemId = Number(req.params.id);
+  const { userId } = req.body;
+  if (!userId) return res.status(400).json({ error: "Missing userId" });
+
+  db.get(
+    "SELECT 1 FROM album_item_likes WHERE item_id = ? AND user_id = ?",
+    [itemId, userId],
+    (err, row) => {
+      if (err) return res.status(500).json({ error: err.message });
+
+      const finish = (liked) => {
+        db.get(
+          "SELECT COUNT(*) AS count FROM album_item_likes WHERE item_id = ?",
+          [itemId],
+          (err2, r) => {
+            if (err2) return res.status(500).json({ error: err2.message });
+            res.json({ itemId, like_count: r.count, liked });
+          }
+        );
+      };
+
+      if (row) {
+        db.run(
+          "DELETE FROM album_item_likes WHERE item_id = ? AND user_id = ?",
+          [itemId, userId],
+          (err2) => {
+            if (err2) return res.status(500).json({ error: err2.message });
+            finish(false);
+          }
+        );
+      } else {
+        db.run(
+          "INSERT INTO album_item_likes (item_id, user_id) VALUES (?, ?)",
+          [itemId, userId],
+          (err2) => {
+            if (err2) return res.status(500).json({ error: err2.message });
+            finish(true);
+          }
+        );
+      }
+    }
+  );
+});
+
+// ✍️ Kommentera en bild
+app.post("/api/album-items/:id/comments", (req, res) => {
+  const itemId = Number(req.params.id);
+  const { userId, content } = req.body;
+  if (!userId || !content)
+    return res.status(400).json({ error: "Missing fields" });
+
+  db.run(
+    `INSERT INTO album_item_comments (item_id, user_id, content)
+     VALUES (?, ?, ?)`,
+    [itemId, userId, content],
+    function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+
+      db.get(
+        `SELECT c.id, c.item_id, c.user_id, c.content, c.created_at,
+                u.username, up.avatar_url
+         FROM album_item_comments c
+         JOIN users u ON u.id = c.user_id
+         LEFT JOIN user_profiles up ON up.user_id = u.id
+         WHERE c.id = ?`,
+        [this.lastID],
+        (err2, row) => {
+          if (err2) return res.status(500).json({ error: err2.message });
+          res.status(201).json(row);
+        }
+      );
+    }
+  );
+});
 
 // ===============================
 // Starta servern

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import AlbumImageModal from "./AlbumImageModal.jsx";
 
 const API_URL = "http://localhost:5000";
 
@@ -6,6 +7,7 @@ export default function AlbumModal({ album, onClose, me }) {
   const [details, setDetails] = useState(null);
   const [comment, setComment] = useState("");
   const [comments, setComments] = useState([]);
+  const [openImageId, setOpenImageId] = useState(null);
 
   async function fetchAlbum() {
     const uid = me?.id ? `?meId=${me.id}` : "";
@@ -85,7 +87,8 @@ export default function AlbumModal({ album, onClose, me }) {
               key={img.id}
               src={`${API_URL}${img.media_url}`}
               alt="album item"
-              className="w-full h-40 object-cover rounded"
+              className="w-full h-40 object-cover rounded cursor-pointer hover:opacity-80"
+              onClick={() => setOpenImageId(img.id)}
             />
           ))}
         </div>
@@ -146,6 +149,14 @@ export default function AlbumModal({ album, onClose, me }) {
           )}
         </div>
       </div>
+
+      {openImageId && (
+        <AlbumImageModal
+          itemId={openImageId}
+          onClose={() => setOpenImageId(null)}
+          me={me}
+        />
+      )}
     </div>
   );
 }
