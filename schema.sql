@@ -175,7 +175,7 @@ CREATE TABLE album_comments (
 CREATE TABLE champions (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL,
-  lane TEXT CHECK(lane IN ('top','jungle','mid','adc','support')),
+  lane TEXT CHECK(lane IN ('top','jungle','mid','bot','support')),
   image_url TEXT
 );
 

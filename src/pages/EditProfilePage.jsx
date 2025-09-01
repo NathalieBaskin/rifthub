@@ -169,7 +169,7 @@ export default function EditProfilePage() {
     "challenger"
   ];
 
-  const roleOptions = ["top", "jungle", "mid", "adc", "support"];
+  const roleOptions = ["top", "jungle", "mid", "bot", "support"];
 
   return (
     <div className="max-w-3xl mx-auto mt-10 p-6 bg-white text-black rounded shadow">

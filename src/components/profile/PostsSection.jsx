@@ -71,7 +71,7 @@ export default function PostsSection({ profileUserId, me }) {
         />
         <button
           type="submit"
-          className="mt-2 bg-blue-500 text-white px-4 py-1 rounded"
+          className="mt-2 bg-green-950 text-white px-4 py-1 rounded"
         >
           Post
                   </button>
@@ -83,7 +83,7 @@ export default function PostsSection({ profileUserId, me }) {
           <PostCard key={post.id} post={post} me={me} refresh={fetchPosts} />
         ))}
         {posts.length === 0 && (
-          <p className="text-gray-500 italic">Inga inlägg ännu...</p>
+          <p className="text-gray-500 italic">No posts yet...</p>
         )}
       </div>
     </div>

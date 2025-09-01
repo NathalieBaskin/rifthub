@@ -73,7 +73,7 @@ export default function AlliesSection({ profileUserId }) {
   if (me.id === profileUserId) {
     return (
       <div className="p-4 bg-rift-card border border-rift-gold/40 rounded-md w-80">
-        <h2 className="text-xl font-bold text-rift-gold mb-4">My Allies</h2>
+        <h2 className="text-xl font-bold text-rift-gold mb-4">Allies</h2>
 
         {/* 🔍 Sökfält */}
         <form onSubmit={handleSearch} className="mb-4 flex gap-2">

@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { getUserFromToken } from "../utils/auth.js";
 import AlliesSection from "../components/AlliesSection.jsx";
+import GallerySection from "../components/profile/GallerySection.jsx";
+
 
 // 👇 importera våra nya components
 import PostsSection from "../components/profile/PostsSection.jsx";
@@ -238,8 +240,9 @@ export default function ProfilePage() {
           {/* 🔹 Innehållet beroende på flik */}
           <div className="mt-6 w-full">
           {activeTab === "posts" && <PostsSection profileUserId={profile.id} me={user} />}
+{activeTab === "gallery" && <GallerySection profileUserId={profile.id} me={user} />}
 
-            {activeTab === "gallery" && <div>📷 Gallery kommer snart...</div>}
+
             {activeTab === "history" && <div>⚔️ Match history kommer snart...</div>}
           </div>
         </div>

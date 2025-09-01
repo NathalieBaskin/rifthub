@@ -1414,6 +1414,269 @@ app.post("/api/user-post-comments/:id/like", (req, res) => {
   );
 });
 
+// ===============================
+// ALBUMS (Gallery system)
+// ===============================
+
+db.serialize(() => {
+  db.run(`
+    CREATE TABLE IF NOT EXISTS albums (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      title TEXT NOT NULL,
+      cover TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+    )
+  `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS album_items (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      album_id INTEGER NOT NULL,
+      media_url TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY(album_id) REFERENCES albums(id) ON DELETE CASCADE
+    )
+  `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS album_likes (
+      album_id INTEGER NOT NULL,
+      user_id INTEGER NOT NULL,
+      UNIQUE(album_id, user_id),
+      FOREIGN KEY(album_id) REFERENCES albums(id) ON DELETE CASCADE,
+      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+    )
+  `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS album_comments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      album_id INTEGER NOT NULL,
+      user_id INTEGER NOT NULL,
+      content TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY(album_id) REFERENCES albums(id) ON DELETE CASCADE,
+      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+    )
+  `);
+});
+
+// 📜 Hämta alla album för en användare
+app.get("/api/albums/user/:userId", (req, res) => {
+  const userId = Number(req.params.userId);
+  const meId = req.query.meId ? Number(req.query.meId) : null;
+
+  const likedCol = meId
+    ? `CASE WHEN EXISTS (
+         SELECT 1
+         FROM album_likes
+         WHERE album_id = a.id AND user_id = ${meId}
+       ) THEN 1 ELSE 0 END AS liked_by_me`
+    : `0 AS liked_by_me`;
+
+  const sql = `
+    SELECT 
+      a.id, 
+      a.title, 
+      a.cover, 
+      a.created_at,
+      u.username AS author, 
+      u.id AS user_id,
+      (SELECT COUNT(*) FROM album_likes WHERE album_id = a.id) AS like_count,
+      (SELECT COUNT(*) FROM album_comments WHERE album_id = a.id) AS comment_count,
+      ${likedCol}
+    FROM albums a
+    JOIN users u ON u.id = a.user_id
+    WHERE a.user_id = ?
+    ORDER BY a.created_at DESC
+  `;
+
+  db.all(sql, [userId], (err, rows) => {
+    if (err) {
+      console.error("❌ Error in /api/albums/user/:userId:", err.message);
+      return res.status(500).json({ error: err.message });
+    }
+    res.json(rows || []);
+  });
+});
+
+// ✍️ Skapa nytt album (med bilder)
+app.post("/api/albums", upload.array("images", 10), (req, res) => {
+  const { userId, title, coverIndex } = req.body;
+  if (!userId || !title) return res.status(400).json({ error: "Missing fields" });
+
+  const files = req.files || [];
+  if (files.length === 0) return res.status(400).json({ error: "No images uploaded" });
+
+  // coverIndex bestämmer vilken bild som blir cover (default = första bilden)
+  const coverFile = files[coverIndex ? Number(coverIndex) : 0];
+  const coverUrl = coverFile ? `/uploads/${coverFile.filename}` : null;
+
+  db.run(
+    `INSERT INTO albums (user_id, title, cover) VALUES (?, ?, ?)`,
+    [userId, title, coverUrl],
+    function (err) {
+      if (err) {
+        console.error("❌ Error inserting album:", err.message);
+        return res.status(500).json({ error: err.message });
+      }
+
+      const albumId = this.lastID;
+
+      const stmt = db.prepare(
+        "INSERT INTO album_items (album_id, media_url) VALUES (?, ?)"
+      );
+      files.forEach((file) => {
+        stmt.run(albumId, `/uploads/${file.filename}`);
+      });
+      stmt.finalize();
+
+      res.status(201).json({ success: true, id: albumId, cover: coverUrl });
+    }
+  );
+});
+
+// 📜 Hämta ett specifikt album (med bilder, kommentarer, likes)
+app.get("/api/albums/:id", (req, res) => {
+  const albumId = Number(req.params.id);
+  const meId = req.query.meId ? Number(req.query.meId) : null;
+
+  db.get(
+    `SELECT 
+        a.id,
+        a.title,
+        a.cover,
+        a.created_at,
+        u.username AS author,
+        u.id AS user_id,
+        (SELECT COUNT(*) FROM album_likes WHERE album_id = a.id) AS like_count,
+        (SELECT COUNT(*) FROM album_comments WHERE album_id = a.id) AS comment_count,
+        ${meId ? `CASE WHEN EXISTS (
+            SELECT 1
+            FROM album_likes
+            WHERE album_id = a.id AND user_id = ?
+        ) THEN 1 ELSE 0 END` : `0`} AS liked_by_me
+     FROM albums a
+     JOIN users u ON u.id = a.user_id
+     WHERE a.id = ?`,
+    [meId || -1, albumId],
+    (err, album) => {
+      if (err) {
+        console.error("❌ Error in /api/albums/:id:", err.message);
+        return res.status(500).json({ error: err.message });
+      }
+      if (!album) return res.status(404).json({ error: "Album not found" });
+
+      db.all(
+        `SELECT ai.id, ai.media_url, ai.created_at
+         FROM album_items ai
+         WHERE ai.album_id = ?
+         ORDER BY ai.created_at ASC`,
+        [albumId],
+        (err2, images) => {
+          if (err2) return res.status(500).json({ error: err2.message });
+
+          db.all(
+            `SELECT ac.id, ac.album_id, ac.user_id, ac.content, ac.created_at,
+                    u.username, up.avatar_url
+             FROM album_comments ac
+             JOIN users u ON u.id = ac.user_id
+             LEFT JOIN user_profiles up ON up.user_id = u.id
+             WHERE ac.album_id = ?
+             ORDER BY ac.created_at ASC`,
+            [albumId],
+            (err3, comments) => {
+              if (err3) return res.status(500).json({ error: err3.message });
+              res.json({ ...album, images, comments });
+            }
+          );
+        }
+      );
+    }
+  );
+});
+
+// ❤️ Like/unlike album
+app.post("/api/albums/:id/like", (req, res) => {
+  const albumId = Number(req.params.id);
+  const { userId } = req.body;
+  if (!userId) return res.status(400).json({ error: "Missing userId" });
+
+  db.get(
+    "SELECT 1 FROM album_likes WHERE album_id = ? AND user_id = ?",
+    [albumId, userId],
+    (err, row) => {
+      if (err) return res.status(500).json({ error: err.message });
+
+      const finish = (liked) => {
+        db.get(
+          "SELECT COUNT(*) AS count FROM album_likes WHERE album_id = ?",
+          [albumId],
+          (err2, r) => {
+            if (err2) return res.status(500).json({ error: err2.message });
+            res.json({ albumId, like_count: r.count, liked });
+          }
+        );
+      };
+
+      if (row) {
+        db.run(
+          "DELETE FROM album_likes WHERE album_id = ? AND user_id = ?",
+          [albumId, userId],
+          (err2) => {
+            if (err2) return res.status(500).json({ error: err2.message });
+            finish(false);
+          }
+        );
+      } else {
+        db.run(
+          "INSERT INTO album_likes (album_id, user_id) VALUES (?, ?)",
+          [albumId, userId],
+          (err2) => {
+            if (err2) return res.status(500).json({ error: err2.message });
+            finish(true);
+          }
+        );
+      }
+    }
+  );
+});
+
+// ✍️ Skapa kommentar
+app.post("/api/albums/:id/comments", (req, res) => {
+  const albumId = Number(req.params.id);
+  const { userId, content } = req.body;
+  if (!userId || !content) return res.status(400).json({ error: "Missing fields" });
+
+  db.run(
+    `INSERT INTO album_comments (album_id, user_id, content)
+     VALUES (?, ?, ?)`,
+
+    [albumId, userId, content],
+    function (err) {
+      if (err) {
+        console.error("❌ Error in /api/albums/:id/comments:", err.message);
+        return res.status(500).json({ error: err.message });
+      }
+
+      db.get(
+        `SELECT ac.id, ac.album_id, ac.user_id, ac.content, ac.created_at,
+                u.username, up.avatar_url
+         FROM album_comments ac
+         JOIN users u ON u.id = ac.user_id
+         LEFT JOIN user_profiles up ON up.user_id = u.id
+         WHERE ac.id = ?`,
+        [this.lastID],
+        (err2, row) => {
+          if (err2) return res.status(500).json({ error: err2.message });
+          res.status(201).json(row);
+        }
+      );
+    }
+  );
+});
 
 // ===============================
 // Starta servern
