@@ -67,6 +67,27 @@ export default function AlbumModal({ album, onClose, me }) {
     }
   }
 
+  async function handleDeleteComment(commentId) {
+    if (!me) return;
+    if (!window.confirm("Vill du verkligen radera din kommentar?")) return;
+
+    const res = await fetch(`${API_URL}/api/album-comments/${commentId}`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: me.id }),
+    });
+
+    if (res.ok) {
+      setComments((prev) => prev.filter((c) => c.id !== commentId));
+      setDetails((prev) => ({
+        ...prev,
+        comment_count: (prev.comment_count || 1) - 1,
+      }));
+    } else {
+      console.error(await res.text());
+    }
+  }
+
   async function handleUpdateAlbum(e) {
     e.preventDefault();
     if (!me) return;
@@ -156,11 +177,11 @@ export default function AlbumModal({ album, onClose, me }) {
       onClick={onClose}
     >
       <div
-        className="bg-white text-black rounded-lg shadow-lg w-full max-w-2xl max-h-[80vh] flex flex-col"
+        className="bg-white text-black rounded-lg shadow-lg w-full max-w-2xl max-h-[80vh] flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="p-4 border-b flex justify-between items-center">
+        <div className="p-4 border-b flex justify-between items-center shrink-0 sticky top-0 bg-white z-10">
           {editMode ? (
             <form onSubmit={handleUpdateAlbum} className="flex gap-2 w-full">
               <input
@@ -291,6 +312,15 @@ export default function AlbumModal({ album, onClose, me }) {
                     className="w-8 h-8 rounded-full"
                   />
                   <span className="font-medium">{c.username}</span>
+
+                  {me && me.id === c.user_id && (
+                    <button
+                      onClick={() => handleDeleteComment(c.id)}
+                      className="ml-auto text-xs text-red-600 hover:underline"
+                    >
+                      Delete
+                    </button>
+                  )}
                 </div>
                 <p className="ml-10 text-sm">{c.content}</p>
               </div>
@@ -321,6 +351,7 @@ export default function AlbumModal({ album, onClose, me }) {
       {openImageId && (
         <AlbumImageModal
           itemId={openImageId}
+          images={details.images}
           onClose={() => setOpenImageId(null)}
           me={me}
         />

@@ -1841,6 +1841,30 @@ app.post("/api/albums/:id/comments", (req, res) => {
     }
   );
 });
+// ❌ Ta bort en kommentar i ett album (endast ägaren)
+app.delete("/api/album-comments/:id", (req, res) => {
+  const commentId = Number(req.params.id);
+  const { userId } = req.body;
+
+  if (!userId) return res.status(400).json({ error: "Missing userId" });
+
+  // Hämta kommentaren
+  db.get("SELECT user_id FROM album_comments WHERE id = ?", [commentId], (err, com) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!com) return res.status(404).json({ error: "Comment not found" });
+
+    // Bara ägaren får ta bort
+    if (com.user_id !== Number(userId)) {
+      return res.status(403).json({ error: "Not allowed" });
+    }
+
+    db.run("DELETE FROM album_comments WHERE id = ?", [commentId], function (err2) {
+      if (err2) return res.status(500).json({ error: err2.message });
+      res.json({ success: true });
+    });
+  });
+});
+
 // ===============================
 // ALBUM ITEMS (bilder i album)
 // ===============================
@@ -2088,6 +2112,27 @@ app.delete("/api/album-items/:id", (req, res) => {
         if (err3) return res.status(500).json({ error: err3.message });
         res.json({ success: true });
       });
+    });
+  });
+});
+// ❌ Ta bort en kommentar på en bild
+app.delete("/api/album-item-comments/:id", (req, res) => {
+  const commentId = Number(req.params.id);
+  const { userId } = req.body;
+
+  if (!userId) return res.status(400).json({ error: "Missing userId" });
+
+  db.get("SELECT user_id FROM album_item_comments WHERE id = ?", [commentId], (err, com) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!com) return res.status(404).json({ error: "Comment not found" });
+
+    if (com.user_id !== Number(userId)) {
+      return res.status(403).json({ error: "Not allowed" });
+    }
+
+    db.run("DELETE FROM album_item_comments WHERE id = ?", [commentId], function (err2) {
+      if (err2) return res.status(500).json({ error: err2.message });
+      res.json({ success: true });
     });
   });
 });

@@ -2,25 +2,38 @@ import { useEffect, useState } from "react";
 
 const API_URL = "http://localhost:5000";
 
-export default function AlbumImageModal({ itemId, onClose, me }) {
+export default function AlbumImageModal({ itemId, images, onClose, me }) {
   const [details, setDetails] = useState(null);
   const [comment, setComment] = useState("");
+  const [currentIndex, setCurrentIndex] = useState(
+    images.findIndex((img) => img.id === itemId)
+  );
 
-  async function fetchImage() {
+  const currentImage = images[currentIndex];
+
+  async function fetchImage(id) {
     const uid = me?.id ? `?meId=${me.id}` : "";
-    const res = await fetch(`${API_URL}/api/album-items/${itemId}${uid}`);
+    const res = await fetch(`${API_URL}/api/album-items/${id}${uid}`);
     if (!res.ok) return;
     const data = await res.json();
     setDetails(data);
   }
 
   useEffect(() => {
-    fetchImage();
-  }, [itemId, me]);
+    if (currentImage) fetchImage(currentImage.id);
+  }, [currentImage, me]);
+
+  function goPrev() {
+    if (currentIndex > 0) setCurrentIndex((i) => i - 1);
+  }
+
+  function goNext() {
+    if (currentIndex < images.length - 1) setCurrentIndex((i) => i + 1);
+  }
 
   async function handleLike() {
     if (!me) return alert("Logga in för att gilla");
-    const res = await fetch(`${API_URL}/api/album-items/${itemId}/like`, {
+    const res = await fetch(`${API_URL}/api/album-items/${currentImage.id}/like`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userId: me.id }),
@@ -38,7 +51,7 @@ export default function AlbumImageModal({ itemId, onClose, me }) {
   async function handleAddComment(e) {
     e.preventDefault();
     if (!comment.trim() || !me) return;
-    const res = await fetch(`${API_URL}/api/album-items/${itemId}/comments`, {
+    const res = await fetch(`${API_URL}/api/album-items/${currentImage.id}/comments`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userId: me.id, content: comment }),
@@ -53,6 +66,24 @@ export default function AlbumImageModal({ itemId, onClose, me }) {
     }
   }
 
+  async function handleDeleteComment(id) {
+    if (!me) return;
+    if (!window.confirm("Radera din kommentar?")) return;
+
+    const res = await fetch(`${API_URL}/api/album-item-comments/${id}`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: me.id }),
+    });
+
+    if (res.ok) {
+      setDetails((prev) => ({
+        ...prev,
+        comments: prev.comments.filter((c) => c.id !== id),
+      }));
+    }
+  }
+
   if (!details) return null;
 
   return (
@@ -61,21 +92,45 @@ export default function AlbumImageModal({ itemId, onClose, me }) {
       onClick={onClose}
     >
       <div
-        className="bg-white text-black rounded-lg shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+        className="relative bg-white text-black rounded-lg shadow-lg w-full max-w-3xl max-h-[80vh] overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        <img
-          src={`${API_URL}${details.media_url}`}
-          alt="Album item"
-          className="w-full max-h-[60vh] object-contain"
-        />
-        <div className="p-4">
+        {/* Bild */}
+        <div className="relative">
+          <img
+            src={`${API_URL}${details.media_url}`}
+            alt="Album item"
+            className="w-full max-h-[55vh] object-contain"
+          />
+
+          {/* Prev/Next */}
+          {currentIndex > 0 && (
+            <button
+              onClick={goPrev}
+              className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/60 text-white px-3 py-2 rounded-full"
+            >
+              ‹
+            </button>
+          )}
+          {currentIndex < images.length - 1 && (
+            <button
+              onClick={goNext}
+              className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/60 text-white px-3 py-2 rounded-full"
+            >
+              ›
+            </button>
+          )}
+        </div>
+
+        {/* Info */}
+        <div className="p-4 overflow-y-auto flex-1">
           <button
             onClick={handleLike}
             className="flex gap-1 items-center text-sm hover:text-rift-gold"
           >
             {details.liked_by_me ? "👍" : "👍"} {details.like_count || 0}
           </button>
+
           <h3 className="mt-3 font-semibold">Comments</h3>
           {details.comments?.map((c) => (
             <div key={c.id} className="mt-2 border-b pb-2">
@@ -83,13 +138,23 @@ export default function AlbumImageModal({ itemId, onClose, me }) {
                 <img
                   src={
                     c.avatar_url
-                      ? `${API_URL}${c.avatar_url}`
+                      ? (c.avatar_url.startsWith("http")
+                          ? c.avatar_url
+                          : `${API_URL}${c.avatar_url}`)
                       : "/images/default-avatar.png"
                   }
                   alt={c.username}
                   className="w-6 h-6 rounded-full"
                 />
                 <span className="font-medium">{c.username}</span>
+                {me && me.id === c.user_id && (
+                  <button
+                    onClick={() => handleDeleteComment(c.id)}
+                    className="ml-auto text-xs text-red-600 hover:underline"
+                  >
+                    Delete
+                  </button>
+                )}
               </div>
               <p className="ml-8 text-sm">{c.content}</p>
             </div>
