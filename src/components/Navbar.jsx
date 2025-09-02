@@ -130,14 +130,17 @@ export default function Navbar() {
               Edit My Page
             </Link>
             <button
-              onClick={() => {
-                setDropdownOpen(false);
-                navigate("/account/delete");
-              }}
-              className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-rift-bg"
-            >
-              Delete Account
-            </button>
+  onClick={() => {
+    setDropdownOpen(false);
+    if (window.confirm("⚠️ Are you sure you want to delete your account? This action cannot be undone.")) {
+      navigate("/account/delete");
+    }
+  }}
+  className="w-full text-left block px-4 py-2 text-sm text-red-400 hover:bg-rift-bg"
+>
+  Delete Account
+</button>
+
             <button
               onClick={handleLogout}
               className="w-full text-left block px-4 py-2 text-sm text-gray-200 hover:bg-rift-bg"

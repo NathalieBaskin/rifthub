@@ -138,6 +138,36 @@ app.post("/api/auth/login", (req, res) => {
   });
 });
 
+// ===============================
+// DELETE ACCOUNT
+// ===============================
+app.delete("/api/auth/delete", (req, res) => {
+  const { identifier, password } = req.body;
+
+  if (!identifier || !password) {
+    return res.status(400).json({ error: "All fields are required" });
+  }
+
+  const isEmail = identifier.includes("@");
+  const query = isEmail
+    ? "SELECT * FROM users WHERE LOWER(email) = ?"
+    : "SELECT * FROM users WHERE LOWER(username) = ?";
+  const value = identifier.toLowerCase();
+
+  db.get(query, [value], async (err, user) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!user) return res.status(400).json({ error: "User not found" });
+
+    const match = await bcrypt.compare(password, user.password_hash);
+    if (!match) return res.status(400).json({ error: "Invalid credentials" });
+
+    // radera användaren (ON DELETE CASCADE rensar resten)
+    db.run("DELETE FROM users WHERE id = ?", [user.id], function (err2) {
+      if (err2) return res.status(500).json({ error: err2.message });
+      res.json({ success: true, message: "Account deleted" });
+    });
+  });
+});
 
 // ===============================
 // Produkter & Orders

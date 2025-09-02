@@ -13,6 +13,7 @@ import AdminDashboard from "./pages/admin/AdminDashboard.jsx";
 import ProfilePage from "./pages/ProfilePage.jsx";
 import ChatPage from "./pages/ChatPage.jsx";
 import ThreadPage from "./pages/ThreadPage.jsx";
+import AccountDelete from "./pages/AccountDelete.jsx";
 
 export default function App() {
   const location = useLocation();
@@ -56,6 +57,7 @@ export default function App() {
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/profile/:id" element={<ProfilePage />} /> {/* 👈 viktig */}
         <Route path="/profile/edit" element={<EditProfilePage />} />
+        <Route path="/account/delete" element={<AccountDelete />} />
 
         {/* Admin */}
         <Route path="/admin" element={<AdminDashboard />} />
