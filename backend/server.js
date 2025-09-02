@@ -137,37 +137,95 @@ app.post("/api/auth/login", (req, res) => {
     res.json({ token });
   });
 });
+// ===============================
+// UPDATE ACCOUNT (username, email, password)
+// ===============================
+app.put("/api/auth/update", (req, res) => {
+  const { userId, currentPassword, newUsername, newEmail, newPassword } = req.body;
+
+  if (!userId || !currentPassword) {
+    return res.status(400).json({ error: "Missing userId or current password" });
+  }
+
+  db.get("SELECT * FROM users WHERE id = ?", [userId], async (err, user) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    // ✅ Verifiera nuvarande lösen
+    const match = await bcrypt.compare(currentPassword, user.password_hash);
+    if (!match) {
+      return res.status(400).json({ error: "Incorrect current password" });
+    }
+
+    // ✅ Bygg dynamiskt vilka fält som ska uppdateras
+    const updates = [];
+    const params = [];
+
+    if (newUsername) {
+      updates.push("username = ?");
+      params.push(newUsername);
+    }
+    if (newEmail) {
+      updates.push("email = ?");
+      params.push(newEmail.toLowerCase());
+    }
+    if (newPassword) {
+      const hash = await bcrypt.hash(newPassword, 10);
+      updates.push("password_hash = ?");
+      params.push(hash);
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({ error: "No changes provided" });
+    }
+
+    params.push(userId);
+
+    db.run(
+      `UPDATE users SET ${updates.join(", ")} WHERE id = ?`,
+      params,
+      function (err2) {
+        if (err2) return res.status(500).json({ error: err2.message });
+
+        // Ny token med ev. nytt username/email
+        const updatedUser = {
+          id: user.id,
+          username: newUsername || user.username,
+          is_admin: user.is_admin
+        };
+
+        const token = jwt.sign(updatedUser, JWT_SECRET, { expiresIn: "48h" });
+
+        res.json({ success: true, token });
+      }
+    );
+  });
+});
 
 // ===============================
 // DELETE ACCOUNT
 // ===============================
 app.delete("/api/auth/delete", (req, res) => {
-  const { identifier, password } = req.body;
+  const { userId, currentPassword } = req.body;
 
-  if (!identifier || !password) {
-    return res.status(400).json({ error: "All fields are required" });
+  if (!userId || !currentPassword) {
+    return res.status(400).json({ error: "Missing userId or password" });
   }
 
-  const isEmail = identifier.includes("@");
-  const query = isEmail
-    ? "SELECT * FROM users WHERE LOWER(email) = ?"
-    : "SELECT * FROM users WHERE LOWER(username) = ?";
-  const value = identifier.toLowerCase();
-
-  db.get(query, [value], async (err, user) => {
+  db.get("SELECT * FROM users WHERE id = ?", [userId], async (err, user) => {
     if (err) return res.status(500).json({ error: err.message });
-    if (!user) return res.status(400).json({ error: "User not found" });
+    if (!user) return res.status(404).json({ error: "User not found" });
 
-    const match = await bcrypt.compare(password, user.password_hash);
-    if (!match) return res.status(400).json({ error: "Invalid credentials" });
+    const match = await bcrypt.compare(currentPassword, user.password_hash);
+    if (!match) return res.status(400).json({ error: "Incorrect password" });
 
-    // radera användaren (ON DELETE CASCADE rensar resten)
-    db.run("DELETE FROM users WHERE id = ?", [user.id], function (err2) {
+    db.run("DELETE FROM users WHERE id = ?", [userId], function (err2) {
       if (err2) return res.status(500).json({ error: err2.message });
       res.json({ success: true, message: "Account deleted" });
     });
   });
 });
+
 
 // ===============================
 // Produkter & Orders

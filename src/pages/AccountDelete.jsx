@@ -1,14 +1,16 @@
+// src/pages/AccountDelete.jsx
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { getUserFromToken } from "../utils/auth.js";
 
 export default function AccountDelete() {
-  const [identifier, setIdentifier] = useState(""); // email eller username
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
+  const user = getUserFromToken();
 
   const handleDelete = async (e) => {
     e.preventDefault();
@@ -20,7 +22,10 @@ export default function AccountDelete() {
       const res = await fetch("http://localhost:5000/api/auth/delete", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ identifier, password }),
+        body: JSON.stringify({
+          userId: user.id,              // ✅ backend vill ha userId
+          currentPassword: password     // ✅ backend vill ha currentPassword
+        }),
       });
 
       const data = await res.json();
@@ -66,22 +71,10 @@ export default function AccountDelete() {
 
         <p className="text-sm text-center text-gray-300 mb-4">
           ⚠️ This action is permanent. You must confirm by entering your{" "}
-          <span className="text-rift-gold">email or username</span> and{" "}
           <span className="text-rift-gold">password</span>.
         </p>
 
         <form onSubmit={handleDelete} className="space-y-3">
-          <div>
-            <label className="block text-sm mb-1">Email or Username</label>
-            <input
-              type="text"
-              value={identifier}
-              onChange={(e) => setIdentifier(e.target.value)}
-              className="w-full px-3 py-2 rounded-md bg-black/30 border border-rift-gold/40 focus:outline-none focus:ring-2 focus:ring-rift-gold"
-              required
-            />
-          </div>
-
           <div>
             <label className="block text-sm mb-1">Password</label>
             <input
