@@ -44,6 +44,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // ===============================
+// ===============================
 // REGISTER (skapa användare)
 // ===============================
 app.post("/api/auth/register", async (req, res) => {
@@ -53,9 +54,11 @@ app.post("/api/auth/register", async (req, res) => {
     return res.status(400).json({ error: "All fields are required" });
   }
 
+  const emailLower = email.toLowerCase(); // 👈 alltid lowercase
+
   db.get(
     "SELECT * FROM users WHERE username = ? OR email = ?",
-    [username, email],
+    [username, emailLower],
     async (err, row) => {
       if (err) return res.status(500).json({ error: err.message });
       if (row) {
@@ -69,12 +72,25 @@ app.post("/api/auth/register", async (req, res) => {
 
         db.run(
           "INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)",
-          [username, email, hash],
+          [username, emailLower, hash],
           function (err) {
             if (err) return res.status(500).json({ error: err.message });
+
+            // 🔹 Skapa token direkt så användaren blir inloggad
+            const token = jwt.sign(
+              {
+                id: this.lastID,
+                username,
+                is_admin: 0,
+              },
+              JWT_SECRET,
+              { expiresIn: "48h" }
+            );
+
             res.status(201).json({
               message: "User created",
               userId: this.lastID,
+              token,
             });
           }
         );
@@ -90,12 +106,22 @@ app.post("/api/auth/register", async (req, res) => {
 // LOGIN (logga in användare)
 // ===============================
 app.post("/api/auth/login", (req, res) => {
-  const { email, password } = req.body;
+  const { identifier, password } = req.body; // 👈 email eller username
 
-  if (!email || !password)
+  if (!identifier || !password) {
     return res.status(400).json({ error: "All fields are required" });
+  }
 
-  db.get("SELECT * FROM users WHERE email = ?", [email], async (err, user) => {
+  // bestäm om det är email (innehåller @) eller username
+  const isEmail = identifier.includes("@");
+
+  const query = isEmail
+    ? "SELECT * FROM users WHERE LOWER(email) = ?"
+    : "SELECT * FROM users WHERE LOWER(username) = ?"; // 👈 lowercase även på username
+
+  const value = identifier.toLowerCase();
+
+  db.get(query, [value], async (err, user) => {
     if (err) return res.status(500).json({ error: err.message });
     if (!user) return res.status(400).json({ error: "Invalid credentials" });
 
@@ -111,6 +137,7 @@ app.post("/api/auth/login", (req, res) => {
     res.json({ token });
   });
 });
+
 
 // ===============================
 // Produkter & Orders

@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 
 export default function AuthPage() {
-  const [loginUsername, setLoginUsername] = useState("");
+  const [loginIdentifier, setLoginIdentifier] = useState(""); // 👈 email eller username
   const [loginPassword, setLoginPassword] = useState("");
   const [regUsername, setRegUsername] = useState("");
   const [regEmail, setRegEmail] = useState("");
@@ -30,7 +30,10 @@ export default function AuthPage() {
       const res = await fetch("http://localhost:5000/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: loginUsername, password: loginPassword }),
+        body: JSON.stringify({
+          identifier: loginIdentifier, // 👈 skickar nu korrekt värde
+          password: loginPassword,
+        }),
       });
 
       const data = await res.json();
@@ -42,7 +45,6 @@ export default function AuthPage() {
 
       localStorage.setItem("token", data.token);
 
-      // 🔹  tillbaka till redirect (ex: /summoners-hall?open=new)
       navigate(redirect + (open ? `?open=${open}` : ""));
     } catch (err) {
       console.error(err);
@@ -114,8 +116,8 @@ export default function AuthPage() {
             <label className="block text-sm mb-1">Username or Email</label>
             <input
               type="text"
-              value={loginUsername}
-              onChange={(e) => setLoginUsername(e.target.value)}
+              value={loginIdentifier}
+              onChange={(e) => setLoginIdentifier(e.target.value)}
               className="w-full px-3 py-2 rounded-md bg-white text-black border border-rift-gold/40 focus:outline-none focus:ring-2 focus:ring-rift-gold"
               required
             />
