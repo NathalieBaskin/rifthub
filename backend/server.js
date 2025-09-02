@@ -1987,6 +1987,110 @@ app.post("/api/album-items/:id/comments", (req, res) => {
     }
   );
 });
+// ✏️ Uppdatera album (titel + ev ny cover)
+app.put("/api/albums/:id", upload.single("cover"), (req, res) => {
+  const albumId = Number(req.params.id);
+  const { userId, title, removeCover } = req.body;
+
+  if (!userId || !title) {
+    return res.status(400).json({ error: "Missing fields" });
+  }
+
+  db.get("SELECT * FROM albums WHERE id = ?", [albumId], (err, album) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!album) return res.status(404).json({ error: "Album not found" });
+    if (album.user_id !== Number(userId)) {
+      return res.status(403).json({ error: "Not allowed" });
+    }
+
+    let newCover = album.cover;
+    if (removeCover === "1") {
+      newCover = null;
+    } else if (req.file) {
+      newCover = `/uploads/${req.file.filename}`;
+    }
+
+    db.run(
+      "UPDATE albums SET title = ?, cover = ? WHERE id = ?",
+      [title, newCover, albumId],
+      function (err2) {
+        if (err2) return res.status(500).json({ error: err2.message });
+        res.json({ success: true, id: albumId, title, cover: newCover });
+      }
+    );
+  });
+});
+
+// ❌ Ta bort album (inkl. bilder/comments via CASCADE)
+app.delete("/api/albums/:id", (req, res) => {
+  const albumId = Number(req.params.id);
+  const { userId } = req.body;
+  if (!userId) return res.status(400).json({ error: "Missing userId" });
+
+  db.get("SELECT user_id FROM albums WHERE id = ?", [albumId], (err, album) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!album) return res.status(404).json({ error: "Album not found" });
+    if (album.user_id !== Number(userId)) {
+      return res.status(403).json({ error: "Not allowed" });
+    }
+
+    db.run("DELETE FROM albums WHERE id = ?", [albumId], function (err2) {
+      if (err2) return res.status(500).json({ error: err2.message });
+      res.json({ success: true });
+    });
+  });
+});
+
+// ➕ Lägg till nya bilder i ett album
+app.post("/api/albums/:id/images", upload.array("images", 10), (req, res) => {
+  const albumId = Number(req.params.id);
+  const { userId } = req.body;
+
+  if (!userId) return res.status(400).json({ error: "Missing userId" });
+  const files = req.files || [];
+  if (files.length === 0) return res.status(400).json({ error: "No files uploaded" });
+
+  db.get("SELECT * FROM albums WHERE id = ?", [albumId], (err, album) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!album) return res.status(404).json({ error: "Album not found" });
+    if (album.user_id !== Number(userId)) {
+      return res.status(403).json({ error: "Not allowed" });
+    }
+
+    const stmt = db.prepare("INSERT INTO album_items (album_id, media_url) VALUES (?, ?)");
+    files.forEach((file) => {
+      stmt.run(albumId, `/uploads/${file.filename}`);
+    });
+    stmt.finalize();
+
+    res.json({ success: true });
+  });
+});
+
+// ❌ Ta bort en bild från ett album
+app.delete("/api/album-items/:id", (req, res) => {
+  const itemId = Number(req.params.id);
+  const { userId } = req.body;
+  if (!userId) return res.status(400).json({ error: "Missing userId" });
+
+  db.get("SELECT album_id FROM album_items WHERE id = ?", [itemId], (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!row) return res.status(404).json({ error: "Image not found" });
+
+    db.get("SELECT user_id FROM albums WHERE id = ?", [row.album_id], (err2, album) => {
+      if (err2) return res.status(500).json({ error: err2.message });
+      if (!album) return res.status(404).json({ error: "Album not found" });
+      if (album.user_id !== Number(userId)) {
+        return res.status(403).json({ error: "Not allowed" });
+      }
+
+      db.run("DELETE FROM album_items WHERE id = ?", [itemId], function (err3) {
+        if (err3) return res.status(500).json({ error: err3.message });
+        res.json({ success: true });
+      });
+    });
+  });
+});
 
 
 // ===============================
