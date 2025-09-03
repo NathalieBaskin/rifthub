@@ -6,23 +6,20 @@ import fs from "fs";
 import jwt from "jsonwebtoken";
 import { fileURLToPath } from "url";
 
-const router = express.Router();
-
-// === JWT-secret (samma som i server.js) ===
 const JWT_SECRET = "supersecretkey";
 
-// === fixa __dirname för ESM ===
+// === ESM __dirname ===
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // === Uploads-mapp ===
 const uploadDir = path.join(__dirname, "..", "public", "uploads");
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
+if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+
+// === Multer ===
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadDir),
-  filename: (req, file, cb) =>
+  destination: (_req, _file, cb) => cb(null, uploadDir),
+  filename: (_req, file, cb) =>
     cb(null, Date.now() + "-" + Math.round(Math.random() * 1e9) + path.extname(file.originalname)),
 });
 const upload = multer({ storage });
@@ -34,174 +31,189 @@ function requireAdmin(req, res, next) {
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
-    if (!decoded.is_admin) {
-      return res.status(403).json({ error: "Not authorized" });
-    }
+    if (!decoded.is_admin) return res.status(403).json({ error: "Not authorized" });
     req.user = decoded;
     next();
   } catch (err) {
-    console.error("JWT verify failed:", err.message); // 👈 använder err
+    console.error("JWT verify failed:", err.message);
     return res.status(401).json({ error: "Invalid token" });
   }
 }
 
+// === Helpers ===
+function toYYYYMMDD(input) {
+  if (!input) return new Date().toISOString().slice(0, 10);
+  const d = new Date(input);
+  if (isNaN(d)) return new Date().toISOString().slice(0, 10);
+  return d.toISOString().slice(0, 10); // yyyy-MM-dd
+}
 
-// ===============================
-// 📦 Publika routes
-// ===============================
-
-// Hämta alla produkter
-router.get("/", (req, res) => {
+function withIsNew(row) {
   const now = new Date();
-  db.all("SELECT * FROM products WHERE created_at <= ?", [now.toISOString()], (_err, rows) => {
-    if (_err) return res.status(500).json({ error: "Database error" });
+  const created = new Date(row.created_at);
+  const diffDays = (now - created) / (1000 * 60 * 60 * 24);
+  return { ...row, isNew: diffDays <= 7 };
+}
 
-    const products = rows.map((p) => {
-      const created = new Date(p.created_at);
-      const diffDays = (now - created) / (1000 * 60 * 60 * 24);
-      return { ...p, isNew: diffDays <= 7 };
-    });
-    res.json(products);
+/* ================================
+   PUBLIC ROUTER  (/api/products)
+================================ */
+const productsPublicRouter = express.Router();
+
+// Viktigt: mer specifika routes före ":id"
+productsPublicRouter.get("/news/latest", (_req, res) => {
+  db.all("SELECT * FROM products", [], (err, rows) => {
+    if (err) return res.status(500).json({ error: "Database error" });
+    const latest = rows.map(withIsNew).filter(p => p.isNew);
+    res.json(latest);
+  });
+});
+
+// Hämta alla produkter (publikt)
+productsPublicRouter.get("/", (_req, res) => {
+  const nowIso = new Date().toISOString(); // ok även om created_at är yyyy-MM-dd
+  db.all("SELECT * FROM products WHERE created_at <= ?", [nowIso], (err, rows) => {
+    if (err) return res.status(500).json({ error: "Database error" });
+    res.json(rows.map(withIsNew));
   });
 });
 
 // Hämta en produkt
-router.get("/:id", (req, res) => {
-  db.get("SELECT * FROM products WHERE id = ?", [req.params.id], (_err, row) => {
-    if (_err) return res.status(500).json({ error: "Database error" });
+productsPublicRouter.get("/:id", (req, res) => {
+  db.get("SELECT * FROM products WHERE id = ?", [req.params.id], (err, row) => {
+    if (err) return res.status(500).json({ error: "Database error" });
     if (!row) return res.status(404).json({ error: "Product not found" });
-
-    const now = new Date();
-    const created = new Date(row.created_at);
-    const diffDays = (now - created) / (1000 * 60 * 60 * 24);
-    res.json({ ...row, isNew: diffDays <= 7 });
+    res.json(withIsNew(row));
   });
 });
 
 // Liknande produkter
-router.get("/:id/similar", (req, res) => {
-  db.get("SELECT categories FROM products WHERE id = ?", [req.params.id], (_err, row) => {
-    if (_err) return res.status(500).json({ error: "Database error" });
+productsPublicRouter.get("/:id/similar", (req, res) => {
+  db.get("SELECT categories FROM products WHERE id = ?", [req.params.id], (err, row) => {
+    if (err) return res.status(500).json({ error: "Database error" });
     if (!row) return res.status(404).json({ error: "Product not found" });
 
-    const category = row.categories?.split(",")[0]?.trim() || "";
+    const firstCat = row.categories?.split(",")[0]?.trim() || "";
     db.all(
       "SELECT * FROM products WHERE categories LIKE ? AND id != ? LIMIT 10",
-      [`%${category}%`, req.params.id],
-      (_err2, rows) => {
-        if (_err2) return res.status(500).json({ error: "Database error" });
-
-        const now = new Date();
-        const products = rows.map((p) => {
-          const created = new Date(p.created_at);
-          const diffDays = (now - created) / (1000 * 60 * 60 * 24);
-          return { ...p, isNew: diffDays <= 7 };
-        });
-        res.json(products);
+      [`%${firstCat}%`, req.params.id],
+      (err2, rows) => {
+        if (err2) return res.status(500).json({ error: "Database error" });
+        res.json(rows.map(withIsNew));
       }
     );
   });
 });
 
-// Nyheter – senaste 7 dagar
-router.get("/news/latest", (req, res) => {
-  db.all("SELECT * FROM products", [], (_err, rows) => {
-    if (_err) return res.status(500).json({ error: "Database error" });
+/* ================================
+   ADMIN ROUTER  (/api/admin/products)
+================================ */
+const productsAdminRouter = express.Router();
 
-    const now = new Date();
-    const latest = rows.filter((p) => {
-      const created = new Date(p.created_at);
-      const diffDays = (now - created) / (1000 * 60 * 60 * 24);
-      return diffDays <= 7;
-    });
-    res.json(latest);
-  });
-});
-
-// ===============================
-// 🛠 Admin CRUD
-// ===============================
-
-// Hämta alla produkter (admin)
-router.get("/admin/all", requireAdmin, (req, res) => {
-  db.all("SELECT * FROM products", [], (_err, rows) => {
-    if (_err) return res.status(500).json({ error: _err.message });
-    res.json(rows);
+// Hämta alla (admin) – returnera { success, products }
+productsAdminRouter.get("/", requireAdmin, (_req, res) => {
+  db.all("SELECT * FROM products ORDER BY id DESC", [], (err, rows) => {
+    if (err) return res.status(500).json({ success: false, error: err.message });
+    res.json({ success: true, products: rows });
   });
 });
 
 // Skapa produkt
-router.post("/admin", requireAdmin, upload.single("image"), (req, res) => {
-  const { name, description, price, categories, sku, created_at } = req.body;
+productsAdminRouter.post("/", requireAdmin, upload.single("image"), (req, res) => {
+  const { name, description = "", price, categories = "", sku, created_at } = req.body;
   const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
 
+  if (!name || !price || !sku) {
+    return res.status(400).json({ success: false, error: "name, price, sku are required" });
+  }
   const skuRegex = /^[A-Z]{3}\d{3}$/;
   if (!skuRegex.test(sku)) {
-    return res.status(400).json({ error: "Invalid SKU format (ABC123)" });
+    return res.status(400).json({ success: false, error: "Invalid SKU format (ABC123)" });
   }
 
-  db.get("SELECT id FROM products WHERE sku = ?", [sku], (_err, existing) => {
-    if (_err) return res.status(500).json({ error: _err.message });
-    if (existing) return res.status(400).json({ error: "SKU already exists" });
+  const dateOnly = toYYYYMMDD(created_at);
+
+  db.get("SELECT id FROM products WHERE sku = ?", [sku], (err, existing) => {
+    if (err) return res.status(500).json({ success: false, error: err.message });
+    if (existing) return res.status(400).json({ success: false, error: "SKU already exists" });
 
     db.run(
       `INSERT INTO products (name, description, price, image_url, categories, sku, created_at)
        VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [name, description, price, imageUrl, categories, sku, created_at || new Date().toISOString()],
-      function (_err2) {
-        if (_err2) return res.status(500).json({ error: _err2.message });
-        res.json({ success: true, id: this.lastID });
+      [name, description, Number(price), imageUrl, categories, sku, dateOnly],
+      function (err2) {
+        if (err2) return res.status(500).json({ success: false, error: err2.message });
+
+        db.get("SELECT * FROM products WHERE id = ?", [this.lastID], (e3, row) => {
+          if (e3) return res.status(500).json({ success: false, error: e3.message });
+          res.json({ success: true, product: row });
+        });
       }
     );
   });
 });
 
 // Uppdatera produkt
-router.put("/admin/:id", requireAdmin, upload.single("image"), (req, res) => {
+productsAdminRouter.put("/:id", requireAdmin, upload.single("image"), (req, res) => {
   const { id } = req.params;
-  const { name, description, price, categories, sku, created_at } = req.body;
+  const { name, description = "", price, categories = "", sku, created_at } = req.body;
 
+  if (!name || !price || !sku) {
+    return res.status(400).json({ success: false, error: "name, price, sku are required" });
+  }
   const skuRegex = /^[A-Z]{3}\d{3}$/;
   if (!skuRegex.test(sku)) {
-    return res.status(400).json({ error: "Invalid SKU format (ABC123)" });
+    return res.status(400).json({ success: false, error: "Invalid SKU format (ABC123)" });
   }
 
-  db.get("SELECT id FROM products WHERE sku = ? AND id != ?", [sku, id], (_err, existing) => {
-    if (_err) return res.status(500).json({ error: _err.message });
-    if (existing) return res.status(400).json({ error: "SKU already exists" });
+  const dateOnly = toYYYYMMDD(created_at);
+  const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
 
-    let imageUrl = null;
-    if (req.file) imageUrl = `/uploads/${req.file.filename}`;
+  db.get("SELECT id FROM products WHERE id = ?", [id], (err, exists) => {
+    if (err) return res.status(500).json({ success: false, error: err.message });
+    if (!exists) return res.status(404).json({ success: false, error: "Product not found" });
 
-    const sql = `
-      UPDATE products
-      SET name=?, description=?, price=?, categories=?, sku=?, created_at=? ${imageUrl ? ", image_url=?" : ""}
-      WHERE id=?`;
+    db.get("SELECT id FROM products WHERE sku = ? AND id != ?", [sku, id], (e2, dup) => {
+      if (e2) return res.status(500).json({ success: false, error: e2.message });
+      if (dup) return res.status(400).json({ success: false, error: "SKU already exists" });
 
-    const params = [
-      name,
-      description,
-      price,
-      categories,
-      sku,
-      created_at || new Date().toISOString(),
-    ];
-    if (imageUrl) params.push(imageUrl);
-    params.push(id);
+      const sql =
+        `UPDATE products
+         SET name=?, description=?, price=?, categories=?, sku=?, created_at=?` +
+        (imageUrl ? `, image_url=?` : ``) +
+        ` WHERE id=?`;
 
-    db.run(sql, params, function (_err2) {
-      if (_err2) return res.status(500).json({ error: _err2.message });
-      res.json({ success: true });
+      const params = [
+        name,
+        description,
+        Number(price),
+        categories,
+        sku,
+        dateOnly,
+      ];
+      if (imageUrl) params.push(imageUrl);
+      params.push(id);
+
+      db.run(sql, params, function (e3) {
+        if (e3) return res.status(500).json({ success: false, error: e3.message });
+
+        db.get("SELECT * FROM products WHERE id = ?", [id], (e4, row) => {
+          if (e4) return res.status(500).json({ success: false, error: e4.message });
+          res.json({ success: true, product: row });
+        });
+      });
     });
   });
 });
 
 // Ta bort produkt
-router.delete("/admin/:id", requireAdmin, (req, res) => {
-  db.run("DELETE FROM products WHERE id=?", [req.params.id], function (_err) {
-    if (_err) return res.status(500).json({ error: _err.message });
+productsAdminRouter.delete("/:id", requireAdmin, (req, res) => {
+  db.run("DELETE FROM products WHERE id=?", [req.params.id], function (err) {
+    if (err) return res.status(500).json({ success: false, error: err.message });
+    if (this.changes === 0) return res.status(404).json({ success: false, error: "Not found" });
     res.json({ success: true });
   });
 });
 
-export default router;
+export { productsAdminRouter };
+export default productsPublicRouter;

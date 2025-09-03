@@ -7,7 +7,7 @@ import multer from "multer";
 import fs from "fs";
 import { fileURLToPath } from "url";
 import db from "./db.js";
-import productsRouter from "./routes/products.js";
+import productsPublicRouter, { productsAdminRouter } from "./routes/products.js";
 ;
 
 
@@ -2068,9 +2068,8 @@ app.delete("/api/album-item-comments/:id", (req, res) => {
     });
   });
 });
-
-app.use("/api/admin/products", productsRouter);
-app.use("/api/products", productsRouter);
+app.use("/api/products", productsPublicRouter);
+app.use("/api/admin/products", productsAdminRouter);
 
 
 
