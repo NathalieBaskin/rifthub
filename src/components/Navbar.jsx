@@ -26,9 +26,10 @@ function NavLinks({ className = "" }) {
       <NavLink to="/summoners-hall" className={({ isActive }) => `${linkBase} ${isActive ? active : ""}`}>
         Summoner&apos;s Hall
       </NavLink>
-      <NavLink to="/forum" className={({ isActive }) => `${linkBase} ${isActive ? active : ""}`}>
-        The Rift Tavern
-      </NavLink>
+    <NavLink to="/tavern" className={({ isActive }) => `${linkBase} ${isActive ? active : ""}`}>
+  The Rift Tavern
+</NavLink>
+
       <NavLink to="/shop" className={({ isActive }) => `${linkBase} ${isActive ? active : ""}`}>
         Legends Bazaar
       </NavLink>

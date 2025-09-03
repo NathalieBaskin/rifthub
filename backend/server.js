@@ -19,7 +19,56 @@ const __dirname = dirname(__filename);
 const app = express();
 app.use(cors());
 app.use(express.json());
+import http from "http";
+import { Server as SocketIOServer } from "socket.io";
 
+// ...efter app = express()
+const httpServer = http.createServer(app);
+const io = new SocketIOServer(httpServer, {
+  cors: { origin: "*"}
+});
+
+// ===== WebRTC signaling (namespace /live) =====
+const live = io.of("/live");
+
+live.on("connection", (socket) => {
+  // när en broadcaster går live för ett streamId
+  socket.on("broadcaster:join", ({ streamId }) => {
+    socket.join(`stream:${streamId}`);
+    socket.data.role = "broadcaster";
+    socket.data.streamId = streamId;
+    live.to(`stream:${streamId}`).emit("system", { msg: "Broadcaster joined" });
+  });
+
+  // tittare ansluter
+  socket.on("viewer:join", ({ streamId }) => {
+    socket.join(`stream:${streamId}`);
+    socket.data.role = "viewer";
+    socket.data.streamId = streamId;
+    socket.to(`stream:${streamId}`).emit("viewer:ready", { viewerId: socket.id });
+  });
+
+  // WebRTC signaling
+  socket.on("offer", ({ viewerId, sdp }) => {
+    live.to(viewerId).emit("offer", { from: socket.id, sdp });
+  });
+
+  socket.on("answer", ({ to, sdp }) => {
+    live.to(to).emit("answer", { from: socket.id, sdp });
+  });
+
+  socket.on("ice-candidate", ({ to, candidate }) => {
+    live.to(to).emit("ice-candidate", { from: socket.id, candidate });
+  });
+
+  socket.on("disconnect", () => {
+    const { streamId, role } = socket.data || {};
+    if (streamId && role === "broadcaster") {
+      // meddela tittare att sändaren försvann
+      live.to(`stream:${streamId}`).emit("broadcast:ended");
+    }
+  });
+});
 // ✅ se till att uploads-mappen alltid finns
 const uploadDir = path.join(__dirname, "public", "uploads");
 if (!fs.existsSync(uploadDir)) {
@@ -2169,13 +2218,156 @@ app.delete("/api/album-item-comments/:id", (req, res) => {
 });
 app.use("/api/products", productsPublicRouter);
 app.use("/api/admin/products", productsAdminRouter);
+// TAVERN: Highlights
+// ===============================
+app.get("/api/tavern/highlights", (req, res) => {
+  db.all(
+    `SELECT h.*, u.username as author,
+      (SELECT COUNT(*) FROM tavern_highlight_likes l WHERE l.highlight_id=h.id) AS like_count
+     FROM tavern_highlights h
+     JOIN users u ON u.id = h.user_id
+     ORDER BY h.created_at DESC`,
+    [],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(rows || []);
+    }
+  );
+});
 
+app.post("/api/tavern/highlights", upload.single("video"), (req, res) => {
+  const { userId, title, description } = req.body;
+  if (!userId || !title || !req.file) {
+    return res.status(400).json({ error: "Missing fields" });
+  }
+  const videoUrl = `/uploads/${req.file.filename}`;
+  db.run(
+    `INSERT INTO tavern_highlights (user_id, title, description, video_url)
+     VALUES (?, ?, ?, ?)`,
+    [Number(userId), title, description || "", videoUrl],
+    function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.status(201).json({ id: this.lastID, video_url: videoUrl });
+    }
+  );
+});
+
+app.post("/api/tavern/highlights/:id/like", (req, res) => {
+  const id = Number(req.params.id);
+  const { userId } = req.body;
+  if (!userId) return res.status(400).json({ error: "Missing userId" });
+
+  db.get(
+    "SELECT 1 FROM tavern_highlight_likes WHERE highlight_id=? AND user_id=?",
+    [id, Number(userId)],
+    (err, row) => {
+      if (err) return res.status(500).json({ error: err.message });
+
+      const finish = () => {
+        db.get(
+          "SELECT COUNT(*) AS c FROM tavern_highlight_likes WHERE highlight_id=?",
+          [id],
+          (e2, r) => {
+            if (e2) return res.status(500).json({ error: e2.message });
+            res.json({ like_count: r.c });
+          }
+        );
+      };
+
+      if (row) {
+        db.run(
+          "DELETE FROM tavern_highlight_likes WHERE highlight_id=? AND user_id=?",
+          [id, Number(userId)],
+          (e) => (e ? res.status(500).json({ error: e.message }) : finish())
+        );
+      } else {
+        db.run(
+          "INSERT INTO tavern_highlight_likes (highlight_id, user_id) VALUES (?, ?)",
+          [id, Number(userId)],
+          (e) => (e ? res.status(500).json({ error: e.message }) : finish())
+        );
+      }
+    }
+  );
+});
+
+app.get("/api/tavern/highlights/:id/comments", (req, res) => {
+  const id = Number(req.params.id);
+  db.all(
+    `SELECT c.id, c.content, c.created_at, u.username
+     FROM tavern_highlight_comments c
+     JOIN users u ON u.id = c.user_id
+     WHERE c.highlight_id = ?
+     ORDER BY c.created_at ASC`,
+    [id],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(rows || []);
+    }
+  );
+});
+
+app.post("/api/tavern/highlights/:id/comments", (req, res) => {
+  const id = Number(req.params.id);
+  const { userId, content } = req.body;
+  if (!userId || !content) return res.status(400).json({ error: "Missing fields" });
+  db.run(
+    `INSERT INTO tavern_highlight_comments (highlight_id, user_id, content)
+     VALUES (?, ?, ?)`,
+    [id, Number(userId), content],
+    function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.status(201).json({ id: this.lastID });
+    }
+  );
+});
+
+// ===============================
+// TAVERN: Streams (metadata)
+// ===============================
+app.get("/api/tavern/streams", (req, res) => {
+  db.all(
+    `SELECT s.*, u.username as author
+     FROM tavern_streams s
+     JOIN users u ON u.id = s.user_id
+     ORDER BY s.created_at DESC`,
+    [],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(rows || []);
+    }
+  );
+});
+
+app.post("/api/tavern/streams", (req, res) => {
+  const { userId, title, description } = req.body;
+  if (!userId || !title) return res.status(400).json({ error: "Missing fields" });
+  db.run(
+    `INSERT INTO tavern_streams (user_id, title, description, is_live) VALUES (?, ?, ?, 1)`,
+    [Number(userId), title, description || ""],
+    function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.status(201).json({ id: this.lastID });
+    }
+  );
+});
+
+app.post("/api/tavern/streams/:id/stop", (req, res) => {
+  db.run(
+    `UPDATE tavern_streams SET is_live = 0 WHERE id = ?`,
+    [Number(req.params.id)],
+    function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ success: true });
+    }
+  );
+});
 
 
 // ===============================
 // Starta servern
 // ===============================
 const PORT = 5000;
-app.listen(PORT, () =>
-  console.log(`✅ Backend running on http://localhost:${PORT}`)
+httpServer.listen(PORT, () =>
+  console.log(`✅ Backend + Socket.IO on http://localhost:${PORT}`)
 );
