@@ -1,9 +1,8 @@
 import { useCart } from "../context/useCart.js";
-
 import { Link } from "react-router-dom";
 
 export default function Cart() {
-  const { cart, removeFromCart } = useCart();
+  const { cart, removeFromCart, updateQuantity } = useCart();
 
   const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
@@ -12,27 +11,57 @@ export default function Cart() {
       <h1 className="text-3xl font-display mb-6">Your Cart</h1>
 
       {cart.length === 0 ? (
-        <p className="text-gray-400">Your cart is empty.</p>
+        <p className="text-white">Your cart is empty.</p>
       ) : (
         <>
           <ul className="space-y-4">
             {cart.map((item) => (
               <li
-                key={item.id}
+                key={`${item.id}-${item.size}`}
                 className="flex justify-between items-center border-b border-rift-gold/25 pb-2"
               >
-                <div>
-                  <span className="font-semibold">{item.name}</span>{" "}
-                  <span className="text-sm text-gray-400">
-                    (x{item.quantity})
-                  </span>
-                </div>
+                {/* vänster sida: bild + info */}
                 <div className="flex items-center gap-4">
-                  <span className="text-rift-gold">
+                  <img
+                    src={item.image_url}
+                    alt={item.name}
+                    className="w-16 h-16 object-contain rounded"
+                  />
+                  <div>
+                    <span className="font-semibold">{item.name}</span>
+                    <div className="text-sm text-black">
+                      Size: {item.size}
+                    </div>
+                    <div className="flex items-center gap-2 mt-1">
+                      <button
+                        onClick={() =>
+                          updateQuantity(item.id, item.size, item.quantity - 1)
+                        }
+                        className="px-2 py-1 bg-rift-card border border-rift-gold/40 rounded hover:bg-rift-card/80 transition"
+                        disabled={item.quantity <= 1}
+                      >
+                        -
+                      </button>
+                      <span className="px-2">{item.quantity}</span>
+                      <button
+                        onClick={() =>
+                          updateQuantity(item.id, item.size, item.quantity + 1)
+                        }
+                        className="px-2 py-1 bg-rift-card border border-rift-gold/40 rounded hover:bg-rift-card/80 transition"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* höger sida: pris + remove */}
+                <div className="flex items-center gap-4">
+                  <span className="text-black font-semibold">
                     {item.price * item.quantity} SEK
                   </span>
                   <button
-                    onClick={() => removeFromCart(item.id)}
+                    onClick={() => removeFromCart(item.id, item.size)}
                     className="px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition"
                   >
                     Remove
@@ -44,7 +73,7 @@ export default function Cart() {
 
           <div className="mt-6 text-right">
             <p className="text-lg font-semibold">
-              Total: <span className="text-rift-gold">{total} SEK</span>
+              Total: <span className="text-black">{total} SEK</span>
             </p>
 
             <Link

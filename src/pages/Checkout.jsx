@@ -29,7 +29,7 @@ export default function Checkout() {
         body: JSON.stringify({ ...form, items: cart }),
       });
 
-      const text = await res.text(); // 👈 logga råsvaret för felsökning
+      const text = await res.text();
       console.log("Server response:", text);
 
       const data = JSON.parse(text);
@@ -48,10 +48,8 @@ export default function Checkout() {
       <div className="max-w-xl mx-auto p-6 text-center">
         <h1 className="text-2xl font-display mb-4">Order Confirmed 🎉</h1>
         <p className="mb-2">Thank you for your purchase, {form.firstName}!</p>
-        <p className="mb-2">
-          Your order ID: <span className="font-mono">{confirmation}</span>
-        </p>
-        <p className="text-gray-400">
+       
+        <p className="text-black">
           A confirmation has been sent to {form.email}
         </p>
       </div>
@@ -63,13 +61,42 @@ export default function Checkout() {
       <h1 className="text-2xl font-display mb-6">Checkout</h1>
 
       {cart.length === 0 ? (
-        <p className="text-gray-400">Your cart is empty.</p>
+        <p className="text-black">Your cart is empty.</p>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
             <div className="p-2 bg-red-600 text-white rounded">{error}</div>
           )}
 
+          {/* Orderöversikt */}
+          <div className="border border-rift-gold/40 rounded p-3 mb-4">
+            <h2 className="font-semibold mb-2">Order Summary</h2>
+            <ul className="space-y-2">
+              {cart.map((item) => (
+                <li
+                  key={`${item.id}-${item.size}`}
+                  className="flex items-center gap-4 border-b border-rift-gold/20 pb-2"
+                >
+                  <img
+                    src={item.image_url}
+                    alt={item.name}
+                    className="w-12 h-12 object-contain rounded"
+                  />
+                  <div className="flex-1">
+                    <p className="font-semibold">{item.name}</p>
+                    <p className="text-sm text-black">
+                      Size: {item.size} | Qty: {item.quantity}
+                    </p>
+                  </div>
+                  <span className="text-white font-semibold">
+                    {item.price * item.quantity} SEK
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Kunduppgifter */}
           <input
             name="firstName"
             placeholder="First Name"
@@ -96,7 +123,6 @@ export default function Checkout() {
             className="w-full border border-rift-gold/40 rounded px-3 py-2"
           />
 
-          {/* Address */}
           <input
             name="address"
             placeholder="Address (street + number)"
@@ -106,7 +132,6 @@ export default function Checkout() {
             className="w-full border border-rift-gold/40 rounded px-3 py-2"
           />
 
-          {/* Zipcode + City */}
           <div className="flex gap-4">
             <input
               name="zipcode"

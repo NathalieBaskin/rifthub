@@ -15,6 +15,7 @@ import ChatPage from "./pages/ChatPage.jsx";
 import ThreadPage from "./pages/ThreadPage.jsx";
 import AccountDelete from "./pages/AccountDelete.jsx";
 import SettingsPage from "./pages/SettingsPage.jsx";
+import ProductDetail from "./pages/ProductDetail.jsx";
 
 export default function App() {
   const location = useLocation();
@@ -39,7 +40,9 @@ export default function App() {
         <Route path="/summoners-hall" element={<SummonersHall />} />
 
         {/* Shop */}
-        <Route path="/champions" element={<LegendsBazaar />} />
+    <Route path="/shop" element={<LegendsBazaar />} />
+
+<Route path="/shop/product/:id" element={<ProductDetail />} />
 
         {/* Cart + Checkout */}
         <Route path="/cart" element={<Cart />} />

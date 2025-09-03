@@ -26,7 +26,7 @@ function NavLinks({ className = "" }) {
         The Rift Tavern
       </NavLink>
       <NavLink
-        to="/champions"
+        to="/shop"
         className={({ isActive }) => `${linkBase} ${isActive ? active : ""}`}
       >
         Legends Bazaar
