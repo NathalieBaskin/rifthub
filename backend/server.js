@@ -263,6 +263,105 @@ app.post("/api/orders", (req, res) => {
     }
   );
 });
+// === FAVORITES (user <-> products) =========================================
+db.serialize(() => {
+  db.run(`
+    CREATE TABLE IF NOT EXISTS favorites (
+      user_id INTEGER NOT NULL,
+      product_id INTEGER NOT NULL,
+      UNIQUE(user_id, product_id),
+      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY(product_id) REFERENCES products(id) ON DELETE CASCADE
+    )
+  `);
+});
+
+// Hjälpfn: beräkna isNew + normalisera
+function mapProductRow(row) {
+  const now = new Date();
+  const created = row.created_at ? new Date(row.created_at) : now;
+  const diffDays = (now - created) / (1000 * 60 * 60 * 24);
+  return {
+    ...row,
+    id: Number(row.id),            // säkra nummer
+    price: Number(row.price),      // säkra nummer
+    isNew: diffDays <= 7,
+  };
+}
+
+// 📜 Hämta alla favoriter för en användare
+app.get("/api/favorites/:userId", (req, res) => {
+  const { userId } = req.params;
+  console.log("GET /api/favorites/:userId", { userId });
+
+  db.all(
+    `SELECT p.*
+     FROM favorites f 
+     JOIN products p ON f.product_id = p.id 
+     WHERE f.user_id = ?`,
+    [userId],
+    (err, rows) => {
+      if (err) {
+        console.error("❌ favorites select error:", err.message);
+        return res.status(500).json({ error: err.message });
+      }
+      const list = (rows || []).map(mapProductRow);
+      console.log("✅ favorites ->", list.length, "items");
+      res.json(list);
+    }
+  );
+});
+
+// ❤️ Lägg till / ta bort favorit (toggle)
+app.post("/api/favorites", (req, res) => {
+  const { userId, productId } = req.body || {};
+  console.log("POST /api/favorites", { userId, productId });
+
+  if (!userId || !productId) {
+    return res.status(400).json({ error: "Missing userId or productId" });
+  }
+
+  db.get(
+    "SELECT 1 FROM favorites WHERE user_id = ? AND product_id = ?",
+    [userId, productId],
+    (err, row) => {
+      if (err) {
+        console.error("❌ favorites exists error:", err.message);
+        return res.status(500).json({ error: err.message });
+      }
+
+      if (row) {
+        // redan favorit → ta bort
+        db.run(
+          "DELETE FROM favorites WHERE user_id=? AND product_id=?",
+          [userId, productId],
+          function (err2) {
+            if (err2) {
+              console.error("❌ favorites delete error:", err2.message);
+              return res.status(500).json({ error: err2.message });
+            }
+            console.log("🗑️ removed favorite", { userId, productId });
+            res.json({ success: true, favorited: false });
+          }
+        );
+      } else {
+        // lägg till
+        db.run(
+          "INSERT INTO favorites (user_id, product_id) VALUES (?, ?)",
+          [userId, productId],
+          function (err2) {
+            if (err2) {
+              console.error("❌ favorites insert error:", err2.message);
+              return res.status(500).json({ error: err2.message });
+            }
+            console.log("💛 added favorite", { userId, productId });
+            res.json({ success: true, favorited: true });
+          }
+        );
+      }
+    }
+  );
+});
 
 
 // ===============================

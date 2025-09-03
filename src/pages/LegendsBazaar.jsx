@@ -1,59 +1,105 @@
+// src/pages/LegendsBazaar.jsx
 import { useEffect, useState } from "react";
-import { useCart } from "../context/useCart.js";
-import { AiOutlineHeart, AiFillHeart } from "react-icons/ai";
 import { useNavigate } from "react-router-dom";
+import { AiOutlineHeart, AiFillHeart } from "react-icons/ai";
+
+import { useCart } from "../context/useCart.js";
+import { useFavorites } from "../hooks/useFavorites.js";
+
+const API_URL = "http://localhost:5000";
 
 export default function LegendsBazaar() {
-  const [products, setProducts] = useState([]);
-  const { addToCart } = useCart();
   const navigate = useNavigate();
+  const { addToCart } = useCart();
+  const { favorites, toggleFavorite } = useFavorites();
 
-  const [favorites, setFavorites] = useState(
-    () => JSON.parse(localStorage.getItem("favorites") || "[]")
-  );
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
+  // per-produkt valt storleksval
   const [selectedSizes, setSelectedSizes] = useState({});
-
-  const toggleFavorite = (id) => {
-    let updated;
-    if (favorites.includes(id)) {
-      updated = favorites.filter((fid) => fid !== id);
-    } else {
-      updated = [...favorites, id];
-    }
-    setFavorites(updated);
-    localStorage.setItem("favorites", JSON.stringify(updated));
-  };
+  // per-produkt liten pop-animation när man lägger till favorit
+  const [pop, setPop] = useState({}); // { [productId]: true/false }
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/products")
-      .then((res) => res.json())
-      .then((data) => setProducts(data));
+    async function load() {
+      try {
+        const res = await fetch(`${API_URL}/api/products`);
+        if (!res.ok) throw new Error("Failed to fetch products");
+        const data = await res.json();
+        setProducts(Array.isArray(data) ? data : []);
+      } catch (e) {
+        console.error(e);
+        setProducts([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
   }, []);
 
   const handleSizeChange = (productId, size) => {
     setSelectedSizes((prev) => ({ ...prev, [productId]: size }));
   };
 
+  // Hjälp: är en produkt favorit?
+  const isFav = (id) =>
+    Array.isArray(favorites) &&
+    favorites.some((p) => Number(p.id) === Number(id));
+
+  // Toggle favorit med liten pop-animation när man lägger till
+  const onToggleFavorite = async (e, product) => {
+    e.stopPropagation();
+    const added = await toggleFavorite(product); // sköter LS + ev. backend
+    if (added) {
+      setPop((prev) => ({ ...prev, [product.id]: true }));
+      setTimeout(
+        () => setPop((prev) => ({ ...prev, [product.id]: false })),
+        240
+      );
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="max-w-6xl mx-auto p-6 text-center text-rift-gold">
+        <h1 className="text-3xl font-display mb-4">Legends Bazaar</h1>
+        <p className="text-lg">Loading products…</p>
+      </div>
+    );
+  }
+
+  if (!products || products.length === 0) {
+    return (
+      <div className="max-w-6xl mx-auto p-6 text-center text-rift-gold">
+        <h1 className="text-3xl font-display mb-4">Legends Bazaar</h1>
+        <p className="text-lg">No products available right now. Check back later!</p>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-6xl mx-auto p-6 text-black">
-      <h1 className="text-3xl font-display text-rift-gold mb-6">
-        Legends Bazaar
-      </h1>
+      <h1 className="text-3xl font-display text-rift-gold mb-6">Legends Bazaar</h1>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
         {products.map((p) => {
-          const isFavorite = favorites.includes(p.id);
           const selectedSize = selectedSizes[p.id] || "";
+          const favorite = isFav(p.id);
+          const go = () => navigate(`/shop/product/${p.id}`);
 
           return (
             <div
               key={p.id}
               className="card-fantasy p-4 flex flex-col items-center text-center relative"
             >
+              {/* Bild + NEW + hjärta */}
               <div
                 className="relative w-32 h-32 mb-4 cursor-pointer"
-                onClick={() => navigate(`/shop/product/${p.id}`)}
+                onClick={go}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => e.key === "Enter" && go()}
               >
                 <img
                   src={p.image_url}
@@ -65,30 +111,36 @@ export default function LegendsBazaar() {
                     NEW
                   </span>
                 )}
+
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleFavorite(p.id);
-                  }}
-                  className="absolute bottom-1 right-1 bg-white rounded-full p-1 shadow"
+                  onClick={(e) => onToggleFavorite(e, p)}
+                  className={`absolute bottom-1 right-1 transition-transform ${
+                    pop[p.id] ? "scale-125" : "active:scale-90"
+                  }`}
+                  aria-label={favorite ? "Remove from favorites" : "Add to favorites"}
+                  title={favorite ? "Remove from favorites" : "Add to favorites"}
                 >
-                  {isFavorite ? (
-                    <AiFillHeart className="text-red-500 text-lg" />
+                  {favorite ? (
+                    <AiFillHeart className="text-rift-gold text-lg drop-shadow" />
                   ) : (
                     <AiOutlineHeart className="text-black text-lg" />
                   )}
                 </button>
               </div>
 
+              {/* Namn + pris (klickbara) */}
               <h2
                 className="text-lg font-bold cursor-pointer"
-                onClick={() => navigate(`/shop/product/${p.id}`)}
+                onClick={go}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => e.key === "Enter" && go()}
               >
                 {p.name}
               </h2>
-
               <p className="mt-2 text-rift-gold font-semibold">{p.price} SEK</p>
 
+              {/* Storlek */}
               <select
                 value={selectedSize}
                 onChange={(e) => handleSizeChange(p.id, e.target.value)}
@@ -101,6 +153,7 @@ export default function LegendsBazaar() {
                 <option value="XL">XL</option>
               </select>
 
+              {/* Lägg i kundvagn */}
               <button
                 onClick={() => {
                   if (!selectedSize) {

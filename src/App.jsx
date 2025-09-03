@@ -1,5 +1,5 @@
 // src/App.jsx
-import { Routes, Route, useLocation } from "react-router-dom";
+import { Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { useEffect } from "react";
 import Layout from "./components/Layout.jsx";
 import StartSida from "./pages/StartSida.jsx";
@@ -16,6 +16,7 @@ import ThreadPage from "./pages/ThreadPage.jsx";
 import AccountDelete from "./pages/AccountDelete.jsx";
 import SettingsPage from "./pages/SettingsPage.jsx";
 import ProductDetail from "./pages/ProductDetail.jsx";
+import FavoritesPage from "./pages/FavoritesPage.jsx";
 
 export default function App() {
   const location = useLocation();
@@ -47,7 +48,7 @@ export default function App() {
         {/* Cart + Checkout */}
         <Route path="/cart" element={<Cart />} />
         <Route path="/checkout" element={<Checkout />} />
-
+      <Route path="/favorites" element={<FavoritesPage />} />
         {/* Placeholder för The Rift Tavern */}
         <Route
           path="/forum"
