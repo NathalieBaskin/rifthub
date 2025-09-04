@@ -6,6 +6,7 @@ import rLogo from "../assets/images/r-logo.png";
 import { useCart } from "../context/useCart.js";
 import { getUserFromToken } from "../utils/auth.js";
 import { useFavorites } from "../hooks/useFavorites";
+import NotAuthModal from "./NotAuthModal.jsx"; // 👈 lägg till
 
 // Guldiga ikoner (Heroicons v2 via react-icons)
 import {
@@ -20,17 +21,29 @@ const linkBase =
   "px-3 py-1.5 rounded-md border border-rift-gold/25 bg-rift-card/60 hover:bg-rift-card text-sm transition";
 const active = "text-rift-gold drop-shadow-glow border-rift-gold/50";
 
-function NavLinks({ className = "" }) {
+function NavLinks({ className = "", onTavernClick }) {
   return (
     <nav className={`flex gap-3 ${className}`}>
-      <NavLink to="/summoners-hall" className={({ isActive }) => `${linkBase} ${isActive ? active : ""}`}>
+      <NavLink
+        to="/summoners-hall"
+        className={({ isActive }) => `${linkBase} ${isActive ? active : ""}`}
+      >
         Summoner&apos;s Hall
       </NavLink>
-    <NavLink to="/tavern" className={({ isActive }) => `${linkBase} ${isActive ? active : ""}`}>
-  The Rift Tavern
-</NavLink>
 
-      <NavLink to="/shop" className={({ isActive }) => `${linkBase} ${isActive ? active : ""}`}>
+<button
+  type="button"
+  onClick={onTavernClick}
+  className={linkBase}
+>
+  The Rift Tavern
+</button>
+
+
+      <NavLink
+        to="/shop"
+        className={({ isActive }) => `${linkBase} ${isActive ? active : ""}`}
+      >
         Legends Bazaar
       </NavLink>
     </nav>
@@ -47,8 +60,10 @@ export default function Navbar() {
   const user = getUserFromToken();
   const navigate = useNavigate();
 
+  const [showAuthModal, setShowAuthModal] = useState(false); // 👈 flytta hit
+
   // Favoriter -> pop när antal ökar
-   const { favorites } = useFavorites();
+  const { favorites } = useFavorites();
   const [favPop, setFavPop] = useState(false);
   const prevLen = useRef(favorites?.length || 0);
 
@@ -57,10 +72,10 @@ export default function Navbar() {
     if (curr > prevLen.current) {
       setFavPop(true);
       const t = setTimeout(() => setFavPop(false), 240);
-      prevLen.current = curr; // ✅ se till att vi ALWAYS uppdaterar
+      prevLen.current = curr;
       return () => clearTimeout(t);
     }
-    prevLen.current = curr; // ✅ uppdatera även när det minskar/är samma
+    prevLen.current = curr;
   }, [favorites?.length]);
 
   // Unread chat
@@ -109,28 +124,56 @@ export default function Navbar() {
     }
     return (
       <div className="relative">
-        <button onClick={() => setDropdownOpen((prev) => !prev)} className="p-2" aria-label="Account">
+        <button
+          onClick={() => setDropdownOpen((prev) => !prev)}
+          className="p-2"
+          aria-label="Account"
+        >
           <HiOutlineUser className="h-8 w-8 text-rift-gold" />
         </button>
         {dropdownOpen && (
           <div className="absolute right-0 mt-2 w-48 bg-rift-card border border-rift-gold/40 rounded-md shadow-lg z-50">
-            <Link to="/profile" className="block px-4 py-2 text-sm text-gray-200 hover:bg-rift-bg" onClick={() => setDropdownOpen(false)}>My Page</Link>
-            <Link to="/profile/edit" className="block px-4 py-2 text-sm text-gray-200 hover:bg-rift-bg" onClick={() => setDropdownOpen(false)}>Edit My Page</Link>
-            <Link to="/settings" className="block px-4 py-2 text-sm text-gray-200 hover:bg-rift-bg" onClick={() => setDropdownOpen(false)}>Settings</Link>
-            <button onClick={handleLogout} className="w-full text-left block px-4 py-2 text-sm text-gray-200 hover:bg-rift-bg">Logout</button>
+            <Link
+              to="/profile"
+              className="block px-4 py-2 text-sm text-gray-200 hover:bg-rift-bg"
+              onClick={() => setDropdownOpen(false)}
+            >
+              My Page
+            </Link>
+            <Link
+              to="/profile/edit"
+              className="block px-4 py-2 text-sm text-gray-200 hover:bg-rift-bg"
+              onClick={() => setDropdownOpen(false)}
+            >
+              Edit My Page
+            </Link>
+            <Link
+              to="/settings"
+              className="block px-4 py-2 text-sm text-gray-200 hover:bg-rift-bg"
+              onClick={() => setDropdownOpen(false)}
+            >
+              Settings
+            </Link>
+            <button
+              onClick={handleLogout}
+              className="w-full text-left block px-4 py-2 text-sm text-gray-200 hover:bg-rift-bg"
+            >
+              Logout
+            </button>
           </div>
         )}
       </div>
     );
   };
 
-  // Guldhjärta + badge + pop -> till /favorites
-const HeartLink = ({ className = "" }) => (
+  const HeartLink = ({ className = "" }) => (
     <Link
       to="/favorites"
       aria-label="Favorites"
       title="Favorites"
-      className={`relative p-2 transition-transform duration-200 ${favPop ? "scale-125" : "scale-100"} ${className}`}
+      className={`relative p-2 transition-transform duration-200 ${
+        favPop ? "scale-125" : "scale-100"
+      } ${className}`}
     >
       <HiHeart className="h-8 w-8 text-rift-gold drop-shadow" />
       {favorites?.length > 0 && (
@@ -157,15 +200,25 @@ const HeartLink = ({ className = "" }) => (
         {/* MOBILE */}
         <div className="flex sm:hidden items-center justify-between py-2">
           <Link to="/" className="flex items-center gap-2 min-w-0">
-            <img src={rLogo} alt="RiftHub Small Logo" className="h-12 w-auto object-contain transition-all duration-500" />
+            <img
+              src={rLogo}
+              alt="RiftHub Small Logo"
+              className="h-12 w-auto object-contain transition-all duration-500"
+            />
           </Link>
           <div className="flex items-center gap-3 text-rift-gold">
-            <NavLinks />
+            <NavLinks
+              onTavernClick={() => {
+                if (user) {
+                  window.location.href = "/tavern";
+                } else {
+                  setShowAuthModal(true);
+                }
+              }}
+            />
 
-            {/* Favorites */}
             <HeartLink />
 
-            {/* Cart */}
             <Link to="/cart" className="relative p-2" aria-label="Cart" title="Cart">
               <HiOutlineShoppingCart className="h-8 w-8 text-rift-gold" />
               {count > 0 && (
@@ -175,7 +228,6 @@ const HeartLink = ({ className = "" }) => (
               )}
             </Link>
 
-            {/* Chat */}
             {user && (
               <Link to="/chat" className="relative p-2" aria-label="Chat" title="Chat">
                 <HiOutlineChatBubbleLeftRight className="h-8 w-8 text-rift-gold" />
@@ -189,7 +241,6 @@ const HeartLink = ({ className = "" }) => (
 
             <AccountMenu />
 
-            {/* Admin */}
             {user?.is_admin === 1 && (
               <Link to="/admin" className="p-2" aria-label="Admin" title="Admin">
                 <HiOutlineKey className="h-7 w-7 md:h-8 md:w-8 text-rift-gold" />
@@ -203,26 +254,52 @@ const HeartLink = ({ className = "" }) => (
           <div className={`${!isHome || isScrolled ? "hidden" : "block"} py-2`}>
             <div className="relative flex items-center justify-center">
               <Link to="/" className="flex justify-center">
-                <img src={rifthubLogo} alt="RiftHub Logo" className="h-32 md:h-48 w-auto object-contain transition-all duration-500" />
+                <img
+                  src={rifthubLogo}
+                  alt="RiftHub Logo"
+                  className="h-32 md:h-48 w-auto object-contain transition-all duration-500"
+                />
               </Link>
             </div>
             <div className="mt-3 flex justify-center">
-              <NavLinks />
+              <NavLinks
+                onTavernClick={() => {
+                  if (user) {
+                    window.location.href = "/tavern";
+                  } else {
+                    setShowAuthModal(true);
+                  }
+                }}
+              />
             </div>
           </div>
 
-          <div className={`${!isHome || isScrolled ? "flex" : "hidden"} items-center justify-between py-2 transition-all duration-500`}>
+          <div
+            className={`${
+              !isHome || isScrolled ? "flex" : "hidden"
+            } items-center justify-between py-2 transition-all duration-500`}
+          >
             <Link to="/" className="flex items-center gap-2 min-w-0">
-              <img src={rLogo} alt="RiftHub Small Logo" className="h-14 md:h-16 w-auto object-contain transition-all duration-500" />
+              <img
+                src={rLogo}
+                alt="RiftHub Small Logo"
+                className="h-14 md:h-16 w-auto object-contain transition-all duration-500"
+              />
             </Link>
             <div className="mx-3">
-              <NavLinks />
+              <NavLinks
+                onTavernClick={() => {
+                  if (user) {
+                    window.location.href = "/tavern";
+                  } else {
+                    setShowAuthModal(true);
+                  }
+                }}
+              />
             </div>
             <div className="flex items-center gap-4 text-rift-gold">
-              {/* Favorites */}
               <HeartLink className="hidden md:inline-flex" />
 
-              {/* Cart */}
               <Link to="/cart" className="relative p-2" aria-label="Cart" title="Cart">
                 <HiOutlineShoppingCart className="h-8 w-8 text-rift-gold" />
                 {count > 0 && (
@@ -232,7 +309,6 @@ const HeartLink = ({ className = "" }) => (
                 )}
               </Link>
 
-              {/* Chat */}
               {user && (
                 <Link to="/chat" className="relative p-2" aria-label="Chat" title="Chat">
                   <HiOutlineChatBubbleLeftRight className="h-8 w-8 text-rift-gold" />
@@ -246,7 +322,6 @@ const HeartLink = ({ className = "" }) => (
 
               <AccountMenu />
 
-              {/* Admin */}
               {user?.is_admin === 1 && (
                 <Link to="/admin" className="p-2" aria-label="Admin" title="Admin">
                   <HiOutlineKey className="h-7 w-7 md:h-8 md:w-8 text-rift-gold" />
@@ -256,6 +331,9 @@ const HeartLink = ({ className = "" }) => (
           </div>
         </div>
       </div>
+
+      {/* 🔹 modal visas här */}
+      {showAuthModal && <NotAuthModal onClose={() => setShowAuthModal(false)} />}
     </header>
   );
 }

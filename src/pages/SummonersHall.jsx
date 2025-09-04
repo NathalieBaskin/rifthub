@@ -3,6 +3,7 @@ import React, { useMemo, useState, useEffect } from "react";
 import { getUserFromToken } from "../utils/auth.js";
 import { FaEdit, FaTrash } from "react-icons/fa";
 import { AiOutlineLike, AiFillLike, AiOutlineComment } from "react-icons/ai";
+import NotAuthModal from "../components/NotAuthModal.jsx";
 
 const API_URL = "http://localhost:5000";
 
@@ -138,7 +139,8 @@ function ThreadRow({ t, onOpen, onLike, onDelete, user }) {
   );
 }
 
-function ThreadModal({ thread, onClose, user, onCommentCountChange }) {
+function ThreadModal({ thread, onClose, user, onCommentCountChange, setShowAuthModal }) {
+
   const [comments, setComments] = useState([]);
   const [replyOpen, setReplyOpen] = useState({});
   const [replyText, setReplyText] = useState({});
@@ -188,25 +190,35 @@ async function handleSaveThreadEdit() {
   }
 }
 
-
-
-  // --- COMMENT ACTIONS ---
-  async function handlePostComment(parentId = null) {
-    if (!user) return alert("Log in to comment");
-    const content = parentId ? replyText[parentId] : text;
-    if (!content?.trim()) return;
-
-    const res = await fetch(`${API_URL}/api/threads/${thread.id}/comments`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: user.id, content, parent_id: parentId }),
-    });
-    if (!res.ok) return;
-    const newComment = await res.json();
-    setComments((prev) => [...prev, newComment]);
-    onCommentCountChange?.(thread.id, +1);
-    parentId ? setReplyText((p) => ({ ...p, [parentId]: "" })) : setText("");
+// --- COMMENT ACTIONS ---
+async function handlePostComment(parentId = null) {
+  if (!user) {
+    if (typeof setShowAuthModal === "function") {
+      setShowAuthModal(true);   // 👈 öppna NotAuthModal
+    } else {
+      alert("Log in to comment"); // fallback om prop inte skickas
+    }
+    return;
   }
+
+  const content = parentId ? replyText[parentId] : text;
+  if (!content?.trim()) return;
+
+  const res = await fetch(`${API_URL}/api/threads/${thread.id}/comments`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ userId: user.id, content, parent_id: parentId }),
+  });
+
+  if (!res.ok) return;
+
+  const newComment = await res.json();
+  setComments((prev) => [...prev, newComment]);
+  onCommentCountChange?.(thread.id, +1);
+
+  parentId ? setReplyText((p) => ({ ...p, [parentId]: "" })) : setText("");
+}
+
 
   async function handleToggleLikeComment(commentId) {
     if (!user) return;
@@ -544,6 +556,8 @@ export default function SummonersHall() {
   const [showNew, setShowNew] = useState(false);
   const navOffset = useNavOffset();
   const user = getUserFromToken();
+    const [showAuthModal, setShowAuthModal] = useState(false);
+
 
   async function loadThreads() {
     const uid = user?.id ? `?userId=${user.id}` : "";
@@ -564,37 +578,49 @@ export default function SummonersHall() {
     });
   }, [topic, threads]);
 
-  async function handleLike(thread) {
-    if (!user) return alert("Log in to like posts");
-    const res = await fetch(`${API_URL}/api/threads/${thread.id}/like`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: user.id }),
-    });
-    if (!res.ok) return;
-    const { like_count, liked } = await res.json();
-    setThreads((prev) =>
-      prev.map((t) =>
-        t.id === thread.id ? { ...t, like_count, liked_by_me: liked ? 1 : 0 } : t
-      )
-    );
+async function handleLike(thread) {
+  if (!user) {
+    setShowAuthModal(true); // 👈 öppna modalen istället för alert
+    return;
   }
 
-  async function handleCreateThread({ title, content, topicId, file }) {
-    if (!user) return alert("Log in to create thread");
-    const formData = new FormData();
-    formData.append("userId", user.id);
-    formData.append("title", title);
-    formData.append("content", content);
-    formData.append("topic_id", topicId);
-    if (file) formData.append("thumb", file);
+  const res = await fetch(`${API_URL}/api/threads/${thread.id}/like`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ userId: user.id }),
+  });
+  if (!res.ok) return;
 
-    const res = await fetch(`${API_URL}/api/threads`, { method: "POST", body: formData });
-    if (!res.ok) return;
-    const newThread = await res.json();
-    setThreads((prev) => [newThread, ...prev]);
-    setShowNew(false);
+  const { like_count, liked } = await res.json();
+  setThreads((prev) =>
+    prev.map((t) =>
+      t.id === thread.id ? { ...t, like_count, liked_by_me: liked ? 1 : 0 } : t
+    )
+  );
+}
+
+
+// --- CREATE THREAD ---
+async function handleCreateThread({ title, content, topicId, file }) {
+  if (!user) {
+    setShowAuthModal(true); // 👈 öppna modal istället för alert
+    return;
   }
+
+  const formData = new FormData();
+  formData.append("userId", user.id);
+  formData.append("title", title);
+  formData.append("content", content);
+  formData.append("topic_id", topicId);
+  if (file) formData.append("thumb", file);
+
+  const res = await fetch(`${API_URL}/api/threads`, { method: "POST", body: formData });
+  if (!res.ok) return;
+  const newThread = await res.json();
+  setThreads((prev) => [newThread, ...prev]);
+  setShowNew(false);
+}
+
 
   async function handleDeleteThread(thread) {
     if (!user) return;
@@ -633,13 +659,20 @@ export default function SummonersHall() {
           className="hidden md:grid gap-6"
           style={{ gridTemplateColumns: "420px 1fr" }}
         >
-          <SideRail
-            topic={topic}
-            setTopic={setTopic}
-            onNewThread={() =>
-              user ? setShowNew(true) : alert("Log in to create a thread")
-            }
-          />
+<SideRail
+  topic={topic}
+  setTopic={setTopic}
+  onNewThread={() => {
+    if (user) {
+      setShowNew(true);       // ✅ öppna skapa-tråd-modal
+    } else {
+      setShowAuthModal(true); // ✅ öppna NotAuthModal istället för alert
+    }
+  }}
+/>
+
+
+
           <div className="flex-1 pt-8 pl-1">
             <ul>
               {list.map((t) => (
@@ -662,12 +695,13 @@ export default function SummonersHall() {
         </div>
       </div>
 
-      {open && (
+       {open && (
         <ThreadModal
           thread={open}
           onClose={() => setOpen(null)}
           user={user}
           onCommentCountChange={handleCommentCountChange}
+          setShowAuthModal={setShowAuthModal}   // 👈 lägg till här
         />
       )}
 
@@ -677,6 +711,11 @@ export default function SummonersHall() {
           onCreate={handleCreateThread}
         />
       )}
+
+      {showAuthModal && (
+        <NotAuthModal onClose={() => setShowAuthModal(false)} />
+      )}
     </div>
+
   );
 }
