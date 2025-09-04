@@ -10,8 +10,6 @@ import db from "./db.js";
 import productsPublicRouter, { productsAdminRouter } from "./routes/products.js";
 ;
 
-
-
 // === fixa __dirname för ESM ===
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -31,53 +29,121 @@ const io = new SocketIOServer(httpServer, {
 // ===== WebRTC signaling (namespace /live) =====
 const live = io.of("/live");
 
+// Håller koll på aktiv broadcaster per streamId
+const broadcastersByStream = new Map(); // streamId -> socket.id
+
+const room = (streamId) => `stream:${String(streamId)}`;
+const lockedChat = new Set(); // (om du vill låsa chatten)
+
 live.on("connection", (socket) => {
-  // när en broadcaster går live för ett streamId
+  // --- broadcaster startar ---
   socket.on("broadcaster:join", ({ streamId }) => {
-    socket.join(`stream:${streamId}`);
-    socket.data.role = "broadcaster";
-    socket.data.streamId = streamId;
-    live.to(`stream:${streamId}`).emit("system", { msg: "Broadcaster joined" });
+    if (streamId == null) return;
+    const sid = String(streamId);
+    socket.join(room(sid));
+    socket.data = { role: "broadcaster", streamId: sid };
+    broadcastersByStream.set(sid, socket.id);
+
+    // berätta för rummet att vi är live
+    live.to(room(sid)).emit("live:status", { isLive: true });
+    live.to(room(sid)).emit("system", { msg: "Broadcaster joined" });
+    live.to(room(sid)).emit("chat:locked", { streamId: sid, locked: lockedChat.has(sid) });
   });
 
-  // tittare ansluter
+  // --- viewer ansluter ---
   socket.on("viewer:join", ({ streamId }) => {
-    socket.join(`stream:${streamId}`);
-    socket.data.role = "viewer";
-    socket.data.streamId = streamId;
-    socket.to(`stream:${streamId}`).emit("viewer:ready", { viewerId: socket.id });
-  });
+    if (streamId == null) return;
+    const sid = String(streamId);
+    socket.join(room(sid));
+    socket.data = { role: "viewer", streamId: sid };
 
-  // WebRTC signaling
-  socket.on("offer", ({ viewerId, sdp }) => {
-    live.to(viewerId).emit("offer", { from: socket.id, sdp });
-  });
-
-  socket.on("answer", ({ to, sdp }) => {
-    live.to(to).emit("answer", { from: socket.id, sdp });
-  });
-
-  socket.on("ice-candidate", ({ to, candidate }) => {
-    live.to(to).emit("ice-candidate", { from: socket.id, candidate });
-  });
-
-  socket.on("disconnect", () => {
-    const { streamId, role } = socket.data || {};
-    if (streamId && role === "broadcaster") {
-      // meddela tittare att sändaren försvann
-      live.to(`stream:${streamId}`).emit("broadcast:ended");
+    const bId = broadcastersByStream.get(sid);
+    if (bId) {
+      // be aktuell broadcaster göra offer mot just denna viewer
+      live.to(bId).emit("viewer:ready", { viewerId: socket.id });
+      socket.emit("live:status", { isLive: true });
+    } else {
+      socket.emit("live:status", { isLive: false });
     }
+
+    socket.emit("chat:locked", { streamId: sid, locked: lockedChat.has(sid) });
+ });
+
+  // --- livechat (låsbar) ---
+  socket.on("chat:message", ({ streamId, user, text }) => {
+    if (!streamId || !text?.trim()) return;
+    const sid = String(streamId);
+    if (lockedChat.has(sid) && socket.data?.role !== "broadcaster") return; // låst
+    live.to(room(sid)).emit("chat:message", { user: user || "Anon", text: text.trim(), ts: Date.now() });
+  });
+
+  socket.on("chat:set-locked", ({ streamId, locked }) => {
+    if (!streamId) return;
+    if (socket.data?.role !== "broadcaster") return;
+    const sid = String(streamId);
+    if (locked) lockedChat.add(sid); else lockedChat.delete(sid);
+    live.to(room(sid)).emit("chat:locked", { streamId: sid, locked: !!locked });
+  });
+
+  // --- WebRTC signaling (riktad) ---
+  socket.on("offer",   ({ to, sdp })      => { if (to && sdp) live.to(to).emit("offer",   { from: socket.id, sdp }); });
+  socket.on("answer",  ({ to, sdp })      => { if (to && sdp) live.to(to).emit("answer",  { from: socket.id, sdp }); });
+  socket.on("ice-candidate", ({ to, candidate }) => { if (to && candidate) live.to(to).emit("ice-candidate", { from: socket.id, candidate }); });
+
+// --- broadcaster trycker Avsluta ---
+socket.on("broadcaster:leave", ({ streamId }) => {
+  if (!streamId) return;
+  const sid = String(streamId);
+
+  // meddela tittare
+  live.to(room(sid)).emit("broadcast:ended");
+  live.to(room(sid)).emit("live:status", { isLive: false });
+  // ta bort broadcaster från minnet
+  broadcastersByStream.delete(sid);
+  lockedChat.delete(sid);
+
+  // uppdatera DB
+ db.run("UPDATE tavern_streams SET is_live = 0 WHERE id = ?", [sid], (err) => {
+    if (err) console.error("❌ kunde inte sätta is_live=0:", err.message);
   });
 });
+
+// --- om broadcastern stänger fliken eller kopplar ner oväntat ---
+socket.on("disconnect", () => {
+  const { streamId, role } = socket.data || {};
+  if (role === "broadcaster" && streamId) {
+    const sid = String(streamId);
+
+    live.to(room(sid)).emit("broadcast:ended");
+    live.to(room(sid)).emit("live:status", { isLive: false });
+
+    broadcastersByStream.delete(sid);
+    lockedChat.delete(sid);
+
+    db.run("UPDATE tavern_streams SET is_live = 0 WHERE id = ?", [sid], (err) => {
+      if (err) console.error("❌ kunde inte sätta is_live=0:", err.message);
+    });
+  }
+  });
+});
+
+
+
 // ✅ se till att uploads-mappen alltid finns
 const uploadDir = path.join(__dirname, "public", "uploads");
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
   console.log("📂 Skapade mappen:", uploadDir);
 }
-
-// gör uploads-mappen publik
-app.use("/uploads", express.static(uploadDir));
+// gör uploads-mappen publik + range-stöd för video
+app.use(
+  "/uploads",
+  (req, res, next) => {
+    res.setHeader("Accept-Ranges", "bytes"); // viktigt för MP4 scrub
+    next();
+  },
+  express.static(uploadDir)
+);
 
 // hemlig nyckel för JWT
 const JWT_SECRET = "supersecretkey";
@@ -95,6 +161,7 @@ const storage = multer.diskStorage({
   },
 });
 const upload = multer({ storage });
+
 
 // ===============================
 // ===============================
@@ -1044,50 +1111,7 @@ app.delete("/api/threads/:id", (req, res) => {
     });
   });
 });
-// ✏️ Uppdatera en tråd (endast ägaren, inkl ev. ny bild)
-app.put("/api/threads/:id", upload.single("thumb"), (req, res) => {
-  const threadId = Number(req.params.id);
-  const { userId, title, content } = req.body;
 
-  if (!userId || !title || !content) {
-    return res.status(400).json({ error: "Missing fields" });
-  }
-
-  db.get("SELECT * FROM threads WHERE id = ?", [threadId], (err, thr) => {
-    if (err) return res.status(500).json({ error: err.message });
-    if (!thr) return res.status(404).json({ error: "Thread not found" });
-    if (thr.user_id !== Number(userId)) {
-      return res.status(403).json({ error: "Not allowed" });
-    }
-
-    let thumb = thr.thumb;
-    if (req.file) {
-      thumb = `/uploads/${req.file.filename}`;
-    }
-
-    db.run(
-      "UPDATE threads SET title = ?, content = ?, thumb = ? WHERE id = ?",
-      [title, content, thumb, threadId],
-      function (err2) {
-        if (err2) return res.status(500).json({ error: err2.message });
-
-        db.get(
-          `SELECT t.id, t.title, t.content, t.created_at,
-                  u.username AS author, t.topic_id, t.user_id,
-                  IFNULL(t.thumb, '') AS thumb
-           FROM threads t
-           JOIN users u ON u.id = t.user_id
-           WHERE t.id = ?`,
-          [threadId],
-          (err3, row) => {
-            if (err3) return res.status(500).json({ error: err3.message });
-            res.json(row);
-          }
-        );
-      }
-    );
-  });
-});
 
 // ✏️ Uppdatera en kommentar (endast ägaren)
 app.put("/api/comments/:id", (req, res) => {
@@ -2218,14 +2242,29 @@ app.delete("/api/album-item-comments/:id", (req, res) => {
 });
 app.use("/api/products", productsPublicRouter);
 app.use("/api/admin/products", productsAdminRouter);
-// TAVERN: Highlights
+// ===============================
+// TAVERN: Highlights (improved)
 // ===============================
 app.get("/api/tavern/highlights", (req, res) => {
+  const meId = req.query.meId ? Number(req.query.meId) : null;
+
+  const likedCol = meId
+    ? `CASE WHEN EXISTS (
+         SELECT 1 FROM tavern_highlight_likes l
+         WHERE l.highlight_id = h.id AND l.user_id = ${meId}
+       ) THEN 1 ELSE 0 END AS liked_by_me`
+    : `0 AS liked_by_me`;
+
   db.all(
-    `SELECT h.*, u.username as author,
-      (SELECT COUNT(*) FROM tavern_highlight_likes l WHERE l.highlight_id=h.id) AS like_count
+    `SELECT
+       h.id, h.user_id, h.title, h.description, h.video_url, h.created_at,
+       u.username AS author,
+       up.avatar_url,
+       (SELECT COUNT(*) FROM tavern_highlight_likes l WHERE l.highlight_id=h.id) AS like_count,
+       ${likedCol}
      FROM tavern_highlights h
      JOIN users u ON u.id = h.user_id
+     LEFT JOIN user_profiles up ON up.user_id = h.user_id
      ORDER BY h.created_at DESC`,
     [],
     (err, rows) => {
@@ -2290,13 +2329,16 @@ app.post("/api/tavern/highlights/:id/like", (req, res) => {
     }
   );
 });
-
 app.get("/api/tavern/highlights/:id/comments", (req, res) => {
   const id = Number(req.params.id);
   db.all(
-    `SELECT c.id, c.content, c.created_at, u.username
+    `SELECT c.id, c.content, c.created_at,
+            u.id AS user_id,              -- lägg till detta
+            u.username,
+            up.avatar_url
      FROM tavern_highlight_comments c
      JOIN users u ON u.id = c.user_id
+     LEFT JOIN user_profiles up ON up.user_id = u.id
      WHERE c.highlight_id = ?
      ORDER BY c.created_at ASC`,
     [id],
@@ -2306,6 +2348,7 @@ app.get("/api/tavern/highlights/:id/comments", (req, res) => {
     }
   );
 });
+
 
 app.post("/api/tavern/highlights/:id/comments", (req, res) => {
   const id = Number(req.params.id);
@@ -2321,15 +2364,36 @@ app.post("/api/tavern/highlights/:id/comments", (req, res) => {
     }
   );
 });
+// ❌ Ta bort en highlight-kommentar (endast ägaren)
+app.delete("/api/tavern/highlight-comments/:id", (req, res) => {
+  const commentId = Number(req.params.id);
+  const { userId } = req.body;
+  if (!userId) return res.status(400).json({ error: "Missing userId" });
+
+  db.get("SELECT user_id FROM tavern_highlight_comments WHERE id = ?", [commentId], (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!row) return res.status(404).json({ error: "Comment not found" });
+    if (row.user_id !== Number(userId)) return res.status(403).json({ error: "Not allowed" });
+
+    db.run("DELETE FROM tavern_highlight_comments WHERE id = ?", [commentId], function (err2) {
+      if (err2) return res.status(500).json({ error: err2.message });
+      res.json({ success: true });
+    });
+  });
+});
+
 
 // ===============================
 // TAVERN: Streams (metadata)
 // ===============================
 app.get("/api/tavern/streams", (req, res) => {
+  const onlyLive = req.query.live === "1";
+  const where = onlyLive ? "WHERE s.is_live = 1" : "";
   db.all(
     `SELECT s.*, u.username as author
      FROM tavern_streams s
      JOIN users u ON u.id = s.user_id
+     ${where}
      ORDER BY s.created_at DESC`,
     [],
     (err, rows) => {
@@ -2338,6 +2402,7 @@ app.get("/api/tavern/streams", (req, res) => {
     }
   );
 });
+
 
 app.post("/api/tavern/streams", (req, res) => {
   const { userId, title, description } = req.body;

@@ -1,54 +1,46 @@
 // src/pages/TavernPage.jsx
 import { useEffect, useState } from "react";
-import { getUserFromToken } from "../utils/auth.js";
 import { HiOutlineVideoCamera, HiPlay, HiHeart } from "react-icons/hi2";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
+import { getUserFromToken } from "../utils/auth.js";
+import { timeAgo } from "../utils/time.js";
+import UploadHighlightModal from "../components/UploadHighlightModal.jsx";
 
 const API_URL = "http://localhost:5000";
 
 export default function TavernPage() {
   const me = getUserFromToken();
   const nav = useNavigate();
+
   const [highlights, setHighlights] = useState([]);
   const [live, setLive] = useState([]);
-  const [file, setFile] = useState(null);
-  const [title, setTitle] = useState("");
-  const [desc, setDesc] = useState("");
-  const [uploading, setUploading] = useState(false);
+  const [openModal, setOpenModal] = useState(false);
 
   async function load() {
     const [h, s] = await Promise.all([
-      fetch(`${API_URL}/api/tavern/highlights`).then(r => r.json()),
-      fetch(`${API_URL}/api/tavern/streams`).then(r => r.json()),
+      fetch(`${API_URL}/api/tavern/highlights?meId=${me?.id || ""}`).then((r) =>
+        r.json()
+      ),
+      fetch(`${API_URL}/api/tavern/streams`).then((r) => r.json()),
     ]);
     setHighlights(h);
-    setLive(s.filter(x => x.is_live === 1));
+    setLive(s.filter((x) => Number(x.is_live) === 1));
   }
 
-  useEffect(() => { load(); }, []);
-
-  async function uploadHighlight(e) {
-    e.preventDefault();
-    if (!file || !title.trim()) return;
-    setUploading(true);
-    const fd = new FormData();
-    fd.append("userId", me.id);
-    fd.append("title", title);
-    fd.append("description", desc);
-    fd.append("video", file);
-
-    const res = await fetch(`${API_URL}/api/tavern/highlights`, { method: "POST", body: fd });
-    setUploading(false);
-    if (!res.ok) return alert("Upload failed");
-    setFile(null); setTitle(""); setDesc("");
+  useEffect(() => {
     load();
-  }
+  }, []);
 
-  async function likeHighlight(id) {
+  useEffect(() => {
+    const id = setInterval(load, 5000);
+    return () => clearInterval(id);
+  }, []);
+
+  async function toggleLikeHighlight(id) {
     await fetch(`${API_URL}/api/tavern/highlights/${id}/like`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: me.id })
+      body: JSON.stringify({ userId: me.id }),
     });
     load();
   }
@@ -57,12 +49,20 @@ export default function TavernPage() {
     <div className="max-w-6xl mx-auto p-6">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-display text-rift-gold">The Rift Tavern</h1>
-        <button
-          onClick={() => nav("/tavern/live")}
-          className="px-4 py-2 border border-rift-gold/50 rounded-md text-rift-gold hover:bg-rift-card/60"
-        >
-          Go Live
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={() => setOpenModal(true)}
+            className="px-4 py-2 border border-rift-gold/50 rounded-md text-rift-gold hover:bg-rift-card/60"
+          >
+            Upload highlight
+          </button>
+          <button
+            onClick={() => nav("/tavern/live")}
+            className="px-4 py-2 border border-rift-gold/50 rounded-md text-rift-gold hover:bg-rift-card/60"
+          >
+            Go Live
+          </button>
+        </div>
       </div>
 
       {/* LIVE NOW */}
@@ -73,12 +73,23 @@ export default function TavernPage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             {live.map((s) => (
-              <div key={s.id} className="border border-rift-gold/30 rounded-xl p-3">
+              <div
+                key={s.id}
+                className="border border-rift-gold/30 rounded-xl p-3"
+              >
                 <div className="flex items-center gap-2 text-rift-gold">
                   <HiOutlineVideoCamera className="h-5 w-5" />
                   <span className="font-semibold">{s.title}</span>
                 </div>
-                <p className="text-sm text-gray-300 mt-1">by {s.author}</p>
+                <p className="text-sm text-gray-300 mt-1">
+                  by{" "}
+                  <Link
+                    to={`/profile/${s.id}`}
+                    className="text-rift-gold hover:underline"
+                  >
+                    {s.author}
+                  </Link>
+                </p>
                 <button
                   onClick={() => nav(`/tavern/watch/${s.id}`)}
                   className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded bg-rift-card border border-rift-gold/40 hover:bg-rift-card/70"
@@ -91,39 +102,6 @@ export default function TavernPage() {
         )}
       </section>
 
-      {/* UPLOAD HIGHLIGHT */}
-      <section className="mb-8">
-        <h2 className="text-xl text-rift-gold mb-3">Upload a highlight</h2>
-        <form onSubmit={uploadHighlight} className="grid sm:grid-cols-2 gap-3">
-          <input
-            type="text"
-            placeholder="Title"
-            className="bg-black/30 border border-rift-gold/30 rounded p-2 text-white"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-          />
-          <input
-            type="text"
-            placeholder="Description (optional)"
-            className="bg-black/30 border border-rift-gold/30 rounded p-2 text-white"
-            value={desc}
-            onChange={(e) => setDesc(e.target.value)}
-          />
-          <input
-            type="file"
-            accept="video/mp4,video/webm"
-            onChange={(e) => setFile(e.target.files?.[0] || null)}
-            className="sm:col-span-2"
-          />
-          <button
-            disabled={uploading || !file || !title.trim()}
-            className="sm:col-span-2 px-4 py-2 border border-rift-gold/50 rounded-md text-rift-gold hover:bg-rift-card/60 disabled:opacity-60"
-          >
-            {uploading ? "Uploading…" : "Upload"}
-          </button>
-        </form>
-      </section>
-
       {/* HIGHLIGHTS LIST */}
       <section>
         <h2 className="text-xl text-rift-gold mb-3">Latest highlights</h2>
@@ -132,29 +110,89 @@ export default function TavernPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {highlights.map((h) => (
-              <div key={h.id} className="border border-rift-gold/30 rounded-xl p-3">
-                <video src={h.video_url} controls className="w-full rounded-lg" />
-                <div className="mt-2 flex items-center justify-between">
-                  <div>
-                    <div className="text-white font-semibold">{h.title}</div>
-                    <div className="text-xs text-gray-400">by {h.author}</div>
-                  </div>
-                  <button
-                    onClick={() => likeHighlight(h.id)}
-                    className="inline-flex items-center gap-1 px-2 py-1 rounded bg-rift-card border border-rift-gold/40 hover:bg-rift-card/70"
-                  >
-                    <HiHeart className="h-4 w-4 text-rift-gold" />
-                    <span className="text-white text-sm">{h.like_count}</span>
-                  </button>
-                </div>
-
-                {/* Simple comments list (write + list) */}
-                <HighlightComments highlightId={h.id} />
-              </div>
+              <HighlightCard
+                key={h.id}
+                h={h}
+                onLike={() => toggleLikeHighlight(h.id)}
+              />
             ))}
           </div>
         )}
       </section>
+
+      <UploadHighlightModal
+        open={openModal}
+        onClose={() => setOpenModal(false)}
+        onUploaded={load}
+      />
+    </div>
+  );
+}
+
+export function HighlightCard({ h, onLike }) {
+  return (
+    <div className="border border-rift-gold/30 rounded-xl p-3 bg-black/20">
+      {/* Header med avatar + namn */}
+      <div className="flex items-center gap-3 mb-3">
+        <Link to={`/profile/${h.user_id}`} className="flex items-center gap-2">
+          <img
+            src={
+              h.avatar_url
+                ? `${API_URL}${h.avatar_url}`
+                : "/images/default-avatar.png"
+            }
+            alt={h.author}
+            className="h-9 w-9 rounded-full object-cover border border-rift-gold/30"
+          />
+          <div>
+            <span className="text-rift-gold font-semibold hover:underline">
+              {h.author}
+            </span>
+            <div className="text-xs text-gray-400">{timeAgo(h.created_at)}</div>
+          </div>
+        </Link>
+      </div>
+
+      {/* Video */}
+      <div className="rounded-lg overflow-hidden">
+        <video
+          src={`${API_URL}${h.video_url}`}
+          controls
+          preload="metadata"
+          crossOrigin="anonymous"
+          className="w-full h-auto bg-black"
+          style={{ maxHeight: 420 }}
+        />
+      </div>
+
+      {/* Titel & beskrivning */}
+      <div className="mt-2">
+        <div className="text-white font-semibold">{h.title}</div>
+        {h.description && (
+          <div className="text-sm text-gray-300 mt-1">{h.description}</div>
+        )}
+      </div>
+
+      {/* Like-knapp */}
+      <div className="mt-3 flex items-center justify-between">
+        <button
+          onClick={onLike}
+          className={`inline-flex items-center gap-2 px-3 py-1.5 rounded bg-rift-card border border-rift-gold/40 hover:bg-rift-card/70 ${
+            h.liked_by_me ? "ring-1 ring-rift-gold/60" : ""
+          }`}
+          title={h.liked_by_me ? "Unlike" : "Like"}
+        >
+          <HiHeart
+            className={`h-5 w-5 ${
+              h.liked_by_me ? "text-rift-gold" : "text-gray-300"
+            }`}
+          />
+          <span className="text-white text-sm">{h.like_count}</span>
+        </button>
+      </div>
+
+      {/* Kommentarer */}
+      <HighlightComments highlightId={h.id} />
     </div>
   );
 }
@@ -164,16 +202,20 @@ function HighlightComments({ highlightId }) {
   const [list, setList] = useState([]);
   const [txt, setTxt] = useState("");
 
-  const API_URL = "http://localhost:5000";
-
   async function load() {
-    const r = await fetch(`${API_URL}/api/tavern/highlights/${highlightId}/comments`);
+    const r = await fetch(
+      `${API_URL}/api/tavern/highlights/${highlightId}/comments`
+    );
     if (r.ok) setList(await r.json());
   }
-  useEffect(() => { load(); }, [highlightId]);
+
+  useEffect(() => {
+    load();
+  }, [highlightId]);
 
   async function postComment(e) {
     e.preventDefault();
+    if (!me) return alert("Logga in först.");
     if (!txt.trim()) return;
     await fetch(`${API_URL}/api/tavern/highlights/${highlightId}/comments`, {
       method: "POST",
@@ -184,8 +226,25 @@ function HighlightComments({ highlightId }) {
     load();
   }
 
+  async function delComment(id) {
+    if (!me) return alert("Logga in först.");
+    if (!confirm("Delete this comment?")) return;
+    const r = await fetch(`${API_URL}/api/tavern/highlight-comments/${id}`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: me.id }),
+    });
+    if (r.ok) {
+      setList((prev) => prev.filter((c) => c.id !== id));
+    } else {
+      const e = await r.json().catch(() => ({}));
+      alert(e?.error || "Failed to delete");
+    }
+  }
+
   return (
     <div className="mt-3">
+      {/* Skriv kommentar */}
       <form onSubmit={postComment} className="flex gap-2">
         <input
           className="flex-1 bg-black/30 border border-rift-gold/30 rounded p-2 text-white"
@@ -197,12 +256,51 @@ function HighlightComments({ highlightId }) {
           Send
         </button>
       </form>
-      <div className="mt-2 space-y-2">
-        {list.map((c) => (
-          <div key={c.id} className="text-sm text-gray-200">
-            <span className="text-rift-gold">{c.username}</span>: {c.content}
-          </div>
-        ))}
+
+      {/* Lista kommentarer */}
+      <div className="mt-2 space-y-3">
+        {list.map((c) => {
+          const mine = me && me.username === c.username;
+          return (
+            <div key={c.id} className="flex items-start gap-2">
+              <Link to={`/profile/${c.user_id}`}>
+                <img
+                  src={
+                    c.avatar_url
+                      ? `${API_URL}${c.avatar_url}`
+                      : "/images/default-avatar.png"
+                  }
+                  alt={c.username}
+                  className="h-7 w-7 rounded-full object-cover border border-rift-gold/30 mt-0.5"
+                />
+              </Link>
+
+              <div className="flex-1 text-sm">
+                <div className="flex items-center gap-2 text-gray-300">
+                  <Link
+                    to={`/profile/${c.user_id}`}
+                    className="text-rift-gold font-medium hover:underline"
+                  >
+                    {c.username}
+                  </Link>
+                  <span className="text-xs text-gray-500">
+                    {timeAgo(c.created_at)}
+                  </span>
+                  {mine && (
+                    <button
+                      onClick={() => delComment(c.id)}
+                      className="ml-2 text-xs text-red-400 hover:text-red-300"
+                      title="Delete"
+                    >
+                      Delete
+                    </button>
+                  )}
+                </div>
+                <div className="text-white">{c.content}</div>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
