@@ -13,12 +13,7 @@ export default function AdminDashboard() {
 
       {/* Tab-menyn */}
       <nav className="flex gap-4 mb-6 border-b border-rift-gold/30">
-        <button
-          onClick={() => setTab("profile")}
-          className={`px-4 py-2 ${tab === "profile" ? "border-b-2 border-rift-gold text-rift-gold" : ""}`}
-        >
-          My Profile
-        </button>
+      
         <button
           onClick={() => setTab("products")}
           className={`px-4 py-2 ${tab === "products" ? "border-b-2 border-rift-gold text-rift-gold" : ""}`}
@@ -36,7 +31,7 @@ export default function AdminDashboard() {
 
       {/* Panelen */}
       <div>
-        {tab === "profile" && <div>Här kommer admin kunna ändra sin egen profil (sen).</div>}
+  
         {tab === "products" && <AdminProducts />}
         {tab === "champions" && <AdminChampions />}
 

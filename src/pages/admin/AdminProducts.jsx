@@ -63,7 +63,6 @@ export default function AdminProducts() {
     const token = localStorage.getItem("token");
     if (!token) return;
 
-    // enkel validering
     if (!form.name.trim() || !form.price || !form.sku.trim()) {
       alert("Name, price and SKU are required");
       return;
@@ -78,11 +77,9 @@ export default function AdminProducts() {
     fd.append("name", form.name);
     fd.append("description", form.description);
     fd.append("price", String(form.price));
-    // OBS: join utan extra mellanslag = enklare split i backend/DB
     fd.append("categories", form.categories.join(","));
     fd.append("sku", form.sku);
 
-    // Skicka ISO men bara datumdel i input — backend normaliserar
     const isoDate = new Date(form.created_at).toISOString();
     fd.append("created_at", isoDate);
 
@@ -162,7 +159,7 @@ export default function AdminProducts() {
   }
 
   return (
-    <div className="p-6 text-black">
+    <div className="p-6 text-white">
       <h2 className="text-xl font-bold mb-4">All Products</h2>
       <ul className="space-y-3 mb-6">
         {products.length > 0 ? (
@@ -180,9 +177,9 @@ export default function AdminProducts() {
                   />
                 )}
                 <div>
-                  <span className="font-semibold">{p.name}</span>{" "}
+                  <span className="font-semibold text-white">{p.name}</span>{" "}
                   – <span className="text-rift-gold">{p.price} SEK</span>
-                  <div className="text-sm text-gray-700">
+                  <div className="text-sm text-white">
                     SKU: {p.sku} | Categories: {p.categories}
                   </div>
                 </div>
@@ -190,7 +187,7 @@ export default function AdminProducts() {
               <div className="flex gap-2">
                 <button
                   onClick={() => startEdit(p)}
-                  className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+                  className="px-3 py-1 bg-white text-black rounded hover:bg-black hover:text-white transition"
                 >
                   Edit
                 </button>
@@ -208,7 +205,7 @@ export default function AdminProducts() {
         )}
       </ul>
 
-      <h2 className="text-xl font-bold mb-4">
+      <h2 className="text-xl font-bold mb-4 text-white">
         {isEditing ? "Edit Product" : "Add New Product"}
       </h2>
       <form onSubmit={handleSubmit} className="space-y-3">
@@ -216,28 +213,28 @@ export default function AdminProducts() {
           placeholder="Name"
           value={form.name}
           onChange={(e) => setForm({ ...form, name: e.target.value })}
-          className="border p-2 w-full"
+          className="border p-2 w-full text-black"
           required
         />
         <textarea
           placeholder="Description"
           value={form.description}
           onChange={(e) => setForm({ ...form, description: e.target.value })}
-          className="border p-2 w-full"
+          className="border p-2 w-full text-black"
         />
         <input
           placeholder="Price"
           type="number"
           value={form.price}
           onChange={(e) => setForm({ ...form, price: e.target.value })}
-          className="border p-2 w-full"
+          className="border p-2 w-full text-black"
           required
         />
 
         {/* Categories */}
         <div>
-          <p className="font-semibold mb-2">Categories:</p>
-          <div className="grid grid-cols-2 gap-2">
+          <p className="font-semibold mb-2 text-white">Categories:</p>
+          <div className="grid grid-cols-2 gap-2 text-white">
             {ALL_CATEGORIES.map((cat) => (
               <label key={cat} className="flex items-center gap-2">
                 <input
@@ -257,24 +254,24 @@ export default function AdminProducts() {
           onChange={(e) =>
             setForm({ ...form, sku: e.target.value.toUpperCase() })
           }
-          className="border p-2 w-full"
+          className="border p-2 w-full text-black"
           required
         />
 
         {/* Release date */}
         <div>
-          <label className="font-semibold block mb-1">Release Date:</label>
+          <label className="font-semibold block mb-1 text-white">Release Date:</label>
           <input
             type="date"
             value={form.created_at}
             onChange={(e) => setForm({ ...form, created_at: e.target.value })}
-            className="border p-2"
+            className="border p-2 text-black"
           />
         </div>
 
         {/* Image */}
         <div>
-          <label className="font-semibold block mb-1">Image:</label>
+          <label className="font-semibold block mb-1 text-white">Image:</label>
           {image ? (
             <img
               src={URL.createObjectURL(image)}
