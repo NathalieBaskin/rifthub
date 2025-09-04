@@ -1,53 +1,48 @@
+// src/pages/ProductDetail.jsx
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useCart } from "../context/useCart.js";
-import { AiOutlineHeart, AiFillHeart } from "react-icons/ai";
+import { HiOutlineHeart, HiHeart } from "react-icons/hi2";
+import { useFavorites } from "../hooks/useFavorites";
+import ProductCard from "../components/ProductCard";
+
+// Swiper imports
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Navigation } from "swiper/modules";
+import "swiper/css";
+import "swiper/css/navigation";
 
 export default function ProductDetail() {
   const { id } = useParams();
-  const navigate = useNavigate();
   const { addToCart } = useCart();
+  const { favorites, toggleFavorite } = useFavorites();
 
   const [product, setProduct] = useState(null);
   const [similar, setSimilar] = useState([]);
-  const [favorites, setFavorites] = useState(
-    () => JSON.parse(localStorage.getItem("favorites") || "[]")
-  );
   const [selectedSize, setSelectedSize] = useState("");
 
-  const toggleFavorite = (id) => {
-    let updated;
-    if (favorites.includes(id)) {
-      updated = favorites.filter((fid) => fid !== id);
-    } else {
-      updated = [...favorites, id];
-    }
-    setFavorites(updated);
-    localStorage.setItem("favorites", JSON.stringify(updated));
-  };
-
   useEffect(() => {
-    async function fetchProduct() {
+    async function fetchData() {
       const res = await fetch(`http://localhost:5000/api/products/${id}`);
       const data = await res.json();
       setProduct(data);
-    }
-    async function fetchSimilar() {
-      const res = await fetch(`http://localhost:5000/api/products/${id}/similar`);
-      const data = await res.json();
-      setSimilar(data);
-    }
 
-    fetchProduct();
-    fetchSimilar();
+      const simRes = await fetch(
+        `http://localhost:5000/api/products/${id}/similar`
+      );
+      const simData = await simRes.json();
+      setSimilar(simData);
+    }
+    fetchData();
   }, [id]);
 
   if (!product) return <p className="p-6">Loading...</p>;
 
-  const isFavorite = favorites.includes(product.id);
+  const isFavorite = favorites.some((p) => Number(p.id) === Number(product.id));
 
   return (
-    <div className="max-w-5xl mx-auto p-6 text-black">
+    <div className="max-w-5xl mx-auto p-6 text-white">
+      {/* Produkt-detaljer */}
       <div className="flex flex-col md:flex-row gap-8 mb-10">
         <div className="relative w-full md:w-1/2 flex justify-center">
           <img
@@ -61,13 +56,13 @@ export default function ProductDetail() {
             </span>
           )}
           <button
-            onClick={() => toggleFavorite(product.id)}
+            onClick={() => toggleFavorite(product)}
             className="absolute bottom-2 right-2 bg-white rounded-full p-2 shadow"
           >
             {isFavorite ? (
-              <AiFillHeart className="text-red-500 text-xl" />
+              <HiHeart className="text-rift-gold text-xl" />
             ) : (
-              <AiOutlineHeart className="text-black text-xl" />
+              <HiOutlineHeart className="text-gray-600 text-xl" />
             )}
           </button>
         </div>
@@ -107,6 +102,7 @@ export default function ProductDetail() {
         </div>
       </div>
 
+      {/* Liknande produkter */}
       <div>
         <h2 className="text-2xl font-display text-rift-gold mb-4">
           Similar Products
@@ -115,48 +111,30 @@ export default function ProductDetail() {
         {similar.length === 0 ? (
           <p>No similar products found.</p>
         ) : (
-          <div className="flex gap-4 overflow-x-auto pb-4">
-            {similar.map((p) => {
-              const simFav = favorites.includes(p.id);
-              return (
-                <div
-                  key={p.id}
-                  onClick={() => navigate(`/shop/product/${p.id}`)}
-                  className="min-w-[200px] bg-white rounded-xl shadow cursor-pointer hover:shadow-lg transition relative text-black"
-                >
-                  <img
-                    src={p.image_url}
-                    alt={p.name}
-                    className="w-full h-40 object-cover rounded-t-xl"
-                  />
-                  {p.isNew && (
-                    <span className="absolute top-1 left-1 bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded">
-                      NEW
-                    </span>
-                  )}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleFavorite(p.id);
-                    }}
-                    className="absolute bottom-2 right-2 bg-white rounded-full p-1 shadow"
-                  >
-                    {simFav ? (
-                      <AiFillHeart className="text-red-500 text-lg" />
-                    ) : (
-                      <AiOutlineHeart className="text-black text-lg" />
-                    )}
-                  </button>
-                  <div className="p-3 text-center">
-                    <p className="font-semibold">{p.name}</p>
-                    <p className="text-sm text-rift-gold">{p.price} SEK</p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+   <Swiper
+  modules={[Navigation]}
+  navigation
+  spaceBetween={16}
+  slidesPerView={3}
+  className="
+    [&_.swiper-button-next]:!text-rift-gold 
+    [&_.swiper-button-prev]:!text-rift-gold
+    [&_.swiper-button-next]:!w-10 [&_.swiper-button-prev]:!w-10
+    [&_.swiper-button-next]:!h-10 [&_.swiper-button-prev]:!h-10
+    [&_.swiper-button-next]:hover:!text-black
+    [&_.swiper-button-prev]:hover:!text-black
+  "
+>
+  {similar.map((p) => (
+    <SwiperSlide key={p.id}>
+      <ProductCard product={p} />
+    </SwiperSlide>
+  ))}
+</Swiper>
+
         )}
       </div>
+      
     </div>
   );
 }
