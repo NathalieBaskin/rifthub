@@ -108,7 +108,7 @@ export default function Navbar() {
           <img
             src="/images/user-icon.png"
             alt="User"
-            className="h-8 w-8 object-contain"
+            className="h-11 w-11 object-contain"
           />
         </Link>
       );
@@ -123,7 +123,7 @@ export default function Navbar() {
           <img
             src="/images/user-icon.png"
             alt="User"
-            className="h-8 w-8 object-contain"
+            className="h-11 w-11 object-contain"
           />
         </button>
         {dropdownOpen && (
@@ -174,7 +174,7 @@ export default function Navbar() {
       <img
         src="/images/heart-icon.png"
         alt="Favorites"
-        className="h-8 w-8 object-contain"
+        className="h-11 w-11 object-contain"
       />
       {favorites?.length > 0 && (
         <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs px-1.5 rounded-full">
@@ -219,16 +219,11 @@ export default function Navbar() {
 
             <HeartLink />
 
-            <Link
-              to="/cart"
-              className="relative p-2"
-              aria-label="Cart"
-              title="Cart"
-            >
+            <Link to="/cart" className="relative p-2" aria-label="Cart" title="Cart">
               <img
                 src="/images/cart-icon.png"
                 alt="Cart"
-                className="h-8 w-8 object-contain"
+                className="h-11 w-11 object-contain"
               />
               {count > 0 && (
                 <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs px-1.5 rounded-full">
@@ -238,16 +233,11 @@ export default function Navbar() {
             </Link>
 
             {user && (
-              <Link
-                to="/chat"
-                className="relative p-2"
-                aria-label="Chat"
-                title="Chat"
-              >
+              <Link to="/chat" className="relative p-2" aria-label="Chat" title="Chat">
                 <img
                   src="/images/chat-icon.png"
                   alt="Chat"
-                  className="h-8 w-8 object-contain"
+                  className="h-11 w-11 object-contain"
                 />
                 {unreadCount > 0 && (
                   <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs px-1.5 rounded-full">
@@ -264,7 +254,7 @@ export default function Navbar() {
                 <img
                   src="/images/key-icon.png"
                   alt="Admin"
-                  className="h-7 w-7 md:h-8 md:w-8 object-contain"
+                  className="h-11 w-11 object-contain"
                 />
               </Link>
             )}
@@ -322,16 +312,11 @@ export default function Navbar() {
             <div className="flex items-center gap-4 text-rift-gold">
               <HeartLink className="hidden md:inline-flex" />
 
-              <Link
-                to="/cart"
-                className="relative p-2"
-                aria-label="Cart"
-                title="Cart"
-              >
+              <Link to="/cart" className="relative p-2" aria-label="Cart" title="Cart">
                 <img
                   src="/images/cart-icon.png"
                   alt="Cart"
-                  className="h-8 w-8 object-contain"
+                  className="h-11 w-11 object-contain"
                 />
                 {count > 0 && (
                   <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs px-1.5 rounded-full">
@@ -341,16 +326,11 @@ export default function Navbar() {
               </Link>
 
               {user && (
-                <Link
-                  to="/chat"
-                  className="relative p-2"
-                  aria-label="Chat"
-                  title="Chat"
-                >
+                <Link to="/chat" className="relative p-2" aria-label="Chat" title="Chat">
                   <img
                     src="/images/chat-icon.png"
                     alt="Chat"
-                    className="h-8 w-8 object-contain"
+                    className="h-11 w-11 object-contain"
                   />
                   {unreadCount > 0 && (
                     <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs px-1.5 rounded-full">
@@ -367,7 +347,7 @@ export default function Navbar() {
                   <img
                     src="/images/key-icon.png"
                     alt="Admin"
-                    className="h-7 w-7 md:h-8 md:w-8 object-contain"
+                    className="h-11 w-11 object-contain"
                   />
                 </Link>
               )}
