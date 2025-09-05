@@ -1,13 +1,33 @@
+// src/components/Footer.jsx
+import { Link } from "react-router-dom";
+import rifthubLogo from "../assets/images/rifthub.png";
+
 export default function Footer() {
   return (
-    <footer className="border-t border-rift-gold/15 bg-rift-bg/70">
-      <div className="max-w-7xl mx-auto px-4 py-6 text-xs text-gray-400 flex flex-wrap gap-x-6 gap-y-2 justify-center">
-        <a href="https://www.leagueoflegends.com/en-gb/how-to-play/?_gl=1*1k2ux2u*_gcl_au*MTE4NzM0NjY2Ni4xNzU1NTkwMjQx" className="hover:text-gray-200">About LoL</a>
-        <a href="https://support.riotgames.com/hc/en-us" className="hover:text-gray-200">Support</a>
-        <a href="https://lolesports.com/en-GB/" className="hover:text-gray-200">Esports pro site</a>
-        <a href="https://status.riotgames.com/?locale=en_US" className="hover:text-gray-200">Server status</a>
-        <span className="text-gray-600">© {new Date().getFullYear()} RIFT HUB</span>
-      </div>
-    </footer>
+    <div>
+      {/* DESKTOP + IPAD (bara loggan, EJ fixed) */}
+      <footer className="hidden md:flex justify-center items-center py-4 backdrop-blur bg-black/30 border-t border-rift-gold/15">
+        <img
+          src={rifthubLogo}
+          alt="RiftHub Logo"
+          className="h-16 md:h-24 w-auto object-contain mx-auto"
+        />
+      </footer>
+
+      {/* MOBIL (fixed länkar) */}
+      <footer className="md:hidden fixed bottom-0 left-0 w-full z-50 backdrop-blur bg-black/30 border-t border-rift-gold/15">
+        <div className="flex justify-around items-center py-3 text-rift-gold text-sm font-semibold">
+          <Link to="/summoners-hall" className="hover:text-white transition">
+            Summoner&apos;s Hall
+          </Link>
+          <Link to="/tavern" className="hover:text-white transition">
+            The Rift Tavern
+          </Link>
+          <Link to="/shop" className="hover:text-white transition">
+            Legends Bazaar
+          </Link>
+        </div>
+      </footer>
+    </div>
   );
 }

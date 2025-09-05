@@ -48,7 +48,7 @@ export default function App() {
 
   return (
     <Routes>
-      {/* Allt innehåll använder Layout som wrapper (Navbar + ev. Footer) */}
+      {/* Allt innehåll använder Layout som wrapper (Navbar + Footer) */}
       <Route element={<Layout />}>
         {/* Startsida */}
         <Route path="/" element={<StartSida />} />
@@ -113,7 +113,10 @@ export default function App() {
         <Route path="/thread/:id" element={<ThreadPage />} />
 
         {/* 404 fallback */}
-        <Route path="*" element={<div className="p-8">Sidan kunde inte hittas.</div>} />
+        <Route
+          path="*"
+          element={<div className="p-8">Sidan kunde inte hittas.</div>}
+        />
       </Route>
     </Routes>
   );

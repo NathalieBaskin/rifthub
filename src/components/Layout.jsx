@@ -1,18 +1,23 @@
 // src/components/Layout.jsx
 import { Outlet, useLocation } from "react-router-dom";
 import Navbar from "./Navbar";
+import Footer from "./Footer";
 
 export default function Layout() {
   const location = useLocation();
   const isChat = location.pathname.startsWith("/chat");
 
   return (
-    <div className="min-h-screen">
+    <div className="flex flex-col min-h-screen">
       <Navbar />
-      {/* ✅ Gör main transparent på chat-sidan */}
-      <main className={isChat ? "pt-20 bg-transparent" : "pt-20"}>
+      <main
+        className={`flex-1 pt-20 ${
+          isChat ? "bg-transparent" : ""
+        } pb-16 sm:pb-0`} // padding bara i mobil för fixed footer
+      >
         <Outlet />
       </main>
+      <Footer />
     </div>
   );
 }
