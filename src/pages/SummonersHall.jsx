@@ -9,7 +9,7 @@ const API_URL = "http://localhost:5000";
 
 const TOPICS = [
   { id: 0, key: "all", name: "All Threads" },
-  { id: 1, key: "guides", name: "Guides & Builds" },
+  { id: 1, key: "guides", name: "Wild Rift" },
   { id: 2, key: "champions", name: "Champs & Database" },
   { id: 3, key: "tft", name: "Teamfight Tactics" },
   { id: 4, key: "tiers", name: "Tier Lists" },
