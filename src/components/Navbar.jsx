@@ -108,7 +108,7 @@ export default function Navbar() {
           <img
             src="/images/user-icon.png"
             alt="User"
-            className="h-11 w-11 object-contain"
+            className="h-9 w-9 object-contain"
           />
         </Link>
       );
@@ -123,7 +123,7 @@ export default function Navbar() {
           <img
             src="/images/user-icon.png"
             alt="User"
-            className="h-11 w-11 object-contain"
+            className="h-9 w-9 object-contain"
           />
         </button>
         {dropdownOpen && (
@@ -174,10 +174,10 @@ export default function Navbar() {
       <img
         src="/images/heart-icon.png"
         alt="Favorites"
-        className="h-11 w-11 object-contain"
+        className="h-9 w-9 object-contain"
       />
       {favorites?.length > 0 && (
-        <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs px-1.5 rounded-full">
+        <span className="absolute -top-1 -right-1 bg-rift-gold text-white text-xs px-1.5 rounded-full">
           {favorites.length}
         </span>
       )}
@@ -197,36 +197,26 @@ export default function Navbar() {
         }`}
     >
       <div className="max-w-7xl mx-auto px-4">
-        {/* MOBILE */}
+        {/* MOBILE (endast logga + ikoner) */}
         <div className="flex sm:hidden items-center justify-between py-2">
           <Link to="/" className="flex items-center gap-2 min-w-0">
             <img
               src={rLogo}
               alt="RiftHub Small Logo"
-              className="h-12 w-auto object-contain transition-all duration-500"
+              className="h-14 w-auto object-contain transition-all duration-500"
             />
           </Link>
           <div className="flex items-center gap-3 text-rift-gold">
-            <NavLinks
-              onTavernClick={() => {
-                if (user) {
-                  window.location.href = "/tavern";
-                } else {
-                  setShowAuthModal(true);
-                }
-              }}
-            />
-
             <HeartLink />
 
             <Link to="/cart" className="relative p-2" aria-label="Cart" title="Cart">
               <img
                 src="/images/cart-icon.png"
                 alt="Cart"
-                className="h-11 w-11 object-contain"
+                className="h-9 w-9 object-contain"
               />
               {count > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs px-1.5 rounded-full">
+                <span className="absolute -top-1 -right-1 bg-rift-gold text-white text-xs px-1.5 rounded-full">
                   {count}
                 </span>
               )}
@@ -237,10 +227,10 @@ export default function Navbar() {
                 <img
                   src="/images/chat-icon.png"
                   alt="Chat"
-                  className="h-11 w-11 object-contain"
+                  className="h-9 w-9 object-contain"
                 />
                 {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs px-1.5 rounded-full">
+                  <span className="absolute -top-1 -right-1 bg-rift-gold text-white text-xs px-1.5 rounded-full">
                     {unreadCount}
                   </span>
                 )}
@@ -254,14 +244,14 @@ export default function Navbar() {
                 <img
                   src="/images/key-icon.png"
                   alt="Admin"
-                  className="h-11 w-11 object-contain"
+                  className="h-9 w-9 object-contain"
                 />
               </Link>
             )}
           </div>
         </div>
 
-        {/* DESKTOP */}
+        {/* DESKTOP + IPAD (oförändrat) */}
         <div className="hidden sm:block">
           <div className={`${!isHome || isScrolled ? "hidden" : "block"} py-2`}>
             <div className="relative flex items-center justify-center">
@@ -319,7 +309,7 @@ export default function Navbar() {
                   className="h-11 w-11 object-contain"
                 />
                 {count > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs px-1.5 rounded-full">
+                  <span className="absolute -top-1 -right-1 bg-rift-gold text-white text-xs px-1.5 rounded-full">
                     {count}
                   </span>
                 )}
@@ -333,7 +323,7 @@ export default function Navbar() {
                     className="h-11 w-11 object-contain"
                   />
                   {unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs px-1.5 rounded-full">
+                    <span className="absolute -top-1 -right-1 bg-rift-gold text-white text-xs px-1.5 rounded-full">
                       {unreadCount}
                     </span>
                   )}
