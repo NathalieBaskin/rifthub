@@ -1,4 +1,3 @@
-// src/pages/AdminProducts.jsx
 import { useEffect, useState } from "react";
 
 const API_URL = "http://localhost:5000";
@@ -23,7 +22,7 @@ export default function AdminProducts() {
     price: "",
     categories: [],
     sku: "",
-    created_at: new Date().toISOString().split("T")[0], // yyyy-MM-dd
+    created_at: new Date().toISOString().split("T")[0],
     image_url: null,
   });
   const [image, setImage] = useState(null);
@@ -79,10 +78,8 @@ export default function AdminProducts() {
     fd.append("price", String(form.price));
     fd.append("categories", form.categories.join(","));
     fd.append("sku", form.sku);
-
     const isoDate = new Date(form.created_at).toISOString();
     fd.append("created_at", isoDate);
-
     if (image) fd.append("image", image);
 
     const method = isEditing ? "PUT" : "POST";
@@ -158,6 +155,9 @@ export default function AdminProducts() {
     if (res.ok) fetchProducts();
   }
 
+  const resolveImage = (url) =>
+    url?.startsWith("http") ? url : `${API_URL}${url}`;
+
   return (
     <div className="p-6 text-white">
       <h2 className="text-xl font-bold mb-4">All Products</h2>
@@ -171,7 +171,7 @@ export default function AdminProducts() {
               <div className="flex items-center gap-4">
                 {p.image_url && (
                   <img
-                    src={p.image_url}
+                    src={resolveImage(p.image_url)}
                     alt={p.name}
                     className="w-16 h-16 object-contain rounded"
                   />
@@ -258,9 +258,10 @@ export default function AdminProducts() {
           required
         />
 
-        {/* Release date */}
         <div>
-          <label className="font-semibold block mb-1 text-white">Release Date:</label>
+          <label className="font-semibold block mb-1 text-white">
+            Release Date:
+          </label>
           <input
             type="date"
             value={form.created_at}
@@ -269,7 +270,6 @@ export default function AdminProducts() {
           />
         </div>
 
-        {/* Image */}
         <div>
           <label className="font-semibold block mb-1 text-white">Image:</label>
           {image ? (
@@ -281,13 +281,17 @@ export default function AdminProducts() {
           ) : (
             form.image_url && (
               <img
-                src={form.image_url}
+                src={resolveImage(form.image_url)}
                 alt="Current"
                 className="w-32 h-32 object-contain mb-2"
               />
             )
           )}
-          <input type="file" accept="image/*" onChange={(e) => setImage(e.target.files[0])} />
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => setImage(e.target.files[0])}
+          />
         </div>
 
         <button

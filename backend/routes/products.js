@@ -52,7 +52,18 @@ function withIsNew(row) {
   const now = new Date();
   const created = new Date(row.created_at);
   const diffDays = (now - created) / (1000 * 60 * 60 * 24);
-  return { ...row, isNew: diffDays <= 7 };
+
+  // Se till att image_url alltid är absolut
+  let imageUrl = row.image_url;
+  if (imageUrl && !imageUrl.startsWith("http")) {
+    imageUrl = `http://localhost:5000${imageUrl}`;
+  }
+
+  return {
+    ...row,
+    isNew: diffDays <= 7,
+    image_url: imageUrl,
+  };
 }
 
 /* ================================
@@ -71,7 +82,7 @@ productsPublicRouter.get("/news/latest", (_req, res) => {
 
 // Hämta alla produkter (publikt)
 productsPublicRouter.get("/", (_req, res) => {
-  const nowIso = new Date().toISOString(); // ok även om created_at är yyyy-MM-dd
+  const nowIso = new Date().toISOString();
   db.all("SELECT * FROM products WHERE created_at <= ?", [nowIso], (err, rows) => {
     if (err) return res.status(500).json({ error: "Database error" });
     res.json(rows.map(withIsNew));
@@ -114,7 +125,7 @@ const productsAdminRouter = express.Router();
 productsAdminRouter.get("/", requireAdmin, (_req, res) => {
   db.all("SELECT * FROM products ORDER BY id DESC", [], (err, rows) => {
     if (err) return res.status(500).json({ success: false, error: err.message });
-    res.json({ success: true, products: rows });
+    res.json({ success: true, products: rows.map(withIsNew) });
   });
 });
 
@@ -146,7 +157,7 @@ productsAdminRouter.post("/", requireAdmin, upload.single("image"), (req, res) =
 
         db.get("SELECT * FROM products WHERE id = ?", [this.lastID], (e3, row) => {
           if (e3) return res.status(500).json({ success: false, error: e3.message });
-          res.json({ success: true, product: row });
+          res.json({ success: true, product: withIsNew(row) });
         });
       }
     );
@@ -183,14 +194,7 @@ productsAdminRouter.put("/:id", requireAdmin, upload.single("image"), (req, res)
         (imageUrl ? `, image_url=?` : ``) +
         ` WHERE id=?`;
 
-      const params = [
-        name,
-        description,
-        Number(price),
-        categories,
-        sku,
-        dateOnly,
-      ];
+      const params = [name, description, Number(price), categories, sku, dateOnly];
       if (imageUrl) params.push(imageUrl);
       params.push(id);
 
@@ -199,7 +203,7 @@ productsAdminRouter.put("/:id", requireAdmin, upload.single("image"), (req, res)
 
         db.get("SELECT * FROM products WHERE id = ?", [id], (e4, row) => {
           if (e4) return res.status(500).json({ success: false, error: e4.message });
-          res.json({ success: true, product: row });
+          res.json({ success: true, product: withIsNew(row) });
         });
       });
     });

@@ -397,13 +397,22 @@ function mapProductRow(row) {
   const now = new Date();
   const created = row.created_at ? new Date(row.created_at) : now;
   const diffDays = (now - created) / (1000 * 60 * 60 * 24);
+
+  // Gör full URL för image_url
+  let imageUrl = row.image_url;
+  if (imageUrl && !imageUrl.startsWith("http")) {
+    imageUrl = `http://localhost:5000${imageUrl}`;
+  }
+
   return {
     ...row,
-    id: Number(row.id),            // säkra nummer
-    price: Number(row.price),      // säkra nummer
+    id: Number(row.id),
+    price: Number(row.price),
     isNew: diffDays <= 7,
+    image_url: imageUrl,
   };
 }
+
 
 // 📜 Hämta alla favoriter för en användare
 app.get("/api/favorites/:userId", (req, res) => {

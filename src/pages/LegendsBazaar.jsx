@@ -79,7 +79,7 @@ export default function LegendsBazaar() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-6 text-black">
+    <div className="max-w-6xl mx-auto p-6 text-white">
       <h1 className="text-3xl font-display text-rift-gold mb-6">Legends Bazaar</h1>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
@@ -123,7 +123,7 @@ export default function LegendsBazaar() {
                   {favorite ? (
                     <AiFillHeart className="text-rift-gold text-lg drop-shadow" />
                   ) : (
-                    <AiOutlineHeart className="text-black text-lg" />
+                    <AiOutlineHeart className="text-white text-lg" />
                   )}
                 </button>
               </div>
@@ -164,7 +164,7 @@ export default function LegendsBazaar() {
                 }}
                 className="mt-4 px-4 py-2 bg-rift-card border border-rift-gold/40 rounded-md hover:bg-rift-card/80 transition"
               >
-                🛒 Add to Cart
+              Add to Cart
               </button>
             </div>
           );

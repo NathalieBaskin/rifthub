@@ -103,7 +103,7 @@ export default function ProductDetail() {
       </div>
 
       {/* Liknande produkter */}
-      <div>
+      <div className="relative">
         <h2 className="text-2xl font-display text-rift-gold mb-4">
           Similar Products
         </h2>
@@ -111,30 +111,36 @@ export default function ProductDetail() {
         {similar.length === 0 ? (
           <p>No similar products found.</p>
         ) : (
-   <Swiper
-  modules={[Navigation]}
-  navigation
-  spaceBetween={16}
-  slidesPerView={3}
-  className="
-    [&_.swiper-button-next]:!text-rift-gold 
-    [&_.swiper-button-prev]:!text-rift-gold
-    [&_.swiper-button-next]:!w-10 [&_.swiper-button-prev]:!w-10
-    [&_.swiper-button-next]:!h-10 [&_.swiper-button-prev]:!h-10
-    [&_.swiper-button-next]:hover:!text-black
-    [&_.swiper-button-prev]:hover:!text-black
-  "
->
-  {similar.map((p) => (
-    <SwiperSlide key={p.id}>
-      <ProductCard product={p} />
-    </SwiperSlide>
-  ))}
-</Swiper>
+          <div className="relative">
+            {/* Custom pilar */}
+            <div className="custom-prev absolute -left-12 top-1/2 -translate-y-1/2 z-20 cursor-pointer text-rift-gold hover:text-black w-10 h-10 flex items-center justify-center text-3xl">
+              ‹
+            </div>
+            <div className="custom-next absolute -right-12 top-1/2 -translate-y-1/2 z-20 cursor-pointer text-rift-gold hover:text-black w-10 h-10 flex items-center justify-center text-3xl">
+              ›
+            </div>
 
+            <Swiper
+              modules={[Navigation]}
+              navigation={{
+                nextEl: ".custom-next",
+                prevEl: ".custom-prev",
+              }}
+              spaceBetween={24}
+              slidesPerView={3}
+              loop={true} // gör att man loopar runt
+            >
+              {similar.map((p) => (
+                <SwiperSlide key={p.id} className="flex">
+                  <div className="flex-1">
+                    <ProductCard product={p} />
+                  </div>
+                </SwiperSlide>
+              ))}
+            </Swiper>
+          </div>
         )}
       </div>
-      
     </div>
   );
 }
