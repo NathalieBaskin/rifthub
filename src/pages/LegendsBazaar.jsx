@@ -21,6 +21,9 @@ export default function LegendsBazaar() {
   // per-produkt liten pop-animation när man lägger till favorit
   const [pop, setPop] = useState({}); // { [productId]: true/false }
 
+  // kategori-filter
+  const [selectedCategory, setSelectedCategory] = useState("all");
+
   useEffect(() => {
     async function load() {
       try {
@@ -60,6 +63,17 @@ export default function LegendsBazaar() {
     }
   };
 
+  // 🔹 Filtrera produkter på kategori
+  const filteredProducts =
+    selectedCategory === "all"
+      ? products
+    : products.filter((p) => p.categories === selectedCategory);
+
+
+  // 🔹 Hämta alla kategorier från produkterna
+  const categories = ["all", ...new Set(products.map((p) => p.categories))];
+
+
   if (loading) {
     return (
       <div className="max-w-6xl mx-auto p-6 text-center text-rift-gold">
@@ -73,17 +87,42 @@ export default function LegendsBazaar() {
     return (
       <div className="max-w-6xl mx-auto p-6 text-center text-rift-gold">
         <h1 className="text-3xl font-display mb-4">Legends Bazaar</h1>
-        <p className="text-lg">No products available right now. Check back later!</p>
+        <p className="text-lg">
+          No products available right now. Check back later!
+        </p>
       </div>
     );
   }
 
   return (
     <div className="max-w-6xl mx-auto p-6 text-white">
-      <h1 className="text-3xl font-display text-rift-gold mb-6">Legends Bazaar</h1>
+      <h1 className="text-3xl font-display text-rift-gold mb-6">
+        Legends Bazaar
+      </h1>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-        {products.map((p) => {
+      {/* 🔹 Kategori-dropdown */}
+      <div className="mb-6">
+        <select
+          className="px-3 py-2 rounded border text-sm bg-white/90 text-black"
+          value={selectedCategory}
+          onChange={(e) => setSelectedCategory(e.target.value)}
+        >
+    {categories
+  .filter((cat) => cat) // tar bort undefined/null
+  .map((cat) => (
+    <option key={cat} value={cat}>
+      {cat === "all"
+        ? "All categories"
+        : cat.charAt(0).toUpperCase() + cat.slice(1)}
+    </option>
+  ))}
+
+        </select>
+      </div>
+
+      {/* 🔹 Grid med produkter */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        {filteredProducts.map((p) => {
           const selectedSize = selectedSizes[p.id] || "";
           const favorite = isFav(p.id);
           const go = () => navigate(`/shop/product/${p.id}`);
@@ -117,7 +156,9 @@ export default function LegendsBazaar() {
                   className={`absolute bottom-1 right-1 transition-transform ${
                     pop[p.id] ? "scale-125" : "active:scale-90"
                   }`}
-                  aria-label={favorite ? "Remove from favorites" : "Add to favorites"}
+                  aria-label={
+                    favorite ? "Remove from favorites" : "Add to favorites"
+                  }
                   title={favorite ? "Remove from favorites" : "Add to favorites"}
                 >
                   {favorite ? (
@@ -164,7 +205,7 @@ export default function LegendsBazaar() {
                 }}
                 className="mt-4 px-4 py-2 bg-rift-card border border-rift-gold/40 rounded-md hover:bg-rift-card/80 transition"
               >
-              Add to Cart
+                Add to Cart
               </button>
             </div>
           );
