@@ -1,9 +1,11 @@
 // src/pages/FavoritesPage.jsx
 import { useFavorites } from "../hooks/useFavorites";
-import ProductCard from "../components/ProductCard";
+import { AiOutlineHeart, AiFillHeart } from "react-icons/ai";
+import { useNavigate } from "react-router-dom";
 
 export default function FavoritesPage() {
-  const { favorites } = useFavorites();
+  const { favorites, toggleFavorite } = useFavorites();
+  const navigate = useNavigate();
 
   if (!favorites || favorites.length === 0) {
     return (
@@ -28,7 +30,42 @@ export default function FavoritesPage() {
 
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
         {favorites.map((p) => (
-          <ProductCard key={p.id} product={p} />
+          <div
+            key={p.id}
+            className="card-fantasy p-4 flex flex-col items-center text-center relative"
+          >
+            {/* Bild */}
+            <div
+              className="relative w-32 h-32 mb-4 cursor-pointer"
+              onClick={() => navigate(`/shop/product/${p.id}`)}
+            >
+              <img
+                src={p.image_url}
+                alt={p.name}
+                className="w-full h-full object-contain rounded-md"
+              />
+
+              {/* Hjärtikon */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleFavorite(p); // tar bort om den redan finns
+                }}
+                className="absolute bottom-1 right-1"
+              >
+                <AiFillHeart className="text-rift-gold text-lg drop-shadow" />
+              </button>
+            </div>
+
+            {/* Namn + pris */}
+            <h2
+              className="text-lg font-bold cursor-pointer"
+              onClick={() => navigate(`/shop/product/${p.id}`)}
+            >
+              {p.name}
+            </h2>
+            <p className="mt-2 text-rift-gold font-semibold">{p.price} SEK</p>
+          </div>
         ))}
       </div>
     </div>
