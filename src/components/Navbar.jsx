@@ -6,16 +6,7 @@ import rLogo from "../assets/images/r-logo.png";
 import { useCart } from "../context/useCart.js";
 import { getUserFromToken } from "../utils/auth.js";
 import { useFavorites } from "../hooks/useFavorites";
-import NotAuthModal from "./NotAuthModal.jsx"; // 👈 lägg till
-
-// Guldiga ikoner (Heroicons v2 via react-icons)
-import {
-  HiHeart,
-  HiOutlineShoppingCart,
-  HiOutlineChatBubbleLeftRight,
-  HiOutlineUser,
-  HiOutlineKey,
-} from "react-icons/hi2";
+import NotAuthModal from "./NotAuthModal.jsx";
 
 const linkBase =
   "px-3 py-1.5 rounded-md border border-rift-gold/25 bg-rift-card/60 hover:bg-rift-card text-sm transition";
@@ -31,14 +22,9 @@ function NavLinks({ className = "", onTavernClick }) {
         Summoner&apos;s Hall
       </NavLink>
 
-<button
-  type="button"
-  onClick={onTavernClick}
-  className={linkBase}
->
-  The Rift Tavern
-</button>
-
+      <button type="button" onClick={onTavernClick} className={linkBase}>
+        The Rift Tavern
+      </button>
 
       <NavLink
         to="/shop"
@@ -60,7 +46,7 @@ export default function Navbar() {
   const user = getUserFromToken();
   const navigate = useNavigate();
 
-  const [showAuthModal, setShowAuthModal] = useState(false); // 👈 flytta hit
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   // Favoriter -> pop när antal ökar
   const { favorites } = useFavorites();
@@ -114,11 +100,16 @@ export default function Navbar() {
     window.location.reload();
   };
 
+  // AccountMenu
   const AccountMenu = () => {
     if (!user) {
       return (
         <Link to="/auth" className="p-2" aria-label="Account">
-          <HiOutlineUser className="h-8 w-8 text-rift-gold" />
+          <img
+            src="/images/user-icon.png"
+            alt="User"
+            className="h-8 w-8 object-contain"
+          />
         </Link>
       );
     }
@@ -129,7 +120,11 @@ export default function Navbar() {
           className="p-2"
           aria-label="Account"
         >
-          <HiOutlineUser className="h-8 w-8 text-rift-gold" />
+          <img
+            src="/images/user-icon.png"
+            alt="User"
+            className="h-8 w-8 object-contain"
+          />
         </button>
         {dropdownOpen && (
           <div className="absolute right-0 mt-2 w-48 bg-rift-card border border-rift-gold/40 rounded-md shadow-lg z-50">
@@ -166,6 +161,7 @@ export default function Navbar() {
     );
   };
 
+  // HeartLink
   const HeartLink = ({ className = "" }) => (
     <Link
       to="/favorites"
@@ -175,7 +171,11 @@ export default function Navbar() {
         favPop ? "scale-125" : "scale-100"
       } ${className}`}
     >
-      <HiHeart className="h-8 w-8 text-rift-gold drop-shadow" />
+      <img
+        src="/images/heart-icon.png"
+        alt="Favorites"
+        className="h-8 w-8 object-contain"
+      />
       {favorites?.length > 0 && (
         <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs px-1.5 rounded-full">
           {favorites.length}
@@ -219,8 +219,17 @@ export default function Navbar() {
 
             <HeartLink />
 
-            <Link to="/cart" className="relative p-2" aria-label="Cart" title="Cart">
-              <HiOutlineShoppingCart className="h-8 w-8 text-rift-gold" />
+            <Link
+              to="/cart"
+              className="relative p-2"
+              aria-label="Cart"
+              title="Cart"
+            >
+              <img
+                src="/images/cart-icon.png"
+                alt="Cart"
+                className="h-8 w-8 object-contain"
+              />
               {count > 0 && (
                 <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs px-1.5 rounded-full">
                   {count}
@@ -229,8 +238,17 @@ export default function Navbar() {
             </Link>
 
             {user && (
-              <Link to="/chat" className="relative p-2" aria-label="Chat" title="Chat">
-                <HiOutlineChatBubbleLeftRight className="h-8 w-8 text-rift-gold" />
+              <Link
+                to="/chat"
+                className="relative p-2"
+                aria-label="Chat"
+                title="Chat"
+              >
+                <img
+                  src="/images/chat-icon.png"
+                  alt="Chat"
+                  className="h-8 w-8 object-contain"
+                />
                 {unreadCount > 0 && (
                   <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs px-1.5 rounded-full">
                     {unreadCount}
@@ -243,7 +261,11 @@ export default function Navbar() {
 
             {user?.is_admin === 1 && (
               <Link to="/admin" className="p-2" aria-label="Admin" title="Admin">
-                <HiOutlineKey className="h-7 w-7 md:h-8 md:w-8 text-rift-gold" />
+                <img
+                  src="/images/key-icon.png"
+                  alt="Admin"
+                  className="h-7 w-7 md:h-8 md:w-8 object-contain"
+                />
               </Link>
             )}
           </div>
@@ -300,8 +322,17 @@ export default function Navbar() {
             <div className="flex items-center gap-4 text-rift-gold">
               <HeartLink className="hidden md:inline-flex" />
 
-              <Link to="/cart" className="relative p-2" aria-label="Cart" title="Cart">
-                <HiOutlineShoppingCart className="h-8 w-8 text-rift-gold" />
+              <Link
+                to="/cart"
+                className="relative p-2"
+                aria-label="Cart"
+                title="Cart"
+              >
+                <img
+                  src="/images/cart-icon.png"
+                  alt="Cart"
+                  className="h-8 w-8 object-contain"
+                />
                 {count > 0 && (
                   <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs px-1.5 rounded-full">
                     {count}
@@ -310,8 +341,17 @@ export default function Navbar() {
               </Link>
 
               {user && (
-                <Link to="/chat" className="relative p-2" aria-label="Chat" title="Chat">
-                  <HiOutlineChatBubbleLeftRight className="h-8 w-8 text-rift-gold" />
+                <Link
+                  to="/chat"
+                  className="relative p-2"
+                  aria-label="Chat"
+                  title="Chat"
+                >
+                  <img
+                    src="/images/chat-icon.png"
+                    alt="Chat"
+                    className="h-8 w-8 object-contain"
+                  />
                   {unreadCount > 0 && (
                     <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs px-1.5 rounded-full">
                       {unreadCount}
@@ -324,7 +364,11 @@ export default function Navbar() {
 
               {user?.is_admin === 1 && (
                 <Link to="/admin" className="p-2" aria-label="Admin" title="Admin">
-                  <HiOutlineKey className="h-7 w-7 md:h-8 md:w-8 text-rift-gold" />
+                  <img
+                    src="/images/key-icon.png"
+                    alt="Admin"
+                    className="h-7 w-7 md:h-8 md:w-8 object-contain"
+                  />
                 </Link>
               )}
             </div>
