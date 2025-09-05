@@ -177,7 +177,7 @@ export default function Navbar() {
         className="h-9 w-9 object-contain"
       />
       {favorites?.length > 0 && (
-        <span className="absolute -top-1 -right-1 bg-rift-gold text-white text-xs px-1.5 rounded-full">
+        <span className="absolute -top-1 -right-1 bg-rift-gold text-black text-xs px-1.5 rounded-full">
           {favorites.length}
         </span>
       )}
@@ -216,7 +216,7 @@ export default function Navbar() {
                 className="h-9 w-9 object-contain"
               />
               {count > 0 && (
-                <span className="absolute -top-1 -right-1 bg-rift-gold text-white text-xs px-1.5 rounded-full">
+                <span className="absolute -top-1 -right-1 bg-rift-gold text-black text-xs px-1.5 rounded-full">
                   {count}
                 </span>
               )}
@@ -230,7 +230,7 @@ export default function Navbar() {
                   className="h-9 w-9 object-contain"
                 />
                 {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-rift-gold text-white text-xs px-1.5 rounded-full">
+                  <span className="absolute -top-1 -right-1 bg-rift-gold text-black text-xs px-1.5 rounded-full">
                     {unreadCount}
                   </span>
                 )}
