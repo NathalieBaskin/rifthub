@@ -309,7 +309,7 @@ export default function Navbar() {
                   className="h-11 w-11 object-contain"
                 />
                 {count > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-rift-gold text-white text-xs px-1.5 rounded-full">
+                  <span className="absolute -top-1 -right-1 bg-rift-gold text-black text-xs px-1.5 rounded-full">
                     {count}
                   </span>
                 )}
@@ -323,7 +323,7 @@ export default function Navbar() {
                     className="h-11 w-11 object-contain"
                   />
                   {unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-rift-gold text-white text-xs px-1.5 rounded-full">
+                    <span className="absolute -top-1 -right-1 bg-rift-gold text-black text-xs px-1.5 rounded-full">
                       {unreadCount}
                     </span>
                   )}
