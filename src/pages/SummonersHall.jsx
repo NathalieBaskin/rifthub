@@ -88,10 +88,10 @@ function ThreadRow({ t, onOpen, onLike, onDelete, user }) {
             />
           )}
           <div className="min-w-0 flex-1">
-         <h3 className="font-display text-xl text-rift-bg line-clamp-1 truncate max-w-[20ch]">
+    <h3 className="font-display text-xl md:text-rift-bg text-rift-gold line-clamp-1 truncate max-w-[20ch]">
   {t.title}
 </h3>
-           <p className="mt-1 text-sm text-rift-bg/70 line-clamp-2 truncate max-w-[20ch]">
+          <p className="mt-1 text-sm md:text-rift-bg/70 text-white/80 line-clamp-2 truncate max-w-[20ch]">
   {t.content}
 </p>
             <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-rift-bg/70">
@@ -105,14 +105,17 @@ function ThreadRow({ t, onOpen, onLike, onDelete, user }) {
       </div>
       <div className="flex items-center gap-4 px-6 py-2 text-sm text-rift-bg/70">
         <button
-          className="flex items-center gap-1 hover:text-rift-gold"
-          onClick={(e) => {
-            e.stopPropagation();
-            onLike(t);
-          }}
-        >
-          {hasLiked ? <AiFillLike /> : <AiOutlineLike />} {t.like_count || 0}
-        </button>
+  className={`flex items-center gap-1 ${
+    hasLiked ? "text-rift-gold" : "hover:text-rift-gold"
+  }`}
+  onClick={(e) => {
+    e.stopPropagation();
+    onLike(t);
+  }}
+>
+  {hasLiked ? <AiFillLike /> : <AiOutlineLike />} {t.like_count || 0}
+</button>
+
         <button
           className="flex items-center gap-1 hover:text-rift-gold"
           onClick={(e) => {
@@ -645,33 +648,32 @@ async function handleCreateThread({ title, content, topicId, file }) {
       setOpen((o) => ({ ...o, comment_count: (o.comment_count || 0) + delta }));
     }
   }
-
-  return (
+      return (
     <div className="min-h-screen bg-transparent">
+      {/* Desktop/iPad → parchment-wrapper */}
       <div
-        className="parchment-wrapper min-h-[1100px]"
+        className="hidden md:block parchment-wrapper min-h-[1100px]"
         style={{ marginTop: (navOffset || 0) - 90 }}
       >
         <h1 className="font-display text-3xl md:text-4xl text-rift-bg text-center mb-6">
           Summoner&apos;s Hall
         </h1>
+
         <div
-          className="hidden md:grid gap-6"
+          className="grid gap-6"
           style={{ gridTemplateColumns: "420px 1fr" }}
         >
-<SideRail
-  topic={topic}
-  setTopic={setTopic}
-  onNewThread={() => {
-    if (user) {
-      setShowNew(true);       // ✅ öppna skapa-tråd-modal
-    } else {
-      setShowAuthModal(true); // ✅ öppna NotAuthModal istället för alert
-    }
-  }}
-/>
-
-
+          <SideRail
+            topic={topic}
+            setTopic={setTopic}
+            onNewThread={() => {
+              if (user) {
+                setShowNew(true);
+              } else {
+                setShowAuthModal(true);
+              }
+            }}
+          />
 
           <div className="flex-1 pt-8 pl-1">
             <ul>
@@ -695,13 +697,84 @@ async function handleCreateThread({ title, content, topicId, file }) {
         </div>
       </div>
 
-       {open && (
+      {/* 🔹 Mobil-layout */}
+      <div
+        className="md:hidden flex flex-col gap-4 px-3"
+        style={{ marginTop: (navOffset || 0) - 60 }}
+      >
+        <h1 className="font-display text-2xl text-white text-center mb-2">
+          Summoner&apos;s Hall
+        </h1>
+
+        {/* Rad med Create + Topic dropdown */}
+        <div className="flex items-center justify-between gap-3">
+          <button
+            onClick={() => (user ? setShowNew(true) : setShowAuthModal(true))}
+            className="px-3 py-1.5 rounded bg-rift-card text-rift-gold text-sm"
+          >
+            + Create
+          </button>
+          <select
+            className="px-2 py-1 rounded border text-sm bg-white/90 text-black"
+            value={topic}
+            onChange={(e) => setTopic(e.target.value)}
+          >
+            {TOPICS.map((t) => (
+              <option key={t.id} value={t.key}>
+                {t.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Trådlista */}
+        <ul className="flex flex-col gap-4 mt-2">
+          {list.map((t) => (
+            <li
+              key={t.id}
+              className="backdrop-blur-md bg-black/40 rounded-xl p-2"
+            >
+              <div className="text-white">
+                {/* ThreadRow används igen men med mobil-stil */}
+                <ThreadRow
+                  t={{
+                    ...t,
+                    // markera liked trådar så de får guld-ikon
+                    liked_by_me: t.liked_by_me,
+                  }}
+                  user={user}
+                  onOpen={setOpen}
+                  onLike={handleLike}
+                  onDelete={handleDeleteThread}
+                />
+
+                {/* extra override för author, datum, knappar i mobil */}
+                <style jsx>{`
+                  @media (max-width: 767px) {
+                    li .text-rift-bg,
+                    li .text-rift-bg\\/70 {
+                      color: white !important;
+                    }
+                  }
+                `}</style>
+              </div>
+            </li>
+          ))}
+          {list.length === 0 && (
+            <li className="px-4 py-10 text-center text-white/70">
+              No threads found.
+            </li>
+          )}
+        </ul>
+      </div>
+
+      {open && (
         <ThreadModal
           thread={open}
           onClose={() => setOpen(null)}
           user={user}
           onCommentCountChange={handleCommentCountChange}
-          setShowAuthModal={setShowAuthModal}   // 👈 lägg till här
+          setShowAuthModal={setShowAuthModal}
         />
       )}
 
@@ -716,6 +789,5 @@ async function handleCreateThread({ title, content, topicId, file }) {
         <NotAuthModal onClose={() => setShowAuthModal(false)} />
       )}
     </div>
-
   );
 }
