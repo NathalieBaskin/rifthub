@@ -4,9 +4,6 @@ import { useParams } from "react-router-dom";
 import { getUserFromToken } from "../utils/auth.js";
 import AlliesSection from "../components/AlliesSection.jsx";
 import GallerySection from "../components/profile/GallerySection.jsx";
-
-
-// 👇 importera våra nya components
 import PostsSection from "../components/profile/PostsSection.jsx";
 
 export default function ProfilePage() {
@@ -14,7 +11,7 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [champs, setChamps] = useState([]);
-  const [activeTab, setActiveTab] = useState("posts"); // 🔹 ny state för flikar
+  const [activeTab, setActiveTab] = useState("posts");
   const user = getUserFromToken();
 
   useEffect(() => {
@@ -52,7 +49,6 @@ export default function ProfilePage() {
   if (loading) return <div className="p-6">Loading...</div>;
   if (!profile) return <div className="p-6">No profile found</div>;
 
-  // champion info
   const champ = champs.find((c) => c.name === profile.preferred_champ_id);
 
   const rankIcon = profile.rank
@@ -70,7 +66,6 @@ export default function ProfilePage() {
       ? "http://localhost:5000/images/WildRift.png"
       : null;
 
-  // social media ikoner (hämtas från backend/public/socials)
   const socialIcons = {
     facebook: "http://localhost:5000/socials/facebook.png",
     instagram: "http://localhost:5000/socials/instagram.png",
@@ -80,7 +75,10 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="relative max-w-6xl mx-auto mt-10 p-6 text-black">
+    <div className="relative max-w-6xl mx-auto p-6 text-black overflow-x-hidden">
+      {/* ===== MOBIL: spacer för FIXED NAVBAR (70px) ===== */}
+      <div className="md:hidden h-[70px]" />
+
       <div className="flex gap-8">
         {/* Vänster: Profilkort */}
         <div
@@ -176,7 +174,6 @@ export default function ProfilePage() {
                     alt={champ.name}
                     className="w-10 h-10 object-cover rounded border border-rift-gold"
                   />
-                
                   <span className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100">
                     {champ.name}
                   </span>
@@ -188,7 +185,7 @@ export default function ProfilePage() {
 
             <p><b>Level:</b> {profile.level || "—"}</p>
 
-            {/* ✅ Socials längst ner i kortet, högerhörn */}
+            {/* Socials längst ner i kortet, högerhörn */}
             {profile.socials && (
               <div className="absolute bottom-0 right-6 flex gap-3">
                 {Object.entries(profile.socials).map(([key, value]) =>
@@ -215,45 +212,47 @@ export default function ProfilePage() {
             )}
           </div>
 
-  {/* 🔹 Flikar */}
-<div className="flex justify-center gap-8 mt-6">
-  <button
-    className={`px-8 py-2 rounded ${
-      activeTab === "posts"
-        ? "bg-green-950 text-white"
-        : "bg-green-950 text-gray-300"
-    }`}
-    onClick={() => setActiveTab("posts")}
-  >
-    POSTS
-  </button>
-  <button
-    className={`px-8 py-2 rounded ${
-      activeTab === "gallery"
-        ? "bg-green-950 text-white"
-        : "bg-green-950 text-gray-300"
-    }`}
-    onClick={() => setActiveTab("gallery")}
-  >
-    GALLERY
-  </button>
-</div>
+          {/* Flikar */}
+          <div className="flex justify-center gap-8 mt-6">
+            <button
+              className={`px-8 py-2 rounded ${
+                activeTab === "posts"
+                  ? "bg-green-950 text-white"
+                  : "bg-green-950 text-gray-300"
+              }`}
+              onClick={() => setActiveTab("posts")}
+            >
+              POSTS
+            </button>
+            <button
+              className={`px-8 py-2 rounded ${
+                activeTab === "gallery"
+                  ? "bg-green-950 text-white"
+                  : "bg-green-950 text-gray-300"
+              }`}
+              onClick={() => setActiveTab("gallery")}
+            >
+              GALLERY
+            </button>
+          </div>
 
-{/* 🔹 Innehållet beroende på flik */}
-<div className="mt-6 w-full">
-  {activeTab === "posts" && (
-    <PostsSection profileUserId={profile.id} me={user} />
-  )}
-  {activeTab === "gallery" && (
-    <GallerySection profileUserId={profile.id} me={user} />
-  )}
-</div>
-
+          {/* Flik-innehåll */}
+          <div className="mt-6 w-full">
+            {activeTab === "posts" && (
+              <PostsSection profileUserId={profile.id} me={user} />
+            )}
+            {activeTab === "gallery" && (
+              <GallerySection profileUserId={profile.id} me={user} />
+            )}
+          </div>
         </div>
 
         {/* Höger: Allies */}
         <AlliesSection profileUserId={profile.id} />
       </div>
+
+      {/* ===== MOBIL: spacer för FIXED FOOTER (52px) ===== */}
+      <div className="md:hidden h-[52px]" />
     </div>
   );
 }
