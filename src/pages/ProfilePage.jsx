@@ -117,13 +117,18 @@ export default function ProfilePage() {
                   className="h-20 w-20 object-contain"
                 />
               )}
-              {gameLogo && (
-                <img
-                  src={gameLogo}
-                  alt={profile.game}
-                  className={`object-contain ${profile.game === "wildrift" ? "h-16" : "h-15"}`}
-                />
-              )}
+  {gameLogo && (
+  <img
+    src={gameLogo}
+    alt={profile.game}
+    className="object-contain w-auto"
+    style={{
+      height: profile.game === "wildrift" ? 100 : 60, // Wild Rift större, League lite mindre
+    }}
+  />
+)}
+
+
             </div>
 
             {/* Info – vänsterställd & större text */}
