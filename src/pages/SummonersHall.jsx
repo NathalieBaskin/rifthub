@@ -104,9 +104,11 @@ function ThreadRow({ t, onOpen, onLike, onDelete, user }) {
         </div>
       </div>
       <div className="flex items-center gap-4 px-6 py-2 text-sm text-rift-bg/70">
-        <button
+<button
   className={`flex items-center gap-1 ${
-    hasLiked ? "text-rift-gold" : "hover:text-rift-gold"
+    hasLiked
+      ? "text-rift-gold md:text-black"  // Mobil = guld, iPad/desktop = svart
+      : "hover:text-rift-gold"
   }`}
   onClick={(e) => {
     e.stopPropagation();
@@ -650,52 +652,69 @@ async function handleCreateThread({ title, content, topicId, file }) {
   }
       return (
     <div className="min-h-screen bg-transparent">
-      {/* Desktop/iPad → parchment-wrapper */}
-      <div
-        className="hidden md:block parchment-wrapper min-h-[1100px]"
-        style={{ marginTop: (navOffset || 0) - 90 }}
-      >
-        <h1 className="font-display text-3xl md:text-4xl text-rift-bg text-center mb-6">
-          Summoner&apos;s Hall
-        </h1>
 
-        <div
-          className="grid gap-6"
-          style={{ gridTemplateColumns: "420px 1fr" }}
-        >
-          <SideRail
-            topic={topic}
-            setTopic={setTopic}
-            onNewThread={() => {
-              if (user) {
-                setShowNew(true);
-              } else {
-                setShowAuthModal(true);
-              }
-            }}
+{/* Desktop/iPad → parchment-wrapper */}
+<div
+  className="
+    hidden md:block parchment-wrapper
+    md:min-h-[1300px] md:pb-28       /* iPad: längre papper + extra bottenluft */
+    xl:min-h-[1700px] md:pb-28       /* desktop: täck hela höjden ovanför footern */
+    xl:pb-20
+  "
+  style={{ marginTop: (navOffset || 0) - 90 }}
+>
+  <h1 className="font-display text-4xl md:text-5xl text-rift-bg text-center mb-6">
+    Summoner&apos;s Hall
+  </h1>
+
+  {/* iPad: bredare siderail + lite mer vänster; Desktop: tillbaka till original */}
+  <div
+    className="
+      grid gap-6
+      md:[grid-template-columns:460px_1fr]
+      xl:[grid-template-columns:400px_1fr]
+      md:-ml-4 xl:ml-0
+    "
+  >
+    {/* Gör siderailen lite mer till vänster bara i iPad */}
+    <div className="md:-ml-6 xl:ml-0">
+      <SideRail
+        topic={topic}
+        setTopic={setTopic}
+        onNewThread={() => {
+          if (user) {
+            setShowNew(true);
+          } else {
+            setShowAuthModal(true);
+          }
+        }}
+      />
+    </div>
+
+    {/* Trådlistan – ännu mer åt vänster i iPad, normal i desktop */}
+    <div className="flex-1 pt-8 md:-ml-28 xl:ml-0">
+      <ul>
+        {list.map((t) => (
+          <ThreadRow
+            key={t.id}
+            t={t}
+            user={user}
+            onOpen={setOpen}
+            onLike={handleLike}
+            onDelete={handleDeleteThread}
           />
+        ))}
+        {list.length === 0 && (
+          <li className="px-4 py-10 text-center text-rift-bg/70">
+            No threads found.
+          </li>
+        )}
+      </ul>
+    </div>
+  </div>
+</div>
 
-          <div className="flex-1 pt-8 pl-1">
-            <ul>
-              {list.map((t) => (
-                <ThreadRow
-                  key={t.id}
-                  t={t}
-                  user={user}
-                  onOpen={setOpen}
-                  onLike={handleLike}
-                  onDelete={handleDeleteThread}
-                />
-              ))}
-              {list.length === 0 && (
-                <li className="px-4 py-10 text-center text-rift-bg/70">
-                  No threads found.
-                </li>
-              )}
-            </ul>
-          </div>
-        </div>
-      </div>
+
 
       {/* 🔹 Mobil-layout */}
       <div
