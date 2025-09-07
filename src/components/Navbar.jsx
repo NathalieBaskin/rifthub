@@ -127,7 +127,12 @@ export default function Navbar() {
           />
         </button>
         {dropdownOpen && (
-          <div className="absolute right-0 mt-2 w-48 bg-rift-card border border-rift-gold/40 rounded-md shadow-lg z-50">
+    <div
+  className="absolute right-0 translate-x-16 mt-2 w-48 
+             bg-rift-card border border-rift-gold/40 
+             rounded-md shadow-lg z-50"
+>
+
             <Link
               to="/profile"
               className="block px-4 py-2 text-sm text-gray-200 hover:bg-rift-bg"

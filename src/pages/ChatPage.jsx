@@ -156,10 +156,10 @@ export default function ChatPage() {
           ref={mdScrollRef}
           className="fixed overflow-y-auto px-6 py-4"
           style={{
-            top: NAVBAR_H_MD,         // börjar under navbaren
-            left: SIDEBAR_W,          // bredvid sidebar
+            top: NAVBAR_H_MD,         
+            left: SIDEBAR_W,          
             right: 0,
-            bottom: INPUT_H,          // lämna plats för fixed input
+            bottom: INPUT_H,          
           }}
         >
           {activeFriend ? (
@@ -215,7 +215,7 @@ export default function ChatPage() {
             onSubmit={sendMessage}
             className="fixed z-40 h-16 border-t border-yellow-600/40 bg-black flex items-center gap-3 px-4"
             style={{
-              left: SIDEBAR_W,   // börja där sidebar slutar
+              left: SIDEBAR_W,   
               right: 0,
               bottom: 0,
             }}
@@ -235,10 +235,10 @@ export default function ChatPage() {
         )}
       </div>
 
-      {/* ====== MOBIL (oförändrat med TOP_OFFSET=70 och fixed allt) ====== */}
+      {/* ====== MOBIL ====== */}
       <div className="md:hidden h-full">
         {/* Fixed topp (ikoner + namn) */}
-        <div className="fixed left-0 right-0 z-50" style={{ top: TOP_OFFSET }}>
+        <div className="fixed left-0 right-0 z-10" style={{ top: TOP_OFFSET }}>
           <div className="bg-black h-12 flex items-center gap-3 px-3 overflow-x-auto">
             {chatFriends.map((f) => (
               <button key={f.id} className="relative flex-shrink-0" onClick={() => setActiveFriend(f.id)}>
@@ -286,7 +286,7 @@ export default function ChatPage() {
           </form>
         )}
 
-        {/* Chattytan – fixed mellan topp & input+footer */}
+        {/* Chattytan */}
         <div
           ref={mobileScrollRef}
           className="fixed left-0 right-0 overflow-y-auto px-4"
@@ -348,7 +348,7 @@ export default function ChatPage() {
       {/* Allies Modal */}
       {showAlliesModal && (
         <div
-          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50"
+          className="fixed inset-0 bg-black/70 flex items-center justify-center z-[9999]" // <== ändrad till högre z-index
           onClick={() => setShowAlliesModal(false)}
         >
           <div
