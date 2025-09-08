@@ -509,7 +509,6 @@ function requireAdmin(req, res, next) {
   }
 }
 
-
 // ===============================
 // PROFILE (My Page)
 // ===============================
@@ -523,34 +522,35 @@ app.get("/api/profile/:id", (req, res) => {
       if (err) return res.status(500).json({ error: err.message });
       if (!user) return res.status(404).json({ error: "User not found" });
 
-    db.get(
-  `SELECT name, age, gender, preferred_lane, preferred_champ_id,
-          rank, level, league_tag, wildrift_tag, note, background_id,
-          avatar_url, game, socials
-   FROM user_profiles
-   WHERE user_id = ?`,
-  [id],
-  (err, profile) => {
-    if (err) return res.status(500).json({ error: err.message });
+      db.get(
+        `SELECT name, age, gender, preferred_lane, preferred_champ_id,
+                rank, level, lp, league_tag, wildrift_tag, note, background_id,
+                avatar_url, game, socials
+         FROM user_profiles
+         WHERE user_id = ?`,
+        [id],
+        (err, profile) => {
+          if (err) return res.status(500).json({ error: err.message });
 
-           res.json({
-      id: user.id,
-      username: user.username,
-      email: user.email,
-      name: profile?.name || "",
-      age: profile?.age || "",
-      gender: profile?.gender || "",
-      preferred_lane: profile?.preferred_lane || "",
-      preferred_champ_id: profile?.preferred_champ_id || "",
-      rank: profile?.rank || "",
-      level: profile?.level || "",
-      league_tag: profile?.league_tag || "",
-      wildrift_tag: profile?.wildrift_tag || "",
-      note: profile?.note || "",
-      background_id: profile?.background_id || "",
-      avatar_url: profile?.avatar_url || "",
-      game: profile?.game || "",
-      socials: profile?.socials ? JSON.parse(profile.socials) : {}
+          res.json({
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            name: profile?.name || "",
+            age: profile?.age || "",
+            gender: profile?.gender || "",
+            preferred_lane: profile?.preferred_lane || "",
+            preferred_champ_id: profile?.preferred_champ_id || "",
+            rank: profile?.rank || "",
+            level: profile?.level || "",
+            lp: profile?.lp || "",                 // ⬅️ tillagt
+            league_tag: profile?.league_tag || "",
+            wildrift_tag: profile?.wildrift_tag || "",
+            note: profile?.note || "",
+            background_id: profile?.background_id || "",
+            avatar_url: profile?.avatar_url || "",
+            game: profile?.game || "",
+            socials: profile?.socials ? JSON.parse(profile.socials) : {}
           });
         }
       );
@@ -568,6 +568,7 @@ app.put("/api/profile/:id", (req, res) => {
     preferred_champ_id,
     rank,
     level,
+    lp,                 // ⬅️ tillagt
     league_tag,
     wildrift_tag,
     note,
@@ -577,74 +578,51 @@ app.put("/api/profile/:id", (req, res) => {
     socials
   } = req.body;
 
-db.run(
-  `INSERT INTO user_profiles 
-     (user_id, name, age, gender, preferred_lane, preferred_champ_id, rank, level, league_tag, wildrift_tag, note, background_id, avatar_url, game, socials)
-   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-   ON CONFLICT(user_id) DO UPDATE SET
-     name = excluded.name,
-     age = excluded.age,
-     gender = excluded.gender,
-     preferred_lane = excluded.preferred_lane,
-     preferred_champ_id = excluded.preferred_champ_id,
-     rank = excluded.rank,
-     level = excluded.level,
-     league_tag = excluded.league_tag,
-     wildrift_tag = excluded.wildrift_tag,
-     note = excluded.note,
-     background_id = excluded.background_id,
-     avatar_url = excluded.avatar_url,
-     game = excluded.game,
-     socials = excluded.socials`,
-  [
-    id,
-    name,
-    age,
-    gender,
-    preferred_lane,
-    preferred_champ_id,
-    rank,
-    level,
-    league_tag,
-    wildrift_tag,
-    note,
-    background_id,
-    avatar_url,
-    game,
-    JSON.stringify(socials || {})
-  ],
-  function (err) {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json({ success: true });
-  }
-);
-
-});
-
-
-// ✅ Upload profilbild
-app.post("/api/profile/:id/avatar", upload.single("avatar"), (req, res) => {
-  const { id } = req.params;
-
-  if (!req.file) {
-    return res.status(400).json({ error: "No file uploaded" });
-  }
-
-  const avatarUrl = `/uploads/${req.file.filename}`;
-
   db.run(
-    `INSERT INTO user_profiles (user_id, avatar_url)
-     VALUES (?, ?)
-     ON CONFLICT(user_id) DO UPDATE SET avatar_url = excluded.avatar_url`,
-    [id, avatarUrl],
+    `INSERT INTO user_profiles 
+       (user_id, name, age, gender, preferred_lane, preferred_champ_id, rank, level, lp, league_tag, wildrift_tag, note, background_id, avatar_url, game, socials)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT(user_id) DO UPDATE SET
+       name = excluded.name,
+       age = excluded.age,
+       gender = excluded.gender,
+       preferred_lane = excluded.preferred_lane,
+       preferred_champ_id = excluded.preferred_champ_id,
+       rank = excluded.rank,
+       level = excluded.level,
+       lp = excluded.lp,                          -- ⬅️ tillagt
+       league_tag = excluded.league_tag,
+       wildrift_tag = excluded.wildrift_tag,
+       note = excluded.note,
+       background_id = excluded.background_id,
+       avatar_url = excluded.avatar_url,
+       game = excluded.game,
+       socials = excluded.socials`,
+    [
+      id,
+      name,
+      age,
+      gender,
+      preferred_lane,
+      preferred_champ_id,
+      rank,
+      level,
+      lp,                 // ⬅️ tillagt (matchar kolumnordningen)
+      league_tag,
+      wildrift_tag,
+      note,
+      background_id,
+      avatar_url,
+      game,
+      JSON.stringify(socials || {})
+    ],
     function (err) {
-      if (err) {
-        return res.status(500).json({ error: err.message });
-      }
-      res.json({ success: true, avatarUrl });
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ success: true });
     }
   );
 });
+
 
 
 

@@ -1,4 +1,3 @@
-// src/pages/EditProfilePage.jsx
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getUserFromToken } from "../utils/auth.js";
@@ -13,6 +12,10 @@ export default function EditProfilePage() {
     game: "",
     rank: "",
     level: "",
+    lp: "",               // NEW
+    league_tag: "",       // NEW
+    wildrift_tag: "",     // NEW
+    note: "",             // NEW
     avatar_url: "",
     socials: {
       facebook: "",
@@ -46,7 +49,11 @@ export default function EditProfilePage() {
           preferred_champ_id: data.preferred_champ_id || "",
           game: data.game || "",
           rank: data.rank || "",
-          level: data.level || "",
+          level: data.level ?? "",
+          lp: data.lp ?? "",                           // NEW
+          league_tag: data.league_tag ?? "",           // NEW
+          wildrift_tag: data.wildrift_tag ?? "",       // NEW
+          note: data.note ?? "",                       // NEW
           avatar_url: data.avatar_url || "",
           socials: data.socials
             ? typeof data.socials === "string"
@@ -138,7 +145,6 @@ export default function EditProfilePage() {
         return;
       }
 
-      // ✅ När profilen är sparad → gå till användarens profilsida
       navigate(`/profile/${user.id}`);
     } catch (err) {
       console.error("Failed to save profile", err);
@@ -334,6 +340,55 @@ export default function EditProfilePage() {
           value={formData.level}
           onChange={handleChange}
           className="w-full border rounded p-2"
+        />
+      </label>
+
+      {/* LP */}
+      <label className="block mb-6">
+        LP (League Points)
+        <input
+          type="number"
+          name="lp"
+          value={formData.lp}
+          onChange={handleChange}
+          className="w-full border rounded p-2"
+          placeholder="League Points"
+        />
+      </label>
+
+      {/* Tags */}
+      <label className="block mb-4">
+        League Tag
+        <input
+          name="league_tag"
+          value={formData.league_tag}
+          onChange={handleChange}
+          className="w-full border rounded p-2"
+          placeholder=""
+        />
+      </label>
+
+      <label className="block mb-6">
+        Wild Rift Tag
+        <input
+          name="wildrift_tag"
+          value={formData.wildrift_tag}
+          onChange={handleChange}
+          className="w-full border rounded p-2"
+          placeholder=""
+        />
+      </label>
+
+      {/* Note */}
+      <label className="block mb-6">
+        Note
+        <textarea
+          name="note"
+          value={formData.note}
+          onChange={handleChange}
+          className="w-full border rounded p-2"
+          rows={4}
+          placeholder="Note"
         />
       </label>
 
