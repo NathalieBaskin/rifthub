@@ -406,142 +406,177 @@ export default function ProfilePage() {
       </div>
 
       {/* ===== DESKTOP (≥1280) ===== */}
-      <div className="hidden xl:block">
-        <div className="flex gap-8">
-          <div
-            className="relative flex flex-col items-center p-12 flex-1"
-            style={{
-              backgroundImage: "url('/images/mypage-paper.png')",
-              backgroundSize: "contain",
-              backgroundRepeat: "no-repeat",
-              backgroundPosition: "center top",
-              minHeight: "700px",
-            }}
-          >
-            {/* Profilbild + rank + game logo */}
-            <div className="absolute -top-0 left-0 flex items-center gap-6">
-              <div className="relative w-56 h-56">
-                <img
-                  src={
-                    profile.avatar_url
-                      ? profile.avatar_url.startsWith("http")
-                        ? profile.avatar_url
-                        : `${API_URL}${profile.avatar_url}`
-                      : "/images/default-avatar.png"
-                  }
-                  alt="Profile avatar"
-                  className="absolute inset-0 m-auto w-[57%] h-[57%] object-cover rounded-full"
-                />
-                <img
-                  src="/images/frame.png"
-                  alt="Frame"
-                  className="absolute inset-0 w-full h-full pointer-events-none"
-                />
+<div className="hidden xl:block">
+  <div className="flex gap-2">
+    <div
+      className="relative flex flex-col items-center p-12 flex-1"
+      style={{
+        backgroundImage: "url('/images/mypage-paper.png')",
+        backgroundSize: "contain",
+        backgroundRepeat: "no-repeat",
+        backgroundPosition: "center top",
+        minHeight: "700px",
+      }}
+    >
+      {/* Vänsterspalt: avatar + loggor + (NYTT) tag/LP under loggorna */}
+      <div className="absolute -top-0 left-0 flex items-start gap-6">
+        {/* Avatar */}
+        <div className="relative w-56 h-56">
+          <img
+            src={
+              profile.avatar_url
+                ? profile.avatar_url.startsWith("http")
+                  ? profile.avatar_url
+                  : `${API_URL}${profile.avatar_url}`
+                : "/images/default-avatar.png"
+            }
+            alt="Profile avatar"
+            className="absolute inset-0 m-auto w-[57%] h-[57%] object-cover rounded-full"
+          />
+          <img
+            src="/images/frame.png"
+            alt="Frame"
+            className="absolute inset-0 w-full h-full pointer-events-none"
+          />
+        </div>
+
+        {/* Loggor + (NY) League Tag + LP direkt under */}
+        <div className="flex flex-col ml-60 mt-24">
+          <div className="flex items-center gap-3">
+            {rankIcon && (
+              <div className="relative group">
+                <img src={rankIcon} alt={profile.rank} className="w-16 h-16 object-contain" />
+                <span className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100">
+                  {profile.rank}
+                </span>
               </div>
-
-              <div className="flex items-center gap-3 ml-60 mt-2">
-                {rankIcon && (
-                  <div className="relative group">
-                    <img
-                      src={rankIcon}
-                      alt={profile.rank}
-                      className="w-16 h-16 object-contain"
-                    />
-                    <span className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100">
-                      {profile.rank}
-                    </span>
-                  </div>
-                )}
-                {gameLogo && (
-                  <img
-                    src={gameLogo}
-                    alt={profile.game}
-                    className={`object-contain ${profile.game === "wildrift" ? "h-16" : "h-14"}`}
-                  />
-                )}
-              </div>
-            </div>
-
-            <div className="mt-44 text-left w-full max-w-lg space-y-2 relative">
-              <p><b>Name:</b> {profile.name || "—"}</p>
-              <p><b>Age:</b> {profile.age || "—"}</p>
-              <p><b>Gender:</b> {profile.gender || "—"}</p>
-
-              <div className="flex items-center gap-2">
-                <b>Preferred Lane:</b>{" "}
-                {roleIcon ? (
-                  <div className="relative group">
-                    <img
-                      src={roleIcon}
-                      alt={profile.preferred_lane}
-                      className="w-8 h-8 object-contain"
-                    />
-                    <span className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100">
-                      {profile.preferred_lane}
-                    </span>
-                  </div>
-                ) : ("—")}
-              </div>
-
-              <div className="flex items-center gap-2">
-                <b>Preferred Champ:</b>{" "}
-                {champ ? (
-                  <div className="relative group flex items-center gap-2">
-                    <img
-                      src={`${API_URL}${champ.file}`}
-                      alt={champ.name}
-                      className="w-10 h-10 object-cover rounded border border-rift-gold"
-                    />
-                    <span className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100">
-                      {champ.name}
-                    </span>
-                  </div>
-                ) : (profile.preferred_champ_id || "—")}
-              </div>
-
-              {/* Level / LP */}
-              {(hasLevel || hasLP) && (
-                <>
-                  {hasLevel && <p><b>Level:</b> {profile.level}</p>}
-                  {hasLP && <p><b>LP:</b> {profile.lp}</p>}
-                </>
-              )}
-
-              {/* Tags */}
-              {hasLeagueTag && <p><b>League Tag:</b> {profile.league_tag}</p>}
-              {hasWildriftTag && <p><b>Wild Rift Tag:</b> {profile.wildrift_tag}</p>}
-
-              {/* Note */}
-              {hasNote && (
-                <p className="whitespace-pre-wrap"> {profile.note}</p>
-              )}
-            </div>
-
-            <div className="flex justify-center gap-8 mt-6">
-              <button
-                className={`px-8 py-2 rounded ${activeTab === "posts" ? "bg-green-950 text-white" : "bg-green-950 text-gray-300"}`}
-                onClick={() => setActiveTab("posts")}
-              >
-                POSTS
-              </button>
-              <button
-                className={`px-8 py-2 rounded ${activeTab === "gallery" ? "bg-green-950 text-white" : "bg-green-950 text-gray-300"}`}
-                onClick={() => setActiveTab("gallery")}
-              >
-                GALLERY
-              </button>
-            </div>
-
-            <div className="mt-6 w-full">
-              {activeTab === "posts" && <PostsSection profileUserId={profile.id} me={user} />}
-              {activeTab === "gallery" && <GallerySection profileUserId={profile.id} me={user} />}
-            </div>
+            )}
+            {gameLogo && (
+              <img
+                src={gameLogo}
+                alt={profile.game}
+                className={`object-contain ${profile.game === "wildrift" ? "h-16" : "h-14"}`}
+              />
+            )}
           </div>
 
-          {/* Desktop: Allies kvar som sidokolumn */}
-          <AlliesSection profileUserId={profile.id} />
+          {/* 🔹 NYTT: League Tag & LP precis under loggorna (visas bara om ifyllt) */}
+          {(hasLeagueTag || hasLP) && (
+            <div className="mt-2 text-sm text-black/80 space-y-0.5">
+              {hasLeagueTag && (
+                <div><b>League Tag:</b> {profile.league_tag}</div>
+              )}
+              {hasLP && (
+                <div><b>LP:</b> {profile.lp}</div>
+              )}
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Info-ruta */}
+      <div className="mt-44 text-left w-full max-w-lg space-y-2 relative">
+        <p><b>Name:</b> {profile.name || "—"}</p>
+        <p><b>Age:</b> {profile.age || "—"}</p>
+        <p><b>Gender:</b> {profile.gender || "—"}</p>
+
+        <div className="flex items-center gap-2">
+          <b>Preferred Lane:</b>{" "}
+          {roleIcon ? (
+            <div className="relative group">
+              <img src={roleIcon} alt={profile.preferred_lane} className="w-8 h-8 object-contain" />
+              <span className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100">
+                {profile.preferred_lane}
+              </span>
+            </div>
+          ) : ("—")}
+        </div>
+
+        <div className="flex items-center gap-2">
+          <b>Preferred Champ:</b>{" "}
+          {champ ? (
+            <div className="relative group flex items-center gap-2">
+              <img
+                src={`${API_URL}${champ.file}`}
+                alt={champ.name}
+                className="w-10 h-10 object-cover rounded border border-rift-gold"
+              />
+              <span className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100">
+                {champ.name}
+              </span>
+            </div>
+          ) : (profile.preferred_champ_id || "—")}
+        </div>
+
+        {/* Level/LP inne i info-delen låter vi vara – LP visas ändå redan uppe under loggorna */}
+        {profile.level !== null && profile.level !== undefined && `${profile.level}` !== "" && (
+          <p><b>Level:</b> {profile.level}</p>
+        )}
+      {/* (valfritt) visa Wild Rift Tag / Note här om du vill */}
+        {profile.wildrift_tag && `${profile.wildrift_tag}`.trim() !== "" && (
+          <p className="mt-2"><b>Wild Rift Tag:</b> {profile.wildrift_tag}</p>
+        )}
+        {profile.note && `${profile.note}`.trim() !== "" && (
+          <p className="mt-1 whitespace-pre-wrap"> {profile.note}</p>
+        )}
+      </div>
+        {/* 🔹 NYTT: Socials på desktop (de saknades tidigare) */}
+        {profile.socials && Object.values(profile.socials).some(Boolean) && (
+          <div className="mt-4 flex flex-wrap items-center gap-6">
+            {Object.entries(profile.socials).map(([key, value]) =>
+              value ? (
+                <a
+                  key={key}
+                  href={value}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="relative group"
+                  title={key}
+                >
+                  <img
+                    src={socialIcons[key]}
+                    alt={key}
+                    className="w-7 h-7 opacity-90 hover:opacity-100 transition"
+                  />
+                  <span className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100">
+                    {key}
+                  </span>
+                </a>
+              ) : null
+            )}
+          </div>
+        )}
+
+  
+
+      {/* Tabs */}
+      <div className="flex justify-center gap-8 mt-6">
+        <button
+          className={`px-8 py-2 rounded ${activeTab === "posts" ? "bg-green-950 text-white" : "bg-green-950 text-gray-300"}`}
+          onClick={() => setActiveTab("posts")}
+        >
+          POSTS
+        </button>
+        <button
+          className={`px-8 py-2 rounded ${activeTab === "gallery" ? "bg-green-950 text-white" : "bg-green-950 text-gray-300"}`}
+          onClick={() => setActiveTab("gallery")}
+        >
+          GALLERY
+        </button>
+      </div>
+
+      <div className="mt-6 w-full">
+        {activeTab === "posts" && <PostsSection profileUserId={profile.id} me={user} />}
+        {activeTab === "gallery" && <GallerySection profileUserId={profile.id} me={user} />}
+      </div>
     </div>
+
+    {/* Desktop: Allies som sidokolumn */}
+    <AlliesSection profileUserId={profile.id} />
+  </div>
+</div>
+
+        </div>
+    
   );
 }
