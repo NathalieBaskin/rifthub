@@ -122,59 +122,74 @@ export default function Navbar() {
     </Link>
   );
 
-  // ------- Bild-länkar (mindre på iPad/md, Rift fortfarande större) -------
-  const ImageNavLinks = ({ className = "" }) => {
-    const base = "transition-transform duration-150 hover:scale-[1.02] focus:outline-none";
-    const activeGlow = "drop-shadow-[0_0_10px_rgba(255,215,0,0.6)]";
+  // ------- Bild-länkar (iPad normal, DESKTOP mindre) -------
+const ImageNavLinks = ({ className = "" }) => {
+  const base = "transition-transform duration-150 hover:scale-[1.02] focus:outline-none";
+  const activeGlow = "drop-shadow-[0_0_10px_rgba(255,215,0,0.6)]";
 
-    // md (iPad) mindre för att ge plats åt ikonerna
-    const imgSmall = "h-9 md:h-7 lg:h-9 w-auto object-contain select-none shrink-0";
-    const imgLarge = "h-12 md:h-9 lg:h-12 w-auto object-contain select-none shrink-0"; // Rift större
+  const isSummoners = location.pathname.startsWith("/summoners-hall");
+  const isShop = location.pathname.startsWith("/shop");
+  const isTavern = location.pathname.startsWith("/tavern");
 
-    const isSummoners = location.pathname.startsWith("/summoners-hall");
-    const isShop = location.pathname.startsWith("/shop");
-    const isTavern = location.pathname.startsWith("/tavern");
-
-    const onTavernClick = () => {
-      if (user) {
-        window.location.href = "/tavern";
-      } else {
-        setShowAuthModal(true);
-      }
-    };
-
-    return (
-      <nav className={`flex items-center gap-2 sm:gap-3 md:gap-2 lg:gap-4 ${className}`}>
-        <NavLink
-          to="/summoners-hall"
-          className={`${base} ${isSummoners ? activeGlow : ""}`}
-          aria-label="Summoner's Hall"
-          title="Summoner's Hall"
-        >
-          <img src={`${IMG_BASE}/summoners-link.png`} alt="Summoner's Hall" className={imgSmall} draggable="false" />
-        </NavLink>
-
-        <button
-          type="button"
-          onClick={onTavernClick}
-          className={`${base} ${isTavern ? activeGlow : ""} bg-transparent p-0`}
-          aria-label="The Rift Tavern"
-          title="The Rift Tavern"
-        >
-          <img src={`${IMG_BASE}/rift-link.png`} alt="The Rift Tavern" className={imgLarge} draggable="false" />
-        </button>
-
-        <NavLink
-          to="/shop"
-          className={`${base} ${isShop ? activeGlow : ""}`}
-          aria-label="Legends Bazaar"
-          title="Legends Bazaar"
-        >
-          <img src={`${IMG_BASE}/bazaar-link.png`} alt="Legends Bazaar" className={imgSmall} draggable="false" />
-        </NavLink>
-      </nav>
-    );
+  const onTavernClick = () => {
+    if (user) {
+      window.location.href = "/tavern";
+    } else {
+      setShowAuthModal(true);
+    }
   };
+
+  return (
+    <nav className={`flex items-center gap-8 ${className}`}>
+      {/* Summoner's Hall – mindre på desktop */}
+      <NavLink
+        to="/summoners-hall"
+        className={`${base} ${isSummoners ? activeGlow : ""}`}
+        aria-label="Summoner's Hall"
+        title="Summoner's Hall"
+      >
+    <img
+  src={`${IMG_BASE}/summoners-link.png`}
+  alt="Summoner's Hall"
+  className="h-9 md:h-14 lg:h-7 xl:h-7 w-auto object-contain select-none"
+  draggable="false"
+/>
+      </NavLink>
+
+      {/* Rift – större än de andra men också krympt lite på desktop */}
+      <button
+        type="button"
+        onClick={onTavernClick}
+        className={`${base} ${isTavern ? activeGlow : ""} bg-transparent p-0`}
+        aria-label="The Rift Tavern"
+        title="The Rift Tavern"
+      >
+       <img
+  src={`${IMG_BASE}/rift-link.png`}
+  alt="The Rift Tavern"
+  className="h-12 md:h-24 lg:h-10 xl:h-11 w-auto object-contain select-none"
+  draggable="false"
+/>
+      </button>
+
+      {/* Legends Bazaar – mindre på desktop */}
+      <NavLink
+        to="/shop"
+        className={`${base} ${isShop ? activeGlow : ""}`}
+        aria-label="Legends Bazaar"
+        title="Legends Bazaar"
+      >
+     <img
+  src={`${IMG_BASE}/bazaar-link.png`}
+  alt="Legends Bazaar"
+  className="h-9 md:h-16 lg:h-7 xl:h-8 w-auto object-contain select-none"
+  draggable="false"
+/>
+      </NavLink>
+    </nav>
+  );
+};
+
 
   return (
     <header
@@ -220,65 +235,83 @@ export default function Navbar() {
             )}
           </div>
         </div>
+{/* IPAD + DESKTOP */}
+<div className="hidden sm:block">
+  {/* Stor logga på startsidan */}
+  <div className={`${!isHome || isScrolled ? "hidden" : "block"} py-2`}>
+    <div className="relative flex items-center justify-center">
+      <Link to="/" className="flex justify-center">
+        <img
+          src={rifthubLogo}
+          alt="RiftHub Logo"
+          className="h-32 md:h-48 w-auto object-contain transition-all duration-500"
+        />
+      </Link>
+    </div>
+    <div className="mt-3 flex justify-center">
+      {/* centrera, men nudge lite vänster */}
+      <ImageNavLinks className="sm:relative sm:-left-6 md:-left-2 lg:-left-2 xl:-left-2" />
+    </div>
+  </div>
 
-        {/* IPAD + DESKTOP */}
-        <div className="hidden sm:block">
-          {/* Stor logga på startsidan */}
-          <div className={`${!isHome || isScrolled ? "hidden" : "block"} py-2`}>
-            <div className="relative flex items-center justify-center">
-              <Link to="/" className="flex justify-center">
-                <img
-                  src={rifthubLogo}
-                  alt="RiftHub Logo"
-                  className="h-32 md:h-48 w-auto object-contain transition-all duration-500"
-                />
-              </Link>
-            </div>
-            <div className="mt-3 flex justify-center">
-              {/* centrera, men nudge lite vänster */}
-              <ImageNavLinks className="sm:relative sm:-left-6 md:-left-4 lg:-left-5" />
-            </div>
-          </div>
+  {/* Sticky rad */}
+  <div
+    className={`${
+      !isHome || isScrolled ? "flex" : "hidden"
+    } items-center justify-between py-2 transition-all duration-500`}
+  >
+    {/* 🔒 Lilla loggan får inte krympa */}
+    <Link to="/" className="flex items-center gap-2 flex-none shrink-0">
+      <img
+        src={rLogo}
+        alt="RiftHub Small Logo"
+        className="h-14 md:h-16 w-auto object-contain transition-all duration-500 shrink-0 min-w-[3.5rem] md:min-w-[4rem]"
+      />
+    </Link>
 
-          {/* Sticky rad */}
-          <div className={`${!isHome || isScrolled ? "flex" : "hidden"} items-center justify-between py-2 transition-all duration-500`}>
-            <Link to="/" className="flex items-center gap-2 min-w-0">
-              <img src={rLogo} alt="RiftHub Small Logo" className="h-14 md:h-16 w-auto object-contain transition-all duration-500" />
-            </Link>
+    {/* 🔁 Nudge nav-länkar lite vänster på desktop */}
+    <div className="mx-1 md:mx-0 relative lg:-left-3 xl:-left-6">
+      <ImageNavLinks />
+    </div>
 
-            <div className="mx-1 md:mx-0">
-              <ImageNavLinks />
-            </div>
-
-            <div className="flex items-center gap-4 md:gap-3 text-rift-gold">
-              <HeartLink className="hidden md:inline-flex" />
-              <Link to="/cart" className="relative p-2" aria-label="Cart" title="Cart">
-                <img
-                  src="/images/cart-icon.png"
-                  alt="Cart"
-                  className="h-11 w-11 object-contain shrink-0 min-w-[2.75rem]"
-                />
-                {count > 0 && <span className="absolute -top-1 -right-1 bg-rift-gold text-black text-xs px-1.5 rounded-full">{count}</span>}
-              </Link>
-              {user && (
-                <Link to="/chat" className="relative p-2" aria-label="Chat" title="Chat">
-                  <img
-                    src="/images/chat-icon.png"
-                    alt="Chat"
-                    className="h-11 w-11 object-contain shrink-0 min-w-[2.75rem]"
-                  />
-                  {unreadCount > 0 && <span className="absolute -top-1 -right-1 bg-rift-gold text-black text-xs px-1.5 rounded-full">{unreadCount}</span>}
-                </Link>
-              )}
-              <AccountMenu />
-              {user?.is_admin === 1 && (
-                <Link to="/admin" className="p-2" aria-label="Admin" title="Admin">
-                  <img
-                    src="/images/key-icon.png"
-                    alt="Admin"
-                    className="h-11 w-11 object-contain shrink-0 min-w-[2.75rem]"
-                  />
-                </Link>
+    {/* 🔒 Höger-ikoner får inte krympa av mittenlänkarna */}
+    <div className="flex items-center gap-4 md:gap-3 text-rift-gold flex-none shrink-0">
+      <HeartLink className="hidden md:inline-flex" />
+      <Link to="/cart" className="relative p-2" aria-label="Cart" title="Cart">
+        <img
+          src="/images/cart-icon.png"
+          alt="Cart"
+          className="h-11 w-11 object-contain shrink-0 min-w-[2.75rem]"
+        />
+        {count > 0 && (
+          <span className="absolute -top-1 -right-1 bg-rift-gold text-black text-xs px-1.5 rounded-full">
+            {count}
+          </span>
+        )}
+      </Link>
+      {user && (
+        <Link to="/chat" className="relative p-2" aria-label="Chat" title="Chat">
+          <img
+            src="/images/chat-icon.png"
+            alt="Chat"
+            className="h-11 w-11 object-contain shrink-0 min-w-[2.75rem]"
+          />
+          {unreadCount > 0 && (
+            <span className="absolute -top-1 -right-1 bg-rift-gold text-black text-xs px-1.5 rounded-full">
+              {unreadCount}
+            </span>
+          )}
+        </Link>
+      )}
+      <AccountMenu />
+      {user?.is_admin === 1 && (
+        <Link to="/admin" className="p-2" aria-label="Admin" title="Admin">
+          <img
+            src="/images/key-icon.png"
+            alt="Admin"
+            className="h-11 w-11 object-contain shrink-0 min-w-[2.75rem]"
+          />
+        </Link>
               )}
             </div>
           </div>

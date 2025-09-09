@@ -1,7 +1,7 @@
 // src/pages/SummonersHall.jsx
 import React, { useMemo, useState, useEffect } from "react";
 import { getUserFromToken } from "../utils/auth.js";
-import { FaEdit, FaTrash } from "react-icons/fa";
+import { FaTrash } from "react-icons/fa";
 import { AiOutlineLike, AiFillLike, AiOutlineComment } from "react-icons/ai";
 import NotAuthModal from "../components/NotAuthModal.jsx";
 
@@ -38,12 +38,21 @@ function useNavOffset() {
 function SideRail({ topic, setTopic, onNewThread }) {
   return (
     <aside className="paper-rail">
-      <div className="flex justify-start mb-4">
+      <div className="flex justify-start mb-2">
+        {/* Bild-baserad Create-knapp (iPad/desktop) */}
         <button
+          type="button"
           onClick={onNewThread}
-          className="px-4 py-2 rounded bg-rift-card text-rift-gold hover:bg-rift-card/80"
+  className="p-0 bg-transparent -translate-y-1 md:-translate-y-2 lg:-translate-y-14"
+          aria-label="Create new thread"
+          title="Create new thread"
         >
-          + Create
+          <img
+            src={`${API_URL}/images/create-button.png`}
+            alt="Create"
+            className="h-6 md:h-6 lg:h-9 w-auto select-none"
+            draggable="false"
+          />
         </button>
       </div>
       <details className="paper-acc" open>
@@ -88,12 +97,12 @@ function ThreadRow({ t, onOpen, onLike, onDelete, user }) {
             />
           )}
           <div className="min-w-0 flex-1">
-    <h3 className="font-display text-xl md:text-rift-bg text-rift-gold line-clamp-1 truncate max-w-[20ch]">
-  {t.title}
-</h3>
-          <p className="mt-1 text-sm md:text-rift-bg/70 text-white/80 line-clamp-2 truncate max-w-[20ch]">
-  {t.content}
-</p>
+            <h3 className="font-display text-xl md:text-rift-bg text-rift-gold line-clamp-1 truncate max-w-[20ch]">
+              {t.title}
+            </h3>
+            <p className="mt-1 text-sm md:text-rift-bg/70 text-white/80 line-clamp-2 truncate max-w-[20ch]">
+              {t.content}
+            </p>
             <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-rift-bg/70">
               <span>
                 By <span className="font-medium">{t.author}</span>
@@ -104,19 +113,17 @@ function ThreadRow({ t, onOpen, onLike, onDelete, user }) {
         </div>
       </div>
       <div className="flex items-center gap-4 px-6 py-2 text-sm text-rift-bg/70">
-<button
-  className={`flex items-center gap-1 ${
-    hasLiked
-      ? "text-rift-gold md:text-black"  // Mobil = guld, iPad/desktop = svart
-      : "hover:text-rift-gold"
-  }`}
-  onClick={(e) => {
-    e.stopPropagation();
-    onLike(t);
-  }}
->
-  {hasLiked ? <AiFillLike /> : <AiOutlineLike />} {t.like_count || 0}
-</button>
+        <button
+          className={`flex items-center gap-1 ${
+            hasLiked ? "text-rift-gold md:text-black" : "hover:text-rift-gold"
+          }`}
+          onClick={(e) => {
+            e.stopPropagation();
+            onLike(t);
+          }}
+        >
+          {hasLiked ? <AiFillLike /> : <AiOutlineLike />} {t.like_count || 0}
+        </button>
 
         <button
           className="flex items-center gap-1 hover:text-rift-gold"
@@ -144,14 +151,19 @@ function ThreadRow({ t, onOpen, onLike, onDelete, user }) {
   );
 }
 
-function ThreadModal({ thread, onClose, user, onCommentCountChange, setShowAuthModal }) {
-
+function ThreadModal({
+  thread,
+  onClose,
+  user,
+  onCommentCountChange,
+  setShowAuthModal,
+}) {
   const [comments, setComments] = useState([]);
   const [replyOpen, setReplyOpen] = useState({});
   const [replyText, setReplyText] = useState({});
   const [text, setText] = useState("");
 
-  // 🔹 trådredigering
+  // trådredigering
   const [isEditingThread, setIsEditingThread] = useState(false);
   const [threadTitle, setThreadTitle] = useState(thread.title);
   const [threadContent, setThreadContent] = useState(thread.content);
@@ -169,61 +181,64 @@ function ThreadModal({ thread, onClose, user, onCommentCountChange, setShowAuthM
   if (!thread) return null;
 
   const resolveAvatar = (path) =>
-    !path ? "/default-avatar.png" : path.startsWith("/uploads") ? `${API_URL}${path}` : path;
+    !path
+      ? "/default-avatar.png"
+      : path.startsWith("/uploads")
+      ? `${API_URL}${path}`
+      : path;
 
-// --- THREAD EDIT SAVE ---
-async function handleSaveThreadEdit() {
-  if (!user) return;
-  const formData = new FormData();
-  formData.append("id", thread.id); // 🔹 vissa backends kräver id i body
-  formData.append("userId", user.id);
-  formData.append("title", threadTitle);
-  formData.append("content", threadContent);
-  formData.append("topic_id", thread.topic_id); // 🔹 fix
-  if (threadFile) formData.append("thumb", threadFile);
+  // THREAD EDIT SAVE
+  async function handleSaveThreadEdit() {
+    if (!user) return;
+    const formData = new FormData();
+    formData.append("id", thread.id);
+    formData.append("userId", user.id);
+    formData.append("title", threadTitle);
+    formData.append("content", threadContent);
+    formData.append("topic_id", thread.topic_id);
+    if (threadFile) formData.append("thumb", threadFile);
 
-  const res = await fetch(`${API_URL}/api/threads/${thread.id}`, {
-    method: "PUT",
-    body: formData,
-  });
+    const res = await fetch(`${API_URL}/api/threads/${thread.id}`, {
+      method: "PUT",
+      body: formData,
+    });
 
-  if (res.ok) {
-    setIsEditingThread(false);
-    onClose(); // stäng för att refetcha
-  } else {
-    console.error("Failed to save edit", await res.text());
-  }
-}
-
-// --- COMMENT ACTIONS ---
-async function handlePostComment(parentId = null) {
-  if (!user) {
-    if (typeof setShowAuthModal === "function") {
-      setShowAuthModal(true);   // 👈 öppna NotAuthModal
+    if (res.ok) {
+      setIsEditingThread(false);
+      onClose(); // stäng för att refetcha
     } else {
-      alert("Log in to comment"); // fallback om prop inte skickas
+      console.error("Failed to save edit", await res.text());
     }
-    return;
   }
 
-  const content = parentId ? replyText[parentId] : text;
-  if (!content?.trim()) return;
+  // COMMENT ACTIONS
+  async function handlePostComment(parentId = null) {
+    if (!user) {
+      if (typeof setShowAuthModal === "function") {
+        setShowAuthModal(true);
+      } else {
+        alert("Log in to comment");
+      }
+      return;
+    }
 
-  const res = await fetch(`${API_URL}/api/threads/${thread.id}/comments`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ userId: user.id, content, parent_id: parentId }),
-  });
+    const content = parentId ? replyText[parentId] : text;
+    if (!content?.trim()) return;
 
-  if (!res.ok) return;
+    const res = await fetch(`${API_URL}/api/threads/${thread.id}/comments`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: user.id, content, parent_id: parentId }),
+    });
 
-  const newComment = await res.json();
-  setComments((prev) => [...prev, newComment]);
-  onCommentCountChange?.(thread.id, +1);
+    if (!res.ok) return;
 
-  parentId ? setReplyText((p) => ({ ...p, [parentId]: "" })) : setText("");
-}
+    const newComment = await res.json();
+    setComments((prev) => [...prev, newComment]);
+    onCommentCountChange?.(thread.id, +1);
 
+    parentId ? setReplyText((p) => ({ ...p, [parentId]: "" })) : setText("");
+  }
 
   async function handleToggleLikeComment(commentId) {
     if (!user) return;
@@ -236,7 +251,9 @@ async function handlePostComment(parentId = null) {
     const { like_count, liked } = await res.json();
     setComments((prev) =>
       prev.map((c) =>
-        c.id === commentId ? { ...c, like_count, liked_by_me: liked ? 1 : 0 } : c
+        c.id === commentId
+          ? { ...c, like_count, liked_by_me: liked ? 1 : 0 }
+          : c
       )
     );
   }
@@ -260,7 +277,8 @@ async function handlePostComment(parentId = null) {
     comments.forEach((c) => byId.set(c.id, { ...c, children: [] }));
     const roots = [];
     byId.forEach((c) => {
-      if (c.parent_id && byId.has(c.parent_id)) byId.get(c.parent_id).children.push(c);
+      if (c.parent_id && byId.has(c.parent_id))
+        byId.get(c.parent_id).children.push(c);
       else roots.push(c);
     });
     return roots;
@@ -290,7 +308,10 @@ async function handlePostComment(parentId = null) {
     return (
       <div className="mb-3" style={{ marginLeft: depth * 16 }}>
         <div className="flex items-start gap-3">
-          <img src={resolveAvatar(c.avatar_url)} className="w-8 h-8 rounded-full" />
+          <img
+            src={resolveAvatar(c.avatar_url)}
+            className="w-8 h-8 rounded-full"
+          />
           <div className="flex-1">
             <span className="font-medium text-rift-gold">{c.username}</span>
 
@@ -326,9 +347,14 @@ async function handlePostComment(parentId = null) {
 
             <div className="flex gap-3 text-xs mt-1">
               <button onClick={() => handleToggleLikeComment(c.id)}>
-                {liked ? <AiFillLike /> : <AiOutlineLike />} {c.like_count || 0}
+                {liked ? <AiFillLike /> : <AiOutlineLike />}{" "}
+                {c.like_count || 0}
               </button>
-              <button onClick={() => setReplyOpen((p) => ({ ...p, [c.id]: !p[c.id] }))}>
+              <button
+                onClick={() =>
+                  setReplyOpen((p) => ({ ...p, [c.id]: !p[c.id] }))
+                }
+              >
                 Reply
               </button>
               {canEdit && !isEditing && (
@@ -340,7 +366,10 @@ async function handlePostComment(parentId = null) {
                 </button>
               )}
               {canEdit && (
-                <button onClick={() => handleDeleteComment(c.id)} className="text-red-600">
+                <button
+                  onClick={() => handleDeleteComment(c.id)}
+                  className="text-red-600"
+                >
                   Delete
                 </button>
               )}
@@ -390,7 +419,8 @@ async function handlePostComment(parentId = null) {
               <div>
                 <h3 className="font-display text-2xl">{thread.title}</h3>
                 <div className="text-xs">
-                  By {thread.author} • {new Date(thread.created_at).toLocaleDateString()}
+                  By {thread.author} •{" "}
+                  {new Date(thread.created_at).toLocaleDateString()}
                 </div>
               </div>
             ) : (
@@ -561,8 +591,7 @@ export default function SummonersHall() {
   const [showNew, setShowNew] = useState(false);
   const navOffset = useNavOffset();
   const user = getUserFromToken();
-    const [showAuthModal, setShowAuthModal] = useState(false);
-
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   async function loadThreads() {
     const uid = user?.id ? `?userId=${user.id}` : "";
@@ -583,49 +612,52 @@ export default function SummonersHall() {
     });
   }, [topic, threads]);
 
-async function handleLike(thread) {
-  if (!user) {
-    setShowAuthModal(true); // 👈 öppna modalen istället för alert
-    return;
+  async function handleLike(thread) {
+    if (!user) {
+      setShowAuthModal(true);
+      return;
+    }
+
+    const res = await fetch(`${API_URL}/api/threads/${thread.id}/like`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: user.id }),
+    });
+    if (!res.ok) return;
+
+    const { like_count, liked } = await res.json();
+    setThreads((prev) =>
+      prev.map((t) =>
+        t.id === thread.id
+          ? { ...t, like_count, liked_by_me: liked ? 1 : 0 }
+          : t
+      )
+    );
   }
 
-  const res = await fetch(`${API_URL}/api/threads/${thread.id}/like`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ userId: user.id }),
-  });
-  if (!res.ok) return;
+  // CREATE THREAD
+  async function handleCreateThread({ title, content, topicId, file }) {
+    if (!user) {
+      setShowAuthModal(true);
+      return;
+    }
 
-  const { like_count, liked } = await res.json();
-  setThreads((prev) =>
-    prev.map((t) =>
-      t.id === thread.id ? { ...t, like_count, liked_by_me: liked ? 1 : 0 } : t
-    )
-  );
-}
+    const formData = new FormData();
+    formData.append("userId", user.id);
+    formData.append("title", title);
+    formData.append("content", content);
+    formData.append("topic_id", topicId);
+    if (file) formData.append("thumb", file);
 
-
-// --- CREATE THREAD ---
-async function handleCreateThread({ title, content, topicId, file }) {
-  if (!user) {
-    setShowAuthModal(true); // 👈 öppna modal istället för alert
-    return;
+    const res = await fetch(`${API_URL}/api/threads`, {
+      method: "POST",
+      body: formData,
+    });
+    if (!res.ok) return;
+    const newThread = await res.json();
+    setThreads((prev) => [newThread, ...prev]);
+    setShowNew(false);
   }
-
-  const formData = new FormData();
-  formData.append("userId", user.id);
-  formData.append("title", title);
-  formData.append("content", content);
-  formData.append("topic_id", topicId);
-  if (file) formData.append("thumb", file);
-
-  const res = await fetch(`${API_URL}/api/threads`, { method: "POST", body: formData });
-  if (!res.ok) return;
-  const newThread = await res.json();
-  setThreads((prev) => [newThread, ...prev]);
-  setShowNew(false);
-}
-
 
   async function handleDeleteThread(thread) {
     if (!user) return;
@@ -643,80 +675,79 @@ async function handleCreateThread({ title, content, topicId, file }) {
   function handleCommentCountChange(threadId, delta) {
     setThreads((prev) =>
       prev.map((t) =>
-        t.id === threadId ? { ...t, comment_count: (t.comment_count || 0) + delta } : t
+        t.id === threadId
+          ? { ...t, comment_count: (t.comment_count || 0) + delta }
+          : t
       )
     );
     if (open?.id === threadId) {
       setOpen((o) => ({ ...o, comment_count: (o.comment_count || 0) + delta }));
     }
   }
-      return (
+
+  return (
     <div className="min-h-screen bg-transparent">
+      {/* Desktop/iPad → parchment-wrapper */}
+      <div
+        className="
+          hidden md:block parchment-wrapper
+          md:min-h-[1300px] md:pb-28
+          xl:min-h-[1700px] md:pb-28
+          xl:pb-20
+        "
+        style={{ marginTop: (navOffset || 0) - 90 }}
+      >
+        <h1 className="font-display text-4xl md:text-5xl text-rift-bg text-center mb-6">
+          Summoner&apos;s Hall
+        </h1>
 
-{/* Desktop/iPad → parchment-wrapper */}
-<div
-  className="
-    hidden md:block parchment-wrapper
-    md:min-h-[1300px] md:pb-28       /* iPad: längre papper + extra bottenluft */
-    xl:min-h-[1700px] md:pb-28       /* desktop: täck hela höjden ovanför footern */
-    xl:pb-20
-  "
-  style={{ marginTop: (navOffset || 0) - 90 }}
->
-  <h1 className="font-display text-4xl md:text-5xl text-rift-bg text-center mb-6">
-    Summoner&apos;s Hall
-  </h1>
+        <div
+          className="
+            grid gap-6
+            md:[grid-template-columns:460px_1fr]
+            xl:[grid-template-columns:400px_1fr]
+            md:-ml-4 xl:ml-0
+          "
+        >
+          {/* Siderail iPad lite mer vänster */}
+          <div className="md:-ml-6 xl:ml-0">
+            <SideRail
+              topic={topic}
+              setTopic={setTopic}
+              onNewThread={() => {
+                if (user) {
+                  setShowNew(true);
+                } else {
+                  setShowAuthModal(true);
+                }
+              }}
+            />
+          </div>
 
-  {/* iPad: bredare siderail + lite mer vänster; Desktop: tillbaka till original */}
-  <div
-    className="
-      grid gap-6
-      md:[grid-template-columns:460px_1fr]
-      xl:[grid-template-columns:400px_1fr]
-      md:-ml-4 xl:ml-0
-    "
-  >
-    {/* Gör siderailen lite mer till vänster bara i iPad */}
-    <div className="md:-ml-6 xl:ml-0">
-      <SideRail
-        topic={topic}
-        setTopic={setTopic}
-        onNewThread={() => {
-          if (user) {
-            setShowNew(true);
-          } else {
-            setShowAuthModal(true);
-          }
-        }}
-      />
-    </div>
+          {/* Trådlista */}
+          <div className="flex-1 pt-8 md:-ml-28 xl:ml-0">
+            <ul>
+              {list.map((t) => (
+                <ThreadRow
+                  key={t.id}
+                  t={t}
+                  user={user}
+                  onOpen={setOpen}
+                  onLike={handleLike}
+                  onDelete={handleDeleteThread}
+                />
+              ))}
+              {list.length === 0 && (
+                <li className="px-4 py-10 text-center text-rift-bg/70">
+                  No threads found.
+                </li>
+              )}
+            </ul>
+          </div>
+        </div>
+      </div>
 
-    {/* Trådlistan – ännu mer åt vänster i iPad, normal i desktop */}
-    <div className="flex-1 pt-8 md:-ml-28 xl:ml-0">
-      <ul>
-        {list.map((t) => (
-          <ThreadRow
-            key={t.id}
-            t={t}
-            user={user}
-            onOpen={setOpen}
-            onLike={handleLike}
-            onDelete={handleDeleteThread}
-          />
-        ))}
-        {list.length === 0 && (
-          <li className="px-4 py-10 text-center text-rift-bg/70">
-            No threads found.
-          </li>
-        )}
-      </ul>
-    </div>
-  </div>
-</div>
-
-
-
-      {/* 🔹 Mobil-layout */}
+      {/* Mobil-layout */}
       <div
         className="md:hidden flex flex-col gap-4 px-3"
         style={{ marginTop: (navOffset || 0) - 60 }}
@@ -725,14 +756,23 @@ async function handleCreateThread({ title, content, topicId, file }) {
           Summoner&apos;s Hall
         </h1>
 
-        {/* Rad med Create + Topic dropdown */}
+        {/* Rad med Create (bild) + Topic dropdown */}
         <div className="flex items-center justify-between gap-3">
           <button
+            type="button"
             onClick={() => (user ? setShowNew(true) : setShowAuthModal(true))}
-            className="px-3 py-1.5 rounded bg-rift-card text-rift-gold text-sm"
+            className="p-0 bg-transparent"
+            aria-label="Create new thread"
+            title="Create new thread"
           >
-            + Create
+            <img
+              src={`${API_URL}/images/create-button.png`}
+              alt="Create"
+              className="h-8 w-auto select-none"
+              draggable="false"
+            />
           </button>
+
           <select
             className="px-2 py-1 rounded border text-sm bg-white/90 text-black"
             value={topic}
@@ -749,25 +789,16 @@ async function handleCreateThread({ title, content, topicId, file }) {
         {/* Trådlista */}
         <ul className="flex flex-col gap-4 mt-2">
           {list.map((t) => (
-            <li
-              key={t.id}
-              className="backdrop-blur-md bg-black/40 rounded-xl p-2"
-            >
+            <li key={t.id} className="backdrop-blur-md bg-black/40 rounded-xl p-2">
               <div className="text-white">
-                {/* ThreadRow används igen men med mobil-stil */}
                 <ThreadRow
-                  t={{
-                    ...t,
-                    // markera liked trådar så de får guld-ikon
-                    liked_by_me: t.liked_by_me,
-                  }}
+                  t={{ ...t, liked_by_me: t.liked_by_me }}
                   user={user}
                   onOpen={setOpen}
                   onLike={handleLike}
                   onDelete={handleDeleteThread}
                 />
 
-                {/* extra override för author, datum, knappar i mobil */}
                 <style jsx>{`
                   @media (max-width: 767px) {
                     li .text-rift-bg,
