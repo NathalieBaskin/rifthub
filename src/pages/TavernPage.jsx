@@ -47,27 +47,83 @@ export default function TavernPage() {
 
   return (
     <div className="max-w-6xl mx-auto p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-display text-rift-gold">The Rift Tavern</h1>
-        <div className="flex gap-3">
+      {/* Topp: rubrik + iPad/desktop-knappar */}
+      <div className="flex items-center justify-between mb-3 md:mb-6">
+        <h1 className="text-3xl font-display text-rift-white">The Rift Tavern</h1>
+
+        {/* iPad/desktop (md+) – bildknappar */}
+        <div className="hidden md:flex items-center gap-3">
           <button
             onClick={() => setOpenModal(true)}
-            className="px-4 py-2 border border-rift-gold/50 rounded-md text-rift-gold hover:bg-rift-card/60"
+            className="p-0 bg-transparent shrink-0"
+            aria-label="Upload highlight"
+            title="Upload highlight"
           >
-            Upload highlight
+            <img
+              src={`${API_URL}/images/highlight-button.png`}
+              alt="Upload highlight"
+              className="block h-9 md:h-28 lg:h-24 w-auto select-none"
+              draggable="false"
+            />
           </button>
+
           <button
             onClick={() => nav("/tavern/live")}
-            className="px-4 py-2 border border-rift-gold/50 rounded-md text-rift-gold hover:bg-rift-card/60"
+            className="p-0 bg-transparent shrink-0"
+            aria-label="Go Live"
+            title="Go Live"
           >
-            Go Live
+            <img
+              src={`${API_URL}/images/live-button.png`}
+              alt="Go Live"
+              className="block h-9 md:h-20 lg:h-20 w-auto select-none"
+              draggable="false"
+            />
           </button>
         </div>
       </div>
 
+      {/* Mobil (under rubriken) – bildknappar synliga även på små skärmar */}
+      <div className="md:hidden flex items-center gap-3 mb-6">
+        <button
+          onClick={() => setOpenModal(true)}
+          className="p-0 bg-transparent shrink-0"
+          aria-label="Upload highlight"
+          title="Upload highlight"
+        >
+       <img
+  src={`${API_URL}/images/highlight-button.png`}
+  alt="Upload highlight"
+  className="block h-28 md:h-28 lg:h-24 w-auto select-none
+          filter drop-shadow-[0_0_10px_rgba(0,0,0,0.35)]
+             hover:drop-shadow-[0_0_16px_rgba(0,0,0,0.99)]
+             transition"
+  draggable="false"
+/>
+
+        </button>
+
+        <button
+          onClick={() => nav("/tavern/live")}
+          className="p-0 bg-transparent shrink-0"
+          aria-label="Go Live"
+          title="Go Live"
+        >
+    <img
+  src={`${API_URL}/images/live-button.png`}
+  alt="Go Live"
+  className="block h-24 md:h-20 lg:h-20 w-auto select-none
+                filter drop-shadow-[0_0_10px_rgba(0,0,0,0.35)]
+             hover:drop-shadow-[0_0_16px_rgba(0,0,0,0.99)]
+             transition"
+/>
+
+        </button>
+      </div>
+
       {/* LIVE NOW */}
       <section className="mb-10">
-        <h2 className="text-xl text-rift-gold mb-3">Live now</h2>
+        <h2 className="text-xl text-white mb-3">Live now</h2>
         {live.length === 0 ? (
           <p className="text-gray-300">No one is live right now.</p>
         ) : (
@@ -187,7 +243,7 @@ export function HighlightCard({ h, onLike }) {
               h.liked_by_me ? "text-rift-gold" : "text-gray-300"
             }`}
           />
-          <span className="text-white text-sm">{h.like_count}</span>
+        <span className="text-white text-sm">{h.like_count}</span>
         </button>
       </div>
 
