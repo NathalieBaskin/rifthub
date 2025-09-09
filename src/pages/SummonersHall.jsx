@@ -38,24 +38,26 @@ function useNavOffset() {
 function SideRail({ topic, setTopic, onNewThread }) {
   return (
     <aside className="paper-rail">
-      <div className="flex justify-start mb-2">
+      <div className="flex justify-start mb-1 md:mb-1">
         {/* Bild-baserad Create-knapp (iPad/desktop) */}
         <button
           type="button"
           onClick={onNewThread}
-  className="p-0 bg-transparent -translate-y-1 md:-translate-y-2 lg:-translate-y-14"
+          className="p-0 bg-transparent -translate-y-1 md:-translate-y-2 lg:-translate-y-3"
           aria-label="Create new thread"
           title="Create new thread"
         >
           <img
             src={`${API_URL}/images/create-button.png`}
             alt="Create"
-            className="h-6 md:h-6 lg:h-9 w-auto select-none"
+            className="h-6 md:h-8 lg:h-9 w-auto select-none"
             draggable="false"
           />
         </button>
       </div>
-      <details className="paper-acc" open>
+
+      {/* Topics direkt under Create */}
+      <details className="paper-acc mt-0" open>
         <summary className="paper-acc__summary">TOPICS</summary>
         <ul className="paper-list">
           {TOPICS.map((t) => {
@@ -112,6 +114,7 @@ function ThreadRow({ t, onOpen, onLike, onDelete, user }) {
           </div>
         </div>
       </div>
+
       <div className="flex items-center gap-4 px-6 py-2 text-sm text-rift-bg/70">
         <button
           className={`flex items-center gap-1 ${
@@ -134,6 +137,7 @@ function ThreadRow({ t, onOpen, onLike, onDelete, user }) {
         >
           <AiOutlineComment /> {t.comment_count || 0}
         </button>
+
         {user && user.id === t.user_id && (
           <button
             onClick={(e) => {
@@ -146,6 +150,7 @@ function ThreadRow({ t, onOpen, onLike, onDelete, user }) {
           </button>
         )}
       </div>
+
       <div className="paper-divider" />
     </li>
   );
@@ -205,7 +210,7 @@ function ThreadModal({
 
     if (res.ok) {
       setIsEditingThread(false);
-      onClose(); // stäng för att refetcha
+      onClose();
     } else {
       console.error("Failed to save edit", await res.text());
     }
@@ -704,13 +709,13 @@ export default function SummonersHall() {
         <div
           className="
             grid gap-6
-            md:[grid-template-columns:460px_1fr]
+            md:[grid-template-columns:340px_1fr]
             xl:[grid-template-columns:400px_1fr]
             md:-ml-4 xl:ml-0
           "
         >
-          {/* Siderail iPad lite mer vänster */}
-          <div className="md:-ml-6 xl:ml-0">
+          {/* Siderail iPad mer vänster + smalare */}
+          <div className="md:-ml-10 xl:ml-0 md:w-[320px] xl:w-[380px]">
             <SideRail
               topic={topic}
               setTopic={setTopic}
@@ -724,8 +729,8 @@ export default function SummonersHall() {
             />
           </div>
 
-          {/* Trådlista */}
-          <div className="flex-1 pt-8 md:-ml-28 xl:ml-0">
+          {/* Trådlista (lite mindre vänsterskift på iPad) */}
+          <div className="flex-1 pt-8 md:-ml-20 xl:ml-0">
             <ul>
               {list.map((t) => (
                 <ThreadRow
@@ -747,7 +752,7 @@ export default function SummonersHall() {
         </div>
       </div>
 
-      {/* Mobil-layout */}
+      {/* Mobil-layout (oförändrad) */}
       <div
         className="md:hidden flex flex-col gap-4 px-3"
         style={{ marginTop: (navOffset || 0) - 60 }}
@@ -773,7 +778,7 @@ export default function SummonersHall() {
             />
           </button>
 
-          <select
+        <select
             className="px-2 py-1 rounded border text-sm bg-white/90 text-black"
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
