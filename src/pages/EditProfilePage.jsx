@@ -12,10 +12,10 @@ export default function EditProfilePage() {
     game: "",
     rank: "",
     level: "",
-    lp: "",               // NEW
-    league_tag: "",       // NEW
-    wildrift_tag: "",     // NEW
-    note: "",             // NEW
+    lp: "",
+    league_tag: "",
+    wildrift_tag: "",
+    note: "",
     avatar_url: "",
     socials: {
       facebook: "",
@@ -30,11 +30,12 @@ export default function EditProfilePage() {
   const [champs, setChamps] = useState([]);
   const [search, setSearch] = useState("");
   const [showChampModal, setShowChampModal] = useState(false);
+  const [cacheBust, setCacheBust] = useState(Date.now()); // tvinga ny bildhämtning
 
   const user = getUserFromToken();
   const navigate = useNavigate();
 
-  /* ===== Fetch Profile ===== */
+  // ===== Fetch Profile =====
   useEffect(() => {
     async function fetchProfile() {
       try {
@@ -50,10 +51,11 @@ export default function EditProfilePage() {
           game: data.game || "",
           rank: data.rank || "",
           level: data.level ?? "",
-          lp: data.lp ?? "",                           // NEW
-          league_tag: data.league_tag ?? "",           // NEW
-          wildrift_tag: data.wildrift_tag ?? "",       // NEW
-          note: data.note ?? "",                       // NEW
+          lp: data.lp ?? "",
+          league_tag: data.league_tag ?? "",
+          wildrift_tag: data.wildrift_tag ?? "",
+          note: data.note ?? "",
+          // Viktigt: spara BARA ren path från backend eller tom sträng
           avatar_url: data.avatar_url || "",
           socials: data.socials
             ? typeof data.socials === "string"
@@ -77,7 +79,7 @@ export default function EditProfilePage() {
     if (user) fetchProfile();
   }, [user?.id]);
 
-  /* ===== Fetch Champs (public endpoint) ===== */
+  // ===== Fetch Champs (public endpoint)
   useEffect(() => {
     async function fetchChamps() {
       try {
@@ -91,7 +93,7 @@ export default function EditProfilePage() {
     fetchChamps();
   }, []);
 
-  /* ===== Handlers ===== */
+  // ===== Handlers
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -122,10 +124,14 @@ export default function EditProfilePage() {
       );
       const data = await res.json();
       if (data.success) {
+        // Spara BARA relativa URL:en som backend ger (utan ?t)
         setFormData((prev) => ({
           ...prev,
-          avatar_url: `${data.avatarUrl}?t=${Date.now()}`
+          avatar_url: data.avatarUrl || prev.avatar_url
         }));
+        setCacheBust(Date.now()); // tvinga refresh av bilden
+      } else {
+        console.error("Upload error:", data);
       }
     } catch (err) {
       console.error("Upload failed", err);
@@ -177,6 +183,14 @@ export default function EditProfilePage() {
 
   const roleOptions = ["top", "jungle", "mid", "bot", "support"];
 
+  // Bygg bild-URL EN gång (om den finns)
+  const avatarSrc = (() => {
+    const url = formData.avatar_url;
+    if (!url) return ""; // ingen default-bild
+    if (/^https?:\/\//i.test(url)) return `${url}?t=${cacheBust}`;
+    return `http://localhost:5000${url}?t=${cacheBust}`;
+  })();
+
   return (
     <div className="max-w-3xl mx-auto mt-10 p-6 bg-white text-black rounded shadow">
       <h1 className="text-2xl font-bold mb-6">Edit Profile</h1>
@@ -184,18 +198,21 @@ export default function EditProfilePage() {
       {/* Avatar */}
       <div className="mb-6">
         <label className="block font-semibold mb-2">Avatar</label>
+
         <div className="flex items-center gap-4">
-          <img
-            src={
-              formData.avatar_url
-                ? formData.avatar_url.startsWith("http")
-                  ? formData.avatar_url
-                  : `http://localhost:5000${formData.avatar_url}?t=${Date.now()}`
-                : "/images/default-avatar.png"
-            }
-            alt="Profile avatar"
-            className="w-24 h-24 rounded-full object-cover border"
-          />
+          {/* Visa bara bilden om den finns – ingen default */}
+          {avatarSrc ? (
+            <img
+              src={avatarSrc}
+              alt="Profile avatar"
+              className="w-24 h-24 rounded-full object-cover border"
+            />
+          ) : (
+            <div className="w-24 h-24 rounded-full border flex items-center justify-center text-xs text-gray-500">
+              No avatar
+            </div>
+          )}
+
           <input type="file" accept="image/*" onChange={handleAvatarUpload} />
         </div>
       </div>
@@ -364,7 +381,6 @@ export default function EditProfilePage() {
           value={formData.league_tag}
           onChange={handleChange}
           className="w-full border rounded p-2"
-          placeholder=""
         />
       </label>
 
@@ -375,7 +391,6 @@ export default function EditProfilePage() {
           value={formData.wildrift_tag}
           onChange={handleChange}
           className="w-full border rounded p-2"
-          placeholder=""
         />
       </label>
 

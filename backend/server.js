@@ -622,7 +622,31 @@ app.put("/api/profile/:id", (req, res) => {
     }
   );
 });
+// ✅ Upload profilbild (ENDAST AVATAR-ROUTEN)
+app.post("/api/profile/:id/avatar", upload.single("avatar"), (req, res) => {
+  const { id } = req.params;
 
+  if (!req.file) {
+    return res.status(400).json({ error: "No file uploaded" });
+  }
+
+  const relativePath = `/uploads/${req.file.filename}`;
+  const absoluteUrl = `${req.protocol}://${req.get("host")}${relativePath}`;
+
+  db.run(
+    `INSERT INTO user_profiles (user_id, avatar_url)
+     VALUES (?, ?)
+     ON CONFLICT(user_id) DO UPDATE SET avatar_url = excluded.avatar_url`,
+    [id, relativePath],
+    function (err) {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+      // Skickar både relativ och absolut – frontend använder relative
+      res.json({ success: true, avatarUrl: relativePath, avatarUrlAbsolute: absoluteUrl });
+    }
+  );
+});
 
 
 
