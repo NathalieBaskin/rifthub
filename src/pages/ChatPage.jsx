@@ -6,15 +6,15 @@ import { AiOutlinePlus } from "react-icons/ai";
 
 const API_URL = "http://localhost:5000";
 
-/** ==== MOBIL-MÅTT (enligt dina värden) ==== */
-const TOP_OFFSET = 70;   // vän-ikonbar startar exakt 70px från toppen i mobil
+/** ==== MOBIL-MÅTT ==== */
+const TOP_OFFSET = 70;   // vän-ikonbar startar 70px från toppen i mobil
 const HEADER_H  = 88;    // (ikoner h-12 = 48) + (namnrad h-10 = 40) = 88
 const INPUT_H   = 64;    // h-16
-const FOOTER_H  = 52;    // din fasta länkrad i mobil (justera vid behov)
+const FOOTER_H  = 52;    // mobil-footer
 
 /** ==== iPad/DEKSTOP-MÅTT ==== */
-const NAVBAR_H_MD = 80;      // höjden på din navbar i md+ (justera vid behov)
-const SIDEBAR_W   = 256;     // w-64 = 16rem = 256px
+const NAVBAR_H_MD = 80;  // höjd på navbar i md+
+const SIDEBAR_W   = 256; // w-64
 
 export default function ChatPage() {
   const user = getUserFromToken();
@@ -29,7 +29,6 @@ export default function ChatPage() {
   const [myProfile, setMyProfile] = useState(null);
   const [showAlliesModal, setShowAlliesModal] = useState(false);
 
-  // Scrollref: mobil och md+ har egna fixed scroll-ytor
   const mobileScrollRef = useRef(null);
   const mdScrollRef = useRef(null);
 
@@ -43,7 +42,7 @@ export default function ChatPage() {
     scrollToBottom();
   }, [messages, activeFriend]);
 
-  // Query friend
+  // Läs friend=ID från querystring
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const fid = params.get("friend");
@@ -95,12 +94,14 @@ export default function ChatPage() {
     fetchFriends();
     fetchMyProfile();
     fetchLastMessages();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   useEffect(() => {
     if (!activeFriend) return;
     fetchMessages();
     const t = setInterval(fetchMessages, 5000);
     return () => clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeFriend]);
 
   // Aktiva chattvänner (med senaste aktivitet)
@@ -111,17 +112,21 @@ export default function ChatPage() {
   return (
     <div className="relative h-screen text-gray-200 overflow-hidden">
       {/* ====== DESKTOP/IPAD (md+) ====== */}
-      <div className="hidden md:block h-full">
-        {/* Sidebar (samma layout som innan) */}
+      <div className="hidden md:block h-full relative">
+        {/* Sidebar */}
         <aside
-          className="fixed top-0 left-0 w-64 h-full border-r border-yellow-600/40 bg-black/40 overflow-y-auto"
-          style={{ paddingTop: NAVBAR_H_MD }}
+          className={`absolute left-0 top-8 md:top-8 lg:top-2 w-64
+                      h-[calc(100vh-2rem)] md:h-[calc(100vh-3rem)]
+                      bg-black/30 border border-yellow-600/40 overflow-y-auto
+                      pt-0 md:pt-2 lg:pt-[22px]`}
         >
-          <h2 className="text-lg font-bold text-yellow-400 mb-4 px-4 font-LoL">Allies</h2>
+          <h2 className="text-1g font-bold text-rift-gold mb-1 px-6 font-LoL">Allies</h2>
+
           <ul className="space-y-3 px-4 pb-6">
             {friends.map((f) => {
               const last = lastMessages.find((m) => m.friendId === f.id);
               const isUnread = last && last.receiver_id === user.id && last.is_read === 0;
+
               return (
                 <li
                   key={f.id}
@@ -139,9 +144,12 @@ export default function ChatPage() {
                       />
                       <img src="/images/frame.png" alt="Frame" className="absolute inset-0 w-full h-full pointer-events-none" />
                     </div>
+
                     <span className="truncate font-medium">{f.username}</span>
+
                     {isUnread && <span className="ml-auto text-xs bg-red-600 text-white rounded-full px-2">New</span>}
                   </div>
+
                   <span className="ml-12 text-xs text-gray-400 truncate italic">
                     {last ? `${last.sender_name}: ${last.content}` : "No messages yet"}
                   </span>
@@ -151,15 +159,15 @@ export default function ChatPage() {
           </ul>
         </aside>
 
-        {/* Chattens scroll-yta i md+: FIXED mellan navbaren och inputen, och förskjuten från vänster med sidebar-bredd */}
+        {/* Chattens scroll-yta i md+ */}
         <div
           ref={mdScrollRef}
           className="fixed overflow-y-auto px-6 py-4"
           style={{
-            top: NAVBAR_H_MD,         
-            left: SIDEBAR_W,          
+            top: NAVBAR_H_MD,
+            left: SIDEBAR_W,
             right: 0,
-            bottom: INPUT_H,          
+            bottom: INPUT_H,
           }}
         >
           {activeFriend ? (
@@ -209,13 +217,13 @@ export default function ChatPage() {
           )}
         </div>
 
-        {/* Input – ALLTID SYNlig i md+ (fixed nere i högerspalten) */}
+        {/* Input – md+ */}
         {activeFriend && (
           <form
             onSubmit={sendMessage}
             className="fixed z-40 h-16 border-t border-yellow-600/40 bg-black flex items-center gap-3 px-4"
             style={{
-              left: SIDEBAR_W,   
+              left: SIDEBAR_W,
               right: 0,
               bottom: 0,
             }}
@@ -249,7 +257,7 @@ export default function ChatPage() {
                 />
               </button>
             ))}
-            <button onClick={() => setShowAlliesModal(true)} className="ml-2 p-2 bg-yellow-500 text-black rounded-full">
+            <button onClick={() => setShowAlliesModal(true)} className="ml-2 p-2 bg-rift-gold text-black rounded-full">
               <AiOutlinePlus />
             </button>
           </div>
@@ -348,7 +356,7 @@ export default function ChatPage() {
       {/* Allies Modal */}
       {showAlliesModal && (
         <div
-          className="fixed inset-0 bg-black/70 flex items-center justify-center z-[9999]" // <== ändrad till högre z-index
+          className="fixed inset-0 bg-black/70 flex items-center justify-center z-[9999]"
           onClick={() => setShowAlliesModal(false)}
         >
           <div
