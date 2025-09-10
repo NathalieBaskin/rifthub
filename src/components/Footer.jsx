@@ -12,7 +12,7 @@ export default function Footer() {
     <div>
       {/* DESKTOP + IPAD (bara loggan) → göm om chatsidan */}
       {!isChatPage && (
-        <footer className="hidden md:flex justify-center items-center py-1 backdrop-blur bg-black/10 border-t border-rift-gold/15">
+        <footer className="hidden md:flex justify-center items-center py-0 backdrop-blur bg-black/8 border-t border-rift-gold/15">
           <img
             src={rifthubLogo}
             alt="RiftHub Logo"
