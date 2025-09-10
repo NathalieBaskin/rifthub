@@ -4,9 +4,8 @@ import { createContext, useEffect, useState } from "react";
 // eslint-disable-next-line react-refresh/only-export-components
 export const FavoritesContext = createContext(undefined);
 
-// Sätt till true om du vill se debug i konsolen
+// Debug-läge
 const DEBUG = false;
-
 const log = (...args) => DEBUG && console.log("[Favorites]", ...args);
 
 function storageKey(userId) {
@@ -21,35 +20,51 @@ function normalizeId(id) {
 export function FavoritesProvider({ children, me }) {
   const [favorites, setFavorites] = useState([]);
 
-  // 1) Ladda initialt: backend om inloggad, annars LS
+  // 1) Ladda initialt
   useEffect(() => {
     const load = async () => {
       const key = storageKey(me?.id);
+
       if (me?.id) {
         try {
           const r = await fetch(`http://localhost:5000/api/favorites/${me.id}`);
           if (r.ok) {
             const data = await r.json();
             const norm = Array.isArray(data)
-              ? data.map(p => ({ ...p, id: normalizeId(p.id) }))
+              ? data.map((p) => ({ ...p, id: normalizeId(p.id) }))
               : [];
             setFavorites(norm);
             localStorage.setItem(key, JSON.stringify(norm));
             log("Loaded from backend:", norm);
+
+            // ⬇️ Merge guest-favs
+            const guestKey = storageKey(null);
+            const guestFavs = JSON.parse(localStorage.getItem(guestKey) || "[]");
+            if (guestFavs.length > 0) {
+              await fetch("http://localhost:5000/api/favorites/merge", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ userId: me.id, favorites: guestFavs }),
+              });
+              localStorage.removeItem(guestKey);
+              log("Merged guest favorites:", guestFavs);
+            }
+
             return;
           }
         } catch (e) {
           log("Backend load failed, falling back to LS:", e);
         }
       }
+
+      // Guest fallback
       const stored = localStorage.getItem(key);
       const parsed = stored ? JSON.parse(stored) : [];
-      const normLS = parsed.map(p => ({ ...p, id: normalizeId(p.id) }));
+      const normLS = parsed.map((p) => ({ ...p, id: normalizeId(p.id) }));
       setFavorites(normLS);
       log("Loaded from LS:", normLS);
     };
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [me?.id]);
 
   const persist = (next) => {
@@ -57,7 +72,7 @@ export function FavoritesProvider({ children, me }) {
     localStorage.setItem(key, JSON.stringify(next));
   };
 
-  // 2) Toggle – optimistisk uppd, robust id-jämförelse, backend best-effort
+  // 2) Toggle
   async function toggleFavorite(product) {
     if (!product?.id) {
       log("Toggle ignored: product saknar id", product);
@@ -96,7 +111,6 @@ export function FavoritesProvider({ children, me }) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ userId: me.id, productId: prod.id }),
         });
-        // Vi bryr oss inte om svaret för UI:t – optimistiskt läge vinner
         if (!res.ok) log("Backend toggle non-OK:", res.status);
       } catch (e) {
         log("Backend toggle failed:", e);
