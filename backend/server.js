@@ -69,13 +69,20 @@ live.on("connection", (socket) => {
     socket.emit("chat:locked", { streamId: sid, locked: lockedChat.has(sid) });
  });
 
-  // --- livechat (låsbar) ---
-  socket.on("chat:message", ({ streamId, user, text }) => {
-    if (!streamId || !text?.trim()) return;
-    const sid = String(streamId);
-    if (lockedChat.has(sid) && socket.data?.role !== "broadcaster") return; // låst
-    live.to(room(sid)).emit("chat:message", { user: user || "Anon", text: text.trim(), ts: Date.now() });
+// --- livechat (låsbar) ---
+socket.on("chat:message", (msg) => {
+  // msg: { streamId, userId, user, avatar_url, text }
+  const sid = String(msg.streamId);
+  live.to(room(sid)).emit("chat:message", {
+    userId: msg.userId,
+    user: msg.user,
+    avatar_url: msg.avatar_url || null,
+    text: msg.text,
+    created_at: new Date().toISOString(),
   });
+});
+
+
 
   socket.on("chat:set-locked", ({ streamId, locked }) => {
     if (!streamId) return;
@@ -91,19 +98,20 @@ live.on("connection", (socket) => {
   socket.on("ice-candidate", ({ to, candidate }) => { if (to && candidate) live.to(to).emit("ice-candidate", { from: socket.id, candidate }); });
 
 // --- broadcaster trycker Avsluta ---
-socket.on("broadcaster:leave", ({ streamId }) => {
-  if (!streamId) return;
-  const sid = String(streamId);
+socket.on("broadcaster:leave", () => {
+  const sid = socket.data?.streamId;
+  if (!sid) return;
 
   // meddela tittare
   live.to(room(sid)).emit("broadcast:ended");
   live.to(room(sid)).emit("live:status", { isLive: false });
+
   // ta bort broadcaster från minnet
   broadcastersByStream.delete(sid);
   lockedChat.delete(sid);
 
   // uppdatera DB
- db.run("UPDATE tavern_streams SET is_live = 0 WHERE id = ?", [sid], (err) => {
+  db.run("UPDATE tavern_streams SET is_live = 0 WHERE id = ?", [sid], (err) => {
     if (err) console.error("❌ kunde inte sätta is_live=0:", err.message);
   });
 });
@@ -124,9 +132,9 @@ socket.on("disconnect", () => {
       if (err) console.error("❌ kunde inte sätta is_live=0:", err.message);
     });
   }
-  });
 });
 
+}); 
 
 
 // ✅ se till att uploads-mappen alltid finns
@@ -412,6 +420,34 @@ function mapProductRow(row) {
     image_url: imageUrl,
   };
 }
+// === NEW: hämta "nya" produkter (skapade senaste X dagar, default 7) ===
+app.get("/api/products/new", (req, res) => {
+  const days = Number(req.query.days || 7);
+
+  db.all(
+    `SELECT * FROM products ORDER BY datetime(created_at) DESC, id DESC`,
+    [],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+
+      const now = Date.now();
+      const msPerDay = 1000 * 60 * 60 * 24;
+
+      // Filtrera på created_at inom X dagar och normalisera raderna
+      const list = (rows || [])
+        .filter((row) => {
+          if (!row.created_at) return false;
+          const created = new Date(row.created_at).getTime();
+          if (Number.isNaN(created)) return false;
+          const diffDays = (now - created) / msPerDay;
+          return diffDays <= days;
+        })
+        .map(mapProductRow);
+
+      res.json(list);
+    }
+  );
+});
 
 
 // 📜 Hämta alla favoriter för en användare
@@ -488,6 +524,26 @@ app.post("/api/favorites", (req, res) => {
   );
 });
 
+// 📨 Merge guest-favorites vid login
+app.post("/api/favorites/merge", (req, res) => {
+  const { userId, favorites } = req.body;
+  if (!userId || !Array.isArray(favorites)) {
+    return res.status(400).json({ error: "Invalid data" });
+  }
+
+  const stmt = db.prepare(
+    "INSERT OR IGNORE INTO favorites (user_id, product_id) VALUES (?, ?)"
+  );
+
+  favorites.forEach((p) => {
+    stmt.run(userId, p.id);
+  });
+
+  stmt.finalize((err) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ success: true });
+  });
+});
 
 // ===============================
 // Middleware: kräver admin

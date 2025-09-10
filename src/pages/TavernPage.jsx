@@ -76,7 +76,7 @@ export default function TavernPage() {
             <img
               src={`${API_URL}/images/live-button.png`}
               alt="Go Live"
-              className="block h-9 md:h-20 lg:h-20 w-auto select-none"
+              className="block h-9 md:h-20 lg:h-16 w-auto select-none"
               draggable="false"
             />
           </button>

@@ -1,6 +1,7 @@
+// src/pages/GoLivePage.jsx
 import { useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { getUserFromToken } from "../utils/auth.js";
 
 const API_URL = "http://localhost:5000";
@@ -30,6 +31,17 @@ export default function GoLivePage() {
   // chat state
   const [chat, setChat] = useState([]);
   const [msg, setMsg] = useState("");
+
+  // 🔹 Hämta användarens profil (för avatar_url)
+  const [myProfile, setMyProfile] = useState(null);
+  useEffect(() => {
+    if (me?.id) {
+      fetch(`${API_URL}/api/profile/${me.id}`)
+        .then((r) => r.json())
+        .then((data) => setMyProfile(data))
+        .catch((err) => console.error("❌ Failed to load profile", err));
+    }
+  }, [me?.id]);
 
   useEffect(() => {
     const s = io(LIVE_URL, { path: "/socket.io" });
@@ -113,7 +125,9 @@ export default function GoLivePage() {
     if (!msg.trim() || !socket || !streamId) return;
     socket.emit("chat:message", {
       streamId,
+      userId: me?.id,
       user: me?.username || "Anon",
+      avatar_url: myProfile?.avatar_url || null, // ✅ använder profilen
       text: msg.trim(),
     });
     setMsg("");
@@ -153,38 +167,66 @@ export default function GoLivePage() {
         </button>
       )}
 
-      <div className="mt-6">
-        <video
-          ref={videoRef}
-          autoPlay
-          muted
-          playsInline
-          className="w-full rounded-lg border border-rift-gold/30"
-        />
-      </div>
-
-      {live && (
-        <div className="mt-6 border border-rift-gold/30 rounded-lg p-3">
-          <div className="h-40 overflow-auto space-y-1 text-sm">
-            {chat.map((m, i) => (
-              <div key={i}>
-                <span className="text-rift-gold font-medium">{m.user}</span>: {m.text}
-              </div>
-            ))}
-          </div>
-          <form onSubmit={sendMsg} className="mt-2 flex gap-2">
-            <input
-              className="flex-1 bg-black/30 border border-rift-gold/30 rounded p-2 text-white"
-              placeholder="Say something…"
-              value={msg}
-              onChange={(e) => setMsg(e.target.value)}
+      {/* Video + chat i grid */}
+      <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+        {/* Video vänster */}
+        <div className="md:col-span-2">
+          <div className="relative w-full aspect-video rounded-lg overflow-hidden border border-rift-gold/30">
+            <video
+              ref={videoRef}
+              autoPlay
+              muted
+              playsInline
+              className="absolute inset-0 w-full h-full object-cover"
             />
-            <button className="px-3 py-2 border border-rift-gold/50 rounded-md text-rift-gold hover:bg-rift-card/60">
-              Send
-            </button>
-          </form>
+          </div>
         </div>
-      )}
+
+        {/* Chat höger */}
+        {live && (
+          <div className="border border-rift-gold/30 rounded-lg p-3 flex flex-col h-80">
+            {/* 🔹 Bestämd höjd + scroll */}
+            <div className="flex-1 overflow-auto space-y-1 text-sm">
+              {chat.map((m, i) => (
+                <div key={i} className="flex items-start gap-2">
+                  <Link to={`/profile/${m.userId}`}>
+                    <img
+                      src={
+                        m.avatar_url
+                          ? `${API_URL}${m.avatar_url}`
+                          : "/images/default-avatar.png"
+                      }
+                      alt={m.user}
+                      className="h-6 w-6 rounded-full object-cover border border-rift-gold/30"
+                    />
+                  </Link>
+                  <div>
+                    <Link
+                      to={`/profile/${m.userId}`}
+                      className="text-rift-gold font-medium hover:underline"
+                    >
+                      {m.user}
+                    </Link>{" "}
+                    <span className="text-white">{m.text}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <form onSubmit={sendMsg} className="mt-2 flex gap-2">
+              <input
+                className="flex-1 bg-black/30 border border-rift-gold/30 rounded p-2 text-white"
+                placeholder="Say something…"
+                value={msg}
+                onChange={(e) => setMsg(e.target.value)}
+              />
+              <button className="px-3 py-2 border border-rift-gold/50 rounded-md text-rift-gold hover:bg-rift-card/60">
+                Send
+              </button>
+            </form>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -1,8 +1,10 @@
+// src/pages/WatchStreamPage.jsx
 import { useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { getUserFromToken } from "../utils/auth.js";
 
+const API_URL = "http://localhost:5000";
 const LIVE_URL = "http://localhost:5000/live";
 
 const RTC_CFG = {
@@ -24,8 +26,41 @@ export default function WatchStreamPage() {
   const pcRef = useRef(null);
   const broadcasterIdRef = useRef(null);
 
+  // 🔹 min egen profil (för chatten)
+  const [myProfile, setMyProfile] = useState(null);
+
+  // 🔹 broadcasterns profil
+  const [broadcasterProfile, setBroadcasterProfile] = useState(null);
+
+  // hämta min egen profil
   useEffect(() => {
-    const s = io(LIVE_URL, { transports: ["websocket"] });
+    if (me?.id) {
+      fetch(`${API_URL}/api/profile/${me.id}`)
+        .then((r) => r.json())
+        .then((data) => setMyProfile(data))
+        .catch((err) => console.error("❌ Failed to load profile", err));
+    }
+  }, [me?.id]);
+
+  // hämta broadcasterns profil via tavern_streams
+  useEffect(() => {
+    if (streamId) {
+      fetch(`${API_URL}/api/tavern/streams`)
+        .then((r) => r.json())
+        .then((streams) => {
+          const s = streams.find((st) => String(st.id) === String(streamId));
+          if (s?.user_id) {
+            return fetch(`${API_URL}/api/profile/${s.user_id}`);
+          }
+        })
+        .then((r) => (r ? r.json() : null))
+        .then((profile) => setBroadcasterProfile(profile))
+        .catch((err) => console.error("❌ Failed to load broadcaster profile", err));
+    }
+  }, [streamId]);
+
+  useEffect(() => {
+    const s = io(LIVE_URL, { path: "/socket.io" });
     setSocket(s);
     return () => s.disconnect();
   }, []);
@@ -46,7 +81,10 @@ export default function WatchStreamPage() {
 
     pc.onicecandidate = (e) => {
       if (e.candidate && broadcasterIdRef.current) {
-        socket.emit("ice-candidate", { to: broadcasterIdRef.current, candidate: e.candidate });
+        socket.emit("ice-candidate", {
+          to: broadcasterIdRef.current,
+          candidate: e.candidate,
+        });
       }
     };
 
@@ -97,43 +135,98 @@ export default function WatchStreamPage() {
     if (!msg.trim() || !socket) return;
     socket.emit("chat:message", {
       streamId,
+      userId: me?.id,
       user: me?.username || "Anon",
+      avatar_url: myProfile?.avatar_url || null,
       text: msg.trim(),
     });
     setMsg("");
   }
 
   return (
-    <div className="max-w-5xl mx-auto p-6">
-      <h1 className="text-2xl text-rift-gold mb-4">Watching live</h1>
+    <div className="max-w-4xl mx-auto p-6">
+      <h1 className="text-2xl text-rift-gold mb-2">Watching live</h1>
 
-      <video
-        ref={videoRef}
-        autoPlay
-        playsInline
-        controls
-        className="w-full rounded-lg border border-rift-gold/30"
-      />
-
-      <div className="mt-4 border border-rift-gold/30 rounded-lg p-3">
-        <div className="h-48 overflow-auto space-y-1 text-sm">
-          {chat.map((m, i) => (
-            <div key={i}>
-              <span className="text-rift-gold font-medium">{m.user}</span>: {m.text}
-            </div>
-          ))}
+      {/* 🔹 broadcaster-info */}
+      {broadcasterProfile && (
+        <div className="flex items-center gap-3 mb-4">
+          <Link to={`/profile/${broadcasterProfile.id}`}>
+            <img
+              src={
+                broadcasterProfile.avatar_url
+                  ? `${API_URL}${broadcasterProfile.avatar_url}`
+                  : "/images/default-avatar.png"
+              }
+              alt={broadcasterProfile.username}
+              className="h-10 w-10 rounded-full object-cover border border-rift-gold/30"
+            />
+          </Link>
+          <Link
+            to={`/profile/${broadcasterProfile.id}`}
+            className="text-rift-gold font-semibold hover:underline"
+          >
+            {broadcasterProfile.username}
+          </Link>
         </div>
-        <form onSubmit={sendMsg} className="mt-2 flex gap-2">
-          <input
-            className="flex-1 bg-black/30 border border-rift-gold/30 rounded p-2 text-white"
-            placeholder="Say something…"
-            value={msg}
-            onChange={(e) => setMsg(e.target.value)}
-          />
-          <button className="px-3 py-2 border border-rift-gold/50 rounded-md text-rift-gold hover:bg-rift-card/60">
-            Send
-          </button>
-        </form>
+      )}
+
+      {/* Video + chat i grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+        {/* Video vänster */}
+        <div className="md:col-span-2">
+          <div className="relative w-full aspect-video rounded-lg overflow-hidden border border-rift-gold/30">
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              controls
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          </div>
+        </div>
+
+        {/* Chat höger */}
+        <div className="border border-rift-gold/30 rounded-lg p-3 flex flex-col h-80">
+          <div className="flex-1 overflow-auto space-y-2 text-sm">
+            {chat.map((m, i) => (
+              <div key={i} className="flex items-start gap-2">
+                <Link to={`/profile/${m.userId}`}>
+                  <img
+                    src={
+                      m.avatar_url
+                        ? `${API_URL}${m.avatar_url}`
+                        : "/images/default-avatar.png"
+                    }
+                    alt={m.user}
+                    className="h-7 w-7 rounded-full object-cover border border-rift-gold/30 mt-0.5"
+                  />
+                </Link>
+                <div>
+                  <Link
+                    to={`/profile/${m.userId}`}
+                    className="text-rift-gold font-medium hover:underline"
+                  >
+                    {m.user}
+                  </Link>{" "}
+                  <span className="text-white">{m.text}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* skriv nytt meddelande */}
+          <form onSubmit={sendMsg} className="mt-2 flex gap-2">
+            <input
+              className="flex-1 bg-black/30 border border-rift-gold/30 rounded p-2 text-white"
+              placeholder="Say something…"
+              value={msg}
+              onChange={(e) => setMsg(e.target.value)}
+            />
+            <button className="px-3 py-2 border border-rift-gold/50 rounded-md text-rift-gold hover:bg-rift-card/60">
+              Send
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   );
