@@ -40,20 +40,26 @@ function SideRail({ topic, setTopic, onNewThread }) {
     <aside className="paper-rail">
       <div className="flex justify-start mb-1 md:mb-1">
         {/* Bild-baserad Create-knapp (iPad/desktop) */}
-        <button
-          type="button"
-          onClick={onNewThread}
-          className="p-0 bg-transparent -translate-y-1 md:-translate-y-2 lg:-translate-y-3"
-          aria-label="Create new thread"
-          title="Create new thread"
-        >
-          <img
-            src={`${API_URL}/images/create-button.png`}
-            alt="Create"
-            className="h-6 md:h-8 lg:h-9 w-auto select-none"
-            draggable="false"
-          />
-        </button>
+ <button
+  type="button"
+  onClick={onNewThread}
+  className="relative inline-block p-0 bg-transparent -translate-y-1 md:-translate-y-2 lg:-translate-y-3"
+  aria-label="Create new thread"
+  title="Create new thread"
+>
+  {/* LITEN & KONCENTRERAD SKUGGA UNDER KNAPPEN */}
+  <span className="pointer-events-none absolute left-1/2 -translate-x-1/2 -bottom-1 md:-bottom-1.5 w-[68%] md:w-[90%] h-2 md:h-10 bg-black/15 rounded-full blur-[6px] md:blur-[8px]"></span>
+
+  <img
+    src={`${API_URL}/images/create-button.png`}
+    alt="Create"
+    className="relative z-10 h-6 md:h-8 lg:h-9 w-auto select-none"
+    draggable="false"
+    style={{ filter: "drop-shadow(0 10px 16px rgba(0,0,0,0.95))" }}
+  />
+</button>
+
+
       </div>
 
       {/* Topics direkt under Create */}
