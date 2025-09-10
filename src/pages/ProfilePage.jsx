@@ -187,7 +187,7 @@ export default function ProfilePage() {
                   {Object.entries(profile.socials).map(([key, value]) =>
                     value ? (
                       <a key={key} href={value} target="_blank" rel="noopener noreferrer" className="relative group">
-                        <img src={socialIcons[key]} alt={key} className="w-7 h-7 opacity-90 hover:opacity-100 transition" />
+                        <img src={socialIcons[key]} alt={key} className="w-7 h-7 opacity-95 hover:opacity-100 transition" />
                         <span className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100">
                           {key}
                         </span>
@@ -536,7 +536,7 @@ export default function ProfilePage() {
                   <img
                     src={socialIcons[key]}
                     alt={key}
-                    className="w-7 h-7 opacity-90 hover:opacity-100 transition"
+                    className="w-10 h-9 opacity-80 hover:opacity-100 transition"
                   />
                   <span className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100">
                     {key}
