@@ -51,18 +51,18 @@ export default function ProductDetail() {
             className="w-full h-auto max-h-[500px] object-contain rounded-xl shadow"
           />
           {product.isNew && (
-            <span className="absolute top-2 left-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded">
+            <span className="absolute top-2 left-2 bg-black text-rift-gold text-xl font-bold px-2 py-1 rounded">
               NEW
             </span>
           )}
           <button
             onClick={() => toggleFavorite(product)}
-            className="absolute bottom-2 right-2 bg-white rounded-full p-2 shadow"
+            className="absolute bottom-2 right-2 rounded-full p-2 shadow"
           >
             {isFavorite ? (
               <HiHeart className="text-rift-gold text-xl" />
             ) : (
-              <HiOutlineHeart className="text-gray-600 text-xl" />
+              <HiOutlineHeart className="text-white text-2xl" />
             )}
           </button>
         </div>

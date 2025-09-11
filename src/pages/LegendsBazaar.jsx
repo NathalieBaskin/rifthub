@@ -16,12 +16,8 @@ export default function LegendsBazaar() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // per-produkt valt storleksval
   const [selectedSizes, setSelectedSizes] = useState({});
-  // per-produkt liten pop-animation när man lägger till favorit
-  const [pop, setPop] = useState({}); // { [productId]: true/false }
-
-  // kategori-filter
+  const [pop, setPop] = useState({});
   const [selectedCategory, setSelectedCategory] = useState("all");
 
   useEffect(() => {
@@ -45,15 +41,13 @@ export default function LegendsBazaar() {
     setSelectedSizes((prev) => ({ ...prev, [productId]: size }));
   };
 
-  // Hjälp: är en produkt favorit?
   const isFav = (id) =>
     Array.isArray(favorites) &&
     favorites.some((p) => Number(p.id) === Number(id));
 
-  // Toggle favorit med liten pop-animation när man lägger till
   const onToggleFavorite = async (e, product) => {
     e.stopPropagation();
-    const added = await toggleFavorite(product); // sköter LS + ev. backend
+    const added = await toggleFavorite(product);
     if (added) {
       setPop((prev) => ({ ...prev, [product.id]: true }));
       setTimeout(
@@ -63,16 +57,16 @@ export default function LegendsBazaar() {
     }
   };
 
-  // 🔹 Filtrera produkter på kategori
+  // 🔹 Filtrera produkter på kategori + news
   const filteredProducts =
     selectedCategory === "all"
       ? products
-    : products.filter((p) => p.categories === selectedCategory);
+      : selectedCategory === "news"
+      ? products.filter((p) => p.isNew)
+      : products.filter((p) => p.categories === selectedCategory);
 
-
-  // 🔹 Hämta alla kategorier från produkterna
-  const categories = ["all", ...new Set(products.map((p) => p.categories))];
-
+  // 🔹 Hämta kategorier från produkterna + lägg till "news"
+  const categories = ["all", "news", ...new Set(products.map((p) => p.categories))];
 
   if (loading) {
     return (
@@ -107,16 +101,17 @@ export default function LegendsBazaar() {
           value={selectedCategory}
           onChange={(e) => setSelectedCategory(e.target.value)}
         >
-    {categories
-  .filter((cat) => cat) // tar bort undefined/null
-  .map((cat) => (
-    <option key={cat} value={cat}>
-      {cat === "all"
-        ? "All categories"
-        : cat.charAt(0).toUpperCase() + cat.slice(1)}
-    </option>
-  ))}
-
+          {categories
+            .filter((cat) => cat)
+            .map((cat) => (
+              <option key={cat} value={cat}>
+                {cat === "all"
+                  ? "All categories"
+                  : cat === "news"
+                  ? "News"
+                  : cat.charAt(0).toUpperCase() + cat.slice(1)}
+              </option>
+            ))}
         </select>
       </div>
 
@@ -146,7 +141,7 @@ export default function LegendsBazaar() {
                   className="w-full h-full object-contain rounded-md"
                 />
                 {p.isNew && (
-                  <span className="absolute top-1 left-1 bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded">
+                  <span className="absolute top-1 left-1 bg-black text-rift-gold text-xs font-bold px-2 py-0.5 rounded">
                     NEW
                   </span>
                 )}
@@ -169,7 +164,7 @@ export default function LegendsBazaar() {
                 </button>
               </div>
 
-              {/* Namn + pris (klickbara) */}
+              {/* Namn + pris */}
               <h2
                 className="text-lg font-bold cursor-pointer"
                 onClick={go}

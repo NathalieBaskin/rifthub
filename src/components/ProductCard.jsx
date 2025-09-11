@@ -7,7 +7,7 @@ export default function ProductCard({ product }) {
 
   return (
     <div
-      className="relative bg-white rounded-2xl shadow hover:shadow-lg transition p-4 
+      className="relative bg-black/30 rounded-2xl shadow hover:shadow-lg transition p-4 
                  flex flex-col items-center justify-between h-72 w-full cursor-pointer"
       onClick={go}
       role="button"
@@ -23,14 +23,14 @@ export default function ProductCard({ product }) {
         />
 
         {product.isNew && (
-          <span className="absolute top-2 left-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded">
+          <span className="absolute top-2 left-2 bg-black text-rift-gold text-xs font-bold px-2 py-1 rounded">
             NEW
           </span>
         )}
       </div>
 
       {/* Produktnamn */}
-      <p className="mt-3 text-center text-black font-medium line-clamp-2">
+      <p className="mt-3 text-center text-white font-medium line-clamp-2">
         {product.name}
       </p>
     </div>

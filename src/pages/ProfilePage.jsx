@@ -536,7 +536,7 @@ export default function ProfilePage() {
                   <img
                     src={socialIcons[key]}
                     alt={key}
-                    className="w-10 h-9 opacity-80 hover:opacity-100 transition"
+                    className="w-8 h-9 opacity-95 hover:opacity-100 transition"
                   />
                   <span className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100">
                     {key}

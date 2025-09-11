@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import PostCard from "./PostCard.jsx";
 
+const API_URL = "http://localhost:5000";
+
 export default function PostsSection({ profileUserId, me }) {
   const [posts, setPosts] = useState([]);
   const [newPost, setNewPost] = useState("");
@@ -9,14 +11,33 @@ export default function PostsSection({ profileUserId, me }) {
     if (!profileUserId) return;
 
     const url = me
-      ? `http://localhost:5000/api/user-posts/${profileUserId}?meId=${me.id}`
-      : `http://localhost:5000/api/user-posts/${profileUserId}`;
+      ? `${API_URL}/api/user-posts/${profileUserId}?meId=${me.id}`
+      : `${API_URL}/api/user-posts/${profileUserId}`;
 
     try {
       const res = await fetch(url);
       if (!res.ok) throw new Error("Failed to load posts");
       const data = await res.json();
-      setPosts(data);
+
+      // Säkerställ vettig avatar i UI (backend ger relativ path)
+      const fixed = data.map((p) => ({
+        ...p,
+        avatar_url: p.avatar_url
+          ? p.avatar_url.startsWith("http")
+            ? p.avatar_url
+            : `${API_URL}${p.avatar_url}`
+          : "/images/default-avatar.png",
+        comments: (p.comments || []).map((c) => ({
+          ...c,
+          avatar_url: c.avatar_url
+            ? c.avatar_url.startsWith("http")
+              ? c.avatar_url
+              : `${API_URL}${c.avatar_url}`
+            : "/images/default-avatar.png",
+        })),
+      }));
+
+      setPosts(fixed);
     } catch (err) {
       console.error("❌ fetchPosts error:", err);
     }
@@ -24,10 +45,10 @@ export default function PostsSection({ profileUserId, me }) {
 
   async function handleCreatePost(e) {
     e.preventDefault();
-    if (!newPost.trim() || !me) return;
+    if (!newPost.trim() || !me || me.id !== profileUserId) return;
 
     try {
-      const res = await fetch("http://localhost:5000/api/user-posts", {
+      const res = await fetch(`${API_URL}/api/user-posts`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -38,7 +59,7 @@ export default function PostsSection({ profileUserId, me }) {
 
       if (res.ok) {
         setNewPost("");
-        fetchPosts(); // ladda om efter nytt inlägg
+        fetchPosts();
       } else {
         console.error("❌ Failed to create post:", await res.text());
       }
@@ -49,33 +70,27 @@ export default function PostsSection({ profileUserId, me }) {
 
   useEffect(() => {
     fetchPosts();
-  }, [profileUserId, me]);
-
-  if (!me) {
-    return (
-      <p className="text-gray-600">
-        ⚠️ Du måste vara inloggad för att skriva inlägg.
-      </p>
-    );
-  }
+  }, [profileUserId, me?.id]);
 
   return (
     <div>
-      {/* Nytt inlägg */}
-      <form onSubmit={handleCreatePost} className="mb-4">
-        <textarea
-          value={newPost}
-          onChange={(e) => setNewPost(e.target.value)}
-          placeholder="What's on your mind?"
-          className="w-full border rounded p-2"
-        />
-        <button
-          type="submit"
-          className="mt-2 bg-green-950 text-white px-4 py-1 rounded"
-        >
-          Post
-                  </button>
-      </form>
+      {/* Nytt inlägg — endast på din egen profil */}
+      {me?.id === profileUserId && (
+        <form onSubmit={handleCreatePost} className="mb-4">
+          <textarea
+            value={newPost}
+            onChange={(e) => setNewPost(e.target.value)}
+            placeholder="What's on your mind?"
+            className="w-full border rounded p-2"
+          />
+          <button
+            type="submit"
+            className="mt-2 bg-green-950 text-white px-4 py-1 rounded"
+          >
+            Post
+          </button>
+        </form>
+      )}
 
       {/* Lista av inlägg */}
       <div className="space-y-4">

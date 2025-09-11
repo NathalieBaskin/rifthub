@@ -47,15 +47,13 @@ function SideRail({ topic, setTopic, onNewThread }) {
   aria-label="Create new thread"
   title="Create new thread"
 >
-  {/* LITEN & KONCENTRERAD SKUGGA UNDER KNAPPEN */}
-  <span className="pointer-events-none absolute left-1/2 -translate-x-1/2 -bottom-1 md:-bottom-1.5 w-[68%] md:w-[90%] h-2 md:h-10 bg-black/15 rounded-full blur-[6px] md:blur-[8px]"></span>
+
 
   <img
     src={`${API_URL}/images/create-button.png`}
     alt="Create"
     className="relative z-10 h-6 md:h-8 lg:h-9 w-auto select-none"
     draggable="false"
-    style={{ filter: "drop-shadow(0 10px 16px rgba(0,0,0,0.95))" }}
   />
 </button>
 

@@ -316,7 +316,7 @@ export default function AlbumModal({ album, onClose, me }) {
                   {me && me.id === c.user_id && (
                     <button
                       onClick={() => handleDeleteComment(c.id)}
-                      className="ml-auto text-xs text-red-600 hover:underline"
+                      className="ml-auto text-xs text-rift-gold hover:underline"
                     >
                       Delete
                     </button>

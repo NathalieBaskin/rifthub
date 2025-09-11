@@ -128,35 +128,38 @@ export default function StartSida() {
   const goToProduct = (id) => nav(`/shop/product/${id}`);
 
   // Dummy featured
-  const featured = [
-    {
-      id: 1,
-      title: "Nightbringer Yasuo Unbound Showcase",
-      date: "18/01/2025",
-      tag: "GAME UPDATES",
-      excerpt:
-        "A new era of darkness begins! Join Nightbringer Yasuo Unbound down the path of chaos in TFT.",
-      image: yasuoImg,
-    },
-    {
-      id: 2,
-      title: "Teamfight Tactics patch 15.2 notes",
-      date: "19/01/2025",
-      tag: "PATCH NOTES",
-      excerpt:
-        "First patch of K.O. Coliseum with balance changes and a few new opening encounters.",
-      image: tftImg,
-    },
-    {
-      id: 3,
-      title: "Xin Zhao Champion Update Trailer",
-      date: "21/01/2025",
-      tag: "CHAMPION",
-      excerpt:
-        "From the arenas of Noxus to the throne room of Demacia — the legend of Xin Zhao.",
-      videoId: "VlKpZmbcZ7I",
-    },
-  ];
+
+const featured = [
+  {
+    id: 1,
+    title: "Nightbringer Yasuo Unbound Showcase",
+    date: "18/01/2025",
+    tag: "GAME UPDATES",
+    excerpt:
+      "A new era of darkness begins! Join Nightbringer Yasuo Unbound down the path of chaos in TFT.",
+    image: yasuoImg,
+    link: "https://www.leagueoflegends.com/en-gb/news/game-updates/patch-25-18-notes/",
+  },
+  {
+    id: 2,
+    title: "Teamfight Tactics patch 15.4 notes",
+    date: "09/00/2025",
+    tag: "PATCH NOTES",
+    excerpt:
+      "The Coliseum calls to all with balance changes, Item Updates, Trait adjustments and more!",
+    image: tftImg,
+    link: "https://teamfighttactics.leagueoflegends.com/en-gb/news/game-updates/teamfight-tactics-patch-15-4-notes/",
+  },
+  {
+    id: 3,
+    title: "T1: World Championship 2024",
+    date: "21/01/2025",
+    tag: "GAME UPDATES",
+    excerpt: "Meet T1’s World Championship 2024 team skins now.",
+    videoId: "9_GrQ-v928o",
+  },
+];
+
 
   // Slider-knappar
   const scrollByAmount = (dir = 1) => {
@@ -207,29 +210,38 @@ export default function StartSida() {
               key={n.id}
               className="card-fantasy min-w-[85%] md:min-w-0 overflow-hidden"
             >
-              {n.image && (
-                <img
-                  src={n.image}
-                  alt={n.title}
-                  className="w-full h-40 md:h-44 object-cover"
-                  loading="lazy"
-                />
-              )}
-              {n.videoId && (
-                <div className="relative aspect-video">
-                  <iframe
-                    className="w-full h-full rounded-lg"
-                    src={`https://www.youtube.com/embed/${n.videoId}`}
-                    title={n.title}
-                    frameBorder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                    referrerPolicy="strict-origin-when-cross-origin"
-                    allowFullScreen
-                  />
-                </div>
-              )}
+            {n.image && (
+  <a
+    href={n.link}
+    target="_blank"
+    rel="noopener noreferrer"
+    className="block"
+  >
+    <img
+      src={n.image}
+      alt={n.title}
+      className="w-full h-40 md:h-44 object-cover hover:opacity-90 transition"
+      loading="lazy"
+    />
+  </a>
+)}
 
-              <div className="p-4">
+      {n.videoId && (
+  <div className="w-full h-40 md:h-44 overflow-hidden">
+    <iframe
+      className="w-full h-full object-cover"
+      src={`https://www.youtube.com/embed/${n.videoId}`}
+      title={n.title}
+      frameBorder="0"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+      referrerPolicy="strict-origin-when-cross-origin"
+      allowFullScreen
+    />
+  </div>
+)}
+              
+
+              <div className="p-2">
                 <div className="text-[10px] tracking-widest text-gray-400 uppercase">
                   {n.tag} <span className="mx-1">•</span> {n.date}
                 </div>

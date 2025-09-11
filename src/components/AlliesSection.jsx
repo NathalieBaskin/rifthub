@@ -164,7 +164,7 @@ export default function AlliesSection({ profileUserId }) {
               <div className="flex gap-2">
                 <button
                   onClick={() => removeFriend(f.id)}
-                  className="text-red-500"
+                  className="text-rift-gold"
                 >
                   🗑
                 </button>

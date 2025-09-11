@@ -151,7 +151,7 @@ const ImageNavLinks = ({ className = "" }) => {
     <img
   src={`${IMG_BASE}/summoners-link.png`}
   alt="Summoner's Hall"
-  className="h-9 md:h-14 lg:h-7 xl:h-7 w-auto object-contain select-none"
+  className="h-9 md:h-14 lg:h-7 xl:h-9 w-auto object-contain select-none"
   draggable="false"
 />
       </NavLink>
@@ -167,7 +167,7 @@ const ImageNavLinks = ({ className = "" }) => {
        <img
   src={`${IMG_BASE}/rift-link.png`}
   alt="The Rift Tavern"
-  className="h-12 md:h-24 lg:h-10 xl:h-11 w-auto object-contain select-none"
+  className="h-12 md:h-14 lg:h-10 xl:h-8 w-auto object-contain select-none"
   draggable="false"
 />
       </button>
@@ -182,7 +182,7 @@ const ImageNavLinks = ({ className = "" }) => {
      <img
   src={`${IMG_BASE}/bazaar-link.png`}
   alt="Legends Bazaar"
-  className="h-9 md:h-16 lg:h-7 xl:h-8 w-auto object-contain select-none"
+  className="h-9 md:h-16 lg:h-7 xl:h-9 w-auto object-contain select-none"
   draggable="false"
 />
       </NavLink>
@@ -250,7 +250,7 @@ const ImageNavLinks = ({ className = "" }) => {
     </div>
     <div className="mt-3 flex justify-center">
       {/* centrera, men nudge lite vänster */}
-      <ImageNavLinks className="sm:relative sm:-left-6 md:-left-2 lg:-left-2 xl:-left-2" />
+      <ImageNavLinks className="sm:relative sm:-left-6 md:-left-2 lg:-left-2 xl:-left-0" />
     </div>
   </div>
 

@@ -29,7 +29,7 @@ export default function Cart() {
                   />
                   <div>
                     <span className="font-semibold">{item.name}</span>
-                    <div className="text-sm text-black">
+                    <div className="text-sm text-white">
                       Size: {item.size}
                     </div>
                     <div className="flex items-center gap-2 mt-1">
@@ -37,7 +37,7 @@ export default function Cart() {
                         onClick={() =>
                           updateQuantity(item.id, item.size, item.quantity - 1)
                         }
-                        className="px-2 py-1 bg-rift-card border border-rift-gold/40 rounded hover:bg-rift-card/80 transition"
+                        className="px-2 py-1 bg-black/30 border border-rift-gold/40 rounded hover:bg-black/80 transition"
                         disabled={item.quantity <= 1}
                       >
                         -
@@ -47,7 +47,7 @@ export default function Cart() {
                         onClick={() =>
                           updateQuantity(item.id, item.size, item.quantity + 1)
                         }
-                        className="px-2 py-1 bg-rift-card border border-rift-gold/40 rounded hover:bg-rift-card/80 transition"
+                        className="px-2 py-1 bg-black/30 border border-rift-gold/40 rounded hover:bg-black/80 transition"
                       >
                         +
                       </button>
@@ -57,12 +57,12 @@ export default function Cart() {
 
                 {/* höger sida: pris + remove */}
                 <div className="flex items-center gap-4">
-                  <span className="text-black font-semibold">
+                  <span className="text-white font-semibold">
                     {item.price * item.quantity} SEK
                   </span>
                   <button
                     onClick={() => removeFromCart(item.id, item.size)}
-                    className="px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition"
+                    className="px-2 py-1 bg-black text-rift-gold rounded hover:bg-red-700 transition hover:text-white transition"
                   >
                     Remove
                   </button>
@@ -78,7 +78,7 @@ export default function Cart() {
 
             <Link
               to="/checkout"
-              className="mt-4 inline-block px-4 py-2 bg-rift-card border border-rift-gold/40 rounded-md hover:bg-rift-card/80 transition"
+              className="mt-4 inline-block px-4 py-2 bg-black/30 border border-rift-gold/40 rounded-md hover:bg-black/80 transition"
             >
               Go to Checkout →
             </Link>

@@ -1,109 +1,162 @@
+// 🔧 FRONTEND — src/components/profile/PostCard.jsx
 import { useState } from "react";
-import CommentList from "./CommentList.jsx";
+import { Link } from "react-router-dom";
 
 const API_URL = "http://localhost:5000";
 
+function resolveAvatar(url) {
+  if (!url) return "/images/default-avatar.png";
+  if (url.startsWith("http")) return url;
+  return `${API_URL}${url}`;
+}
+
 export default function PostCard({ post, me, refresh }) {
-  const [commentsOpen, setCommentsOpen] = useState(false);
-  const [liked, setLiked] = useState(post.liked_by_me);
-  const [likeCount, setLikeCount] = useState(post.like_count);
-  const [commentCount, setCommentCount] = useState(post.comment_count);
+  const [comment, setComment] = useState("");
 
-  async function toggleLike() {
-    if (!me) return alert("Logga in för att gilla inlägg");
+  async function handleComment(e) {
+    e.preventDefault();
+    if (!comment.trim() || !me) return;
 
-    try {
-      const res = await fetch(`${API_URL}/api/user-posts/${post.id}/like`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: me.id }),
-      });
+    const res = await fetch(`${API_URL}/api/user-posts/${post.id}/comments`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: me.id, content: comment }),
+    });
 
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || "Något gick fel");
-      }
-
-      const data = await res.json();
-      setLikeCount(data.like_count);
-      setLiked(data.liked);
-    } catch (error) {
-      console.error("❌ Gilla misslyckades:", error.message);
-      alert("Kunde inte gilla inlägget: " + error.message);
+    if (res.ok) {
+      setComment("");
+      refresh();
+    } else {
+      console.error("❌ Failed to add comment:", await res.text());
     }
   }
 
-  async function handleDelete() {
-    if (!me) return alert("Du måste vara inloggad för att radera");
-    if (!confirm("Är du säker på att du vill radera detta inlägg?")) return;
+  async function handleDeletePost() {
+    if (!me || me.id !== post.user_id) return;
+    if (!confirm("Delete this post?")) return;
 
-    try {
-      const res = await fetch(`${API_URL}/api/user-posts/${post.id}`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: me.id }),
-      });
+    const res = await fetch(`${API_URL}/api/user-posts/${post.id}`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: me.id }),
+    });
 
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || "Okänt fel");
-      }
-
-      const result = await res.json();
-      console.log("✅ Post raderad:", result);
+    if (res.ok) {
       refresh();
-    } catch (error) {
-      console.error("❌ Misslyckades att radera post:", error.message);
-      alert("Kunde inte radera: " + error.message);
+    } else {
+      console.error("❌ Failed to delete post:", await res.text());
+    }
+  }
+
+  async function handleDeleteComment(commentId) {
+    if (!me) return;
+    if (!confirm("Delete this comment?")) return;
+
+    const res = await fetch(`${API_URL}/api/user-post-comments/${commentId}`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: me.id }),
+    });
+
+    if (res.ok) {
+      refresh();
+    } else {
+      console.error("❌ Failed to delete comment:", await res.text());
     }
   }
 
   return (
-    <div className="p-4 border rounded bg-white">
-      <div className="flex justify-between items-center">
-        <p className="font-bold">{post.author}</p>
-        {me && me.id === post.user_id && (
+    <div className="border border-rift-gold/30 rounded-lg p-4 bg-black/20">
+      {/* Post header */}
+      <div className="flex items-center gap-3 mb-3">
+        <Link to={`/profile/${post.user_id}`}>
+          <img
+            src={resolveAvatar(post.avatar_url)}
+            alt={post.username}
+            className="w-10 h-10 rounded-full object-cover border border-rift-gold/30"
+          />
+        </Link>
+        <Link
+          to={`/profile/${post.user_id}`}
+          className="text-rift-gold font-semibold hover:underline"
+        >
+          {post.username}
+        </Link>
+
+        {me?.id === post.user_id && (
           <button
-            onClick={handleDelete}
-            className="text-red-600 text-sm hover:underline"
+            onClick={handleDeletePost}
+            className="ml-auto hover:opacity-80"
+            title="Delete post"
           >
-            Delete
+            <img
+              src={`${API_URL}/images/trash.png`}
+              alt="Delete"
+              className="w-5 h-5"
+            />
           </button>
         )}
       </div>
 
-      <p>{post.content}</p>
+      <p className="text-white mb-3">{post.content}</p>
 
-      {post.image && (
-        <img
-          src={`${API_URL}${post.image}`}
-          alt="post"
-          className="w-full h-48 object-cover rounded mt-2"
-        />
+      {/* Comments */}
+      {post.comments?.length > 0 && (
+        <div className="mt-3 space-y-3 border-t border-rift-gold/20 pt-3">
+          {post.comments.map((c) => (
+            <div key={c.id} className="flex items-start gap-3">
+              <Link to={`/profile/${c.user_id}`}>
+                <img
+                  src={resolveAvatar(c.avatar_url)}
+                  alt={c.username}
+                  className="w-8 h-8 rounded-full object-cover border border-rift-gold/30"
+                />
+              </Link>
+              <div className="flex-1">
+                <div className="flex items-center justify-between">
+                  <Link
+                    to={`/profile/${c.user_id}`}
+                    className="text-rift-gold font-medium hover:underline"
+                  >
+                    {c.username}
+                  </Link>
+                  {me?.id === c.user_id && (
+                    <button
+                      onClick={() => handleDeleteComment(c.id)}
+                      className="hover:opacity-80"
+                      title="Delete comment"
+                    >
+                      <img
+                        src={`${API_URL}/images/trash.png`}
+                        alt="Delete"
+                        className="w-4 h-4"
+                      />
+                    </button>
+                  )}
+                </div>
+                <p className="text-sm text-white">{c.content}</p>
+              </div>
+            </div>
+          ))}
+        </div>
       )}
 
-      <div className="flex gap-4 text-sm text-gray-600 mt-2">
-        <button
-          onClick={toggleLike}
-          className="flex items-center gap-1 hover:text-rift-gold"
-        >
-          {liked ? "👍" : "👍"} {likeCount || 0}
-        </button>
-        <button
-          onClick={() => setCommentsOpen(!commentsOpen)}
-          className="hover:text-rift-gold"
-        >
-          💬 {commentCount || 0}
-        </button>
-      </div>
-
-      {commentsOpen && (
-        <CommentList
-          postId={post.id}
-          me={me}
-          refresh={refresh}
-          onCommentAdded={() => setCommentCount((c) => c + 1)} // ✅ direkt update
-        />
+      {/* Add comment (bara om inloggad) */}
+      {me && (
+        <form onSubmit={handleComment} className="mt-3 flex gap-2">
+          <input
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            placeholder="Write a comment..."
+            className="flex-1 bg-black/30 border border-rift-gold/30 rounded p-2 text-white text-sm"
+          />
+          <button
+            type="submit"
+            className="px-3 py-1 border border-rift-gold/50 rounded-md text-rift-gold hover:bg-rift-card/60"
+          >
+            Send
+          </button>
+        </form>
       )}
     </div>
   );
