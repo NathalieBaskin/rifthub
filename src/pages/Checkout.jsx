@@ -103,7 +103,7 @@ export default function Checkout() {
             value={form.firstName}
             onChange={handleChange}
             required
-            className="w-full border border-rift-gold/40 rounded px-3 py-2"
+            className="w-full border border-rift-gold/40 rounded px-3 py-2 text-black"
           />
           <input
             name="lastName"
@@ -111,7 +111,7 @@ export default function Checkout() {
             value={form.lastName}
             onChange={handleChange}
             required
-            className="w-full border border-rift-gold/40 rounded px-3 py-2"
+            className="w-full border border-rift-gold/40 rounded px-3 py-2 text-black"
           />
           <input
             name="email"
@@ -120,7 +120,7 @@ export default function Checkout() {
             value={form.email}
             onChange={handleChange}
             required
-            className="w-full border border-rift-gold/40 rounded px-3 py-2"
+            className="w-full border border-rift-gold/40 rounded px-3 py-2 text-black"
           />
 
           <input
@@ -129,7 +129,7 @@ export default function Checkout() {
             value={form.address}
             onChange={handleChange}
             required
-            className="w-full border border-rift-gold/40 rounded px-3 py-2"
+            className="w-full border border-rift-gold/40 rounded px-3 py-2 text-black"
           />
 
           <div className="flex gap-4">
@@ -139,7 +139,7 @@ export default function Checkout() {
               value={form.zipcode}
               onChange={handleChange}
               required
-              className="w-1/3 border border-rift-gold/40 rounded px-3 py-2"
+              className="w-1/3 border border-rift-gold/40 rounded px-3 py-2 text-black"
             />
             <input
               name="city"
@@ -147,7 +147,7 @@ export default function Checkout() {
               value={form.city}
               onChange={handleChange}
               required
-              className="flex-1 border border-rift-gold/40 rounded px-3 py-2"
+              className="flex-1 border border-rift-gold/40 rounded px-3 py-2 text-black"
             />
           </div>
 
