@@ -1,5 +1,6 @@
 import { useCart } from "../context/useCart.js";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 export default function Checkout() {
   const { cart, clearCart } = useCart();
@@ -14,6 +15,7 @@ export default function Checkout() {
   });
   const [confirmation, setConfirmation] = useState(null);
   const [error, setError] = useState(null);
+  const navigate = useNavigate ();
 
   function handleChange(e) {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -43,18 +45,24 @@ export default function Checkout() {
     }
   }
 
-  if (confirmation) {
-    return (
-      <div className="max-w-xl mx-auto p-6 text-center">
-        <h1 className="text-2xl font-display mb-4">Order Confirmed 🎉</h1>
-        <p className="mb-2">Thank you for your purchase, {form.firstName}!</p>
-       
-        <p className="text-black">
-          A confirmation has been sent to {form.email}
-        </p>
-      </div>
-    );
-  }
+if (confirmation) {
+  return (
+    <div className="max-w-xl mx-auto p-6 text-center">
+      <h1 className="text-2xl font-display mb-4">Order Confirmed 🎉</h1>
+      <p className="mb-2">Thank you for your purchase, {form.firstName}!</p>
+      <p className="text-black">
+        A confirmation has been sent to {form.email}
+      </p>
+      <button
+        onClick={() => navigate("/")}
+        className="mt-6 px-4 py-2 bg-rift-card text-rift-gold border border-rift-gold/40 rounded-md hover:bg-rift-card/80 transition"
+      >
+        Go to Homepage
+      </button>
+    </div>
+  );
+}
+
 
   return (
     <div className="max-w-xl mx-auto p-6">
@@ -185,5 +193,6 @@ export default function Checkout() {
         </form>
       )}
     </div>
+    
   );
 }
