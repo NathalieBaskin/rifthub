@@ -1,3 +1,4 @@
+// src/components/profile/AlbumImageModal.jsx
 import { useEffect, useState } from "react";
 
 const API_URL = "http://localhost:5000";
@@ -18,7 +19,12 @@ export default function AlbumImageModal({ itemId, images, onClose, me }) {
     const data = await res.json();
     setDetails(data);
   }
-
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, []);
   useEffect(() => {
     if (currentImage) fetchImage(currentImage.id);
   }, [currentImage, me]);
@@ -33,11 +39,14 @@ export default function AlbumImageModal({ itemId, images, onClose, me }) {
 
   async function handleLike() {
     if (!me) return alert("Logga in för att gilla");
-    const res = await fetch(`${API_URL}/api/album-items/${currentImage.id}/like`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: me.id }),
-    });
+    const res = await fetch(
+      `${API_URL}/api/album-items/${currentImage.id}/like`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: me.id }),
+      }
+    );
     if (res.ok) {
       const data = await res.json();
       setDetails((prev) => ({
@@ -51,11 +60,14 @@ export default function AlbumImageModal({ itemId, images, onClose, me }) {
   async function handleAddComment(e) {
     e.preventDefault();
     if (!comment.trim() || !me) return;
-    const res = await fetch(`${API_URL}/api/album-items/${currentImage.id}/comments`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: me.id, content: comment }),
-    });
+    const res = await fetch(
+      `${API_URL}/api/album-items/${currentImage.id}/comments`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: me.id, content: comment }),
+      }
+    );
     if (res.ok) {
       const newC = await res.json();
       setDetails((prev) => ({
@@ -87,27 +99,41 @@ export default function AlbumImageModal({ itemId, images, onClose, me }) {
   if (!details) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-70 bg-black/80 flex items-center justify-center p-4"
-      onClick={onClose}
-    >
-      <div
-        className="relative bg-white text-black rounded-lg shadow-lg w-full max-w-3xl max-h-[80vh] overflow-hidden flex flex-col"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Bild */}
-        <div className="relative">
-          <img
-            src={`${API_URL}${details.media_url}`}
-            alt="Album item"
-            className="w-full max-h-[55vh] object-contain"
-          />
+  <div
+  className="fixed inset-0 z-[80] bg-black/90 flex justify-center items-center xl:items-start xl:pt-20 p-4"
+  onClick={onClose}
+>
+  <div
+    className="relative bg-black/30 text-rift-gold rounded-lg shadow-lg w-full
+               max-w-md sm:max-w-lg
+               md:max-w-3xl md:max-h-[85vh]
+               xl:max-w-3xl xl:max-h-[75vh]
+               overflow-hidden flex flex-col"
+    onClick={(e) => e.stopPropagation()}
+  >
+        {/* Close-knapp (alltid synlig) */}
+        <button
+          onClick={onClose}
+          className="absolute top-2 right-2 z-20 w-8 h-8 flex items-center justify-center rounded bg-red-600 text-white font-bold"
+          title="Close"
+        >
+          ✕
+        </button>
 
-          {/* Prev/Next */}
+        {/* Bildyta med prev/next */}
+        <div className="relative">
+        <img
+  src={`${API_URL}${details.media_url}`}
+  alt="Album item"
+  className="w-auto max-h-[55vh] sm:max-h-[60vh] xl:max-h-[50vh] mx-auto object-contain"
+/>
+
+
           {currentIndex > 0 && (
             <button
               onClick={goPrev}
-              className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/60 text-white px-3 py-2 rounded-full"
+              className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/60 text-white text-4xl px-3 py-2 rounded-full"
+              title="Previous"
             >
               ‹
             </button>
@@ -115,32 +141,35 @@ export default function AlbumImageModal({ itemId, images, onClose, me }) {
           {currentIndex < images.length - 1 && (
             <button
               onClick={goNext}
-              className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/60 text-white px-3 py-2 rounded-full"
+              className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/60 text-white text-4xl px-3 py-2 rounded-full"
+              title="Next"
             >
               ›
             </button>
           )}
         </div>
 
-        {/* Info */}
-        <div className="p-4 overflow-y-auto flex-1">
+        {/* Info + kommentarer (högre och scrollar separat) */}
+        <div className="p-4 flex-1 overflow-y-auto max-h-[35vh] sm:max-h-[40vh] xl:max-h-[45vh]">
           <button
             onClick={handleLike}
             className="flex gap-1 items-center text-sm hover:text-rift-gold"
+            title="Like"
           >
-            {details.liked_by_me ? "👍" : "👍"} {details.like_count || 0}
+            👍 {details.like_count || 0}
           </button>
 
           <h3 className="mt-3 font-semibold">Comments</h3>
+
           {details.comments?.map((c) => (
             <div key={c.id} className="mt-2 border-b pb-2">
               <div className="flex items-center gap-2">
                 <img
                   src={
                     c.avatar_url
-                      ? (c.avatar_url.startsWith("http")
-                          ? c.avatar_url
-                          : `${API_URL}${c.avatar_url}`)
+                      ? c.avatar_url.startsWith("http")
+                        ? c.avatar_url
+                        : `${API_URL}${c.avatar_url}`
                       : "/images/default-avatar.png"
                   }
                   alt={c.username}
@@ -159,6 +188,7 @@ export default function AlbumImageModal({ itemId, images, onClose, me }) {
               <p className="ml-8 text-sm">{c.content}</p>
             </div>
           ))}
+
           {me ? (
             <form onSubmit={handleAddComment} className="flex gap-2 mt-3">
               <input
