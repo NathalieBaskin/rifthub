@@ -29,7 +29,7 @@ export default function Cart() {
                   />
                   <div>
                     <span className="font-semibold">{item.name}</span>
-                    <div className="text-sm text-white">
+                    <div className="text-sm text-rift-gold">
                       Size: {item.size}
                     </div>
                     <div className="flex items-center gap-2 mt-1">
@@ -73,7 +73,7 @@ export default function Cart() {
 
           <div className="mt-6 text-right">
             <p className="text-lg font-semibold">
-              Total: <span className="text-black">{total} SEK</span>
+              Total: <span className="text-rift-gold">{total} SEK</span>
             </p>
 
             <Link
