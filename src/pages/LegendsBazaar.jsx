@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AiOutlineHeart, AiFillHeart } from "react-icons/ai";
+import { FiShoppingCart } from "react-icons/fi";
 
 import { useCart } from "../context/useCart.js";
 import { useFavorites } from "../hooks/useFavorites.js";
@@ -16,9 +17,10 @@ export default function LegendsBazaar() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const [selectedSizes, setSelectedSizes] = useState({});
   const [pop, setPop] = useState({});
   const [selectedCategory, setSelectedCategory] = useState("all");
+
+  const [sizeModalProduct, setSizeModalProduct] = useState(null);
 
   useEffect(() => {
     async function load() {
@@ -36,10 +38,6 @@ export default function LegendsBazaar() {
     }
     load();
   }, []);
-
-  const handleSizeChange = (productId, size) => {
-    setSelectedSizes((prev) => ({ ...prev, [productId]: size }));
-  };
 
   const isFav = (id) =>
     Array.isArray(favorites) &&
@@ -118,18 +116,17 @@ export default function LegendsBazaar() {
       {/* 🔹 Grid med produkter */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {filteredProducts.map((p) => {
-          const selectedSize = selectedSizes[p.id] || "";
           const favorite = isFav(p.id);
           const go = () => navigate(`/shop/product/${p.id}`);
 
           return (
             <div
               key={p.id}
-              className="card-fantasy p-4 flex flex-col items-center text-center relative"
+              className="relative flex flex-col bg-black/20 rounded-lg overflow-hidden hover:shadow-lg transition"
             >
-              {/* Bild + NEW + hjärta */}
+              {/* Bild */}
               <div
-                className="relative w-32 h-32 mb-4 cursor-pointer"
+                className="relative w-full h-64 md:h-72 flex items-center justify-center cursor-pointer"
                 onClick={go}
                 role="button"
                 tabIndex={0}
@@ -138,74 +135,96 @@ export default function LegendsBazaar() {
                 <img
                   src={p.image_url}
                   alt={p.name}
-                  className="w-full h-full object-contain rounded-md"
+                  className="max-h-full max-w-full object-contain"
                 />
                 {p.isNew && (
-                  <span className="absolute top-1 left-1 bg-black text-rift-gold text-xs font-bold px-2 py-0.5 rounded">
+                  <span className="absolute top-2 left-2 bg-black text-rift-gold text-xs font-bold px-2 py-0.5 rounded">
                     NEW
                   </span>
                 )}
 
+                {/* Hjärtat */}
                 <button
                   onClick={(e) => onToggleFavorite(e, p)}
-                  className={`absolute bottom-1 right-1 transition-transform ${
+                  className={`absolute top-2 right-2 transition-transform ${
                     pop[p.id] ? "scale-125" : "active:scale-90"
                   }`}
-                  aria-label={
-                    favorite ? "Remove from favorites" : "Add to favorites"
-                  }
+                  aria-label={favorite ? "Remove from favorites" : "Add to favorites"}
                   title={favorite ? "Remove from favorites" : "Add to favorites"}
                 >
                   {favorite ? (
-                    <AiFillHeart className="text-rift-gold text-lg drop-shadow" />
+                    <AiFillHeart className="text-rift-gold text-2xl drop-shadow" />
                   ) : (
-                    <AiOutlineHeart className="text-white text-lg" />
+                    <AiOutlineHeart className="text-white text-2xl" />
                   )}
+                </button>
+
+                {/* Cart-symbolen */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSizeModalProduct(p);
+                  }}
+                  className="absolute bottom-2 right-2  p-2 rounded-md hover:bg-black/80 transition"
+                  title="Add to Cart"
+                >
+                  <FiShoppingCart className="text-white text-lg" />
                 </button>
               </div>
 
               {/* Namn + pris */}
-              <h2
-                className="text-lg font-bold cursor-pointer"
-                onClick={go}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => e.key === "Enter" && go()}
-              >
-                {p.name}
-              </h2>
-              <p className="mt-2 text-rift-gold font-semibold">{p.price} SEK</p>
-
-              {/* Storlek */}
-              <select
-                value={selectedSize}
-                onChange={(e) => handleSizeChange(p.id, e.target.value)}
-                className="mt-2 border rounded p-1 text-sm text-black"
-              >
-                <option value="">Select size</option>
-                <option value="S">S</option>
-                <option value="M">M</option>
-                <option value="L">L</option>
-                <option value="XL">XL</option>
-              </select>
-
-              {/* Lägg i kundvagn */}
-              <button
-                onClick={() => {
-                  if (!selectedSize) {
-                    alert("Please select a size before adding to cart");
-                    return;
-                  }
-                  addToCart({ ...p, size: selectedSize });
-                }}
-                className="mt-4 px-4 py-2 bg-rift-card border border-rift-gold/40 rounded-md hover:bg-rift-card/80 transition"
-              >
-                Add to Cart
-              </button>
+              <div className="p-3 text-center">
+                <h2
+                  className="text-sm md:text-base font-semibold cursor-pointer truncate"
+                  onClick={go}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => e.key === "Enter" && go()}
+                >
+                  {p.name}
+                </h2>
+                <p className="mt-1 text-rift-gold font-semibold">{p.price} SEK</p>
+              </div>
             </div>
           );
         })}
       </div>
+
+      {/* 🔹 Size-modal */}
+      {sizeModalProduct && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-white text-black p-6 rounded-lg shadow-lg w-80 relative">
+           <button
+  onClick={() => setSizeModalProduct(null)}
+  className="absolute top-2 right-2 w-10 h-10 flex items-center justify-center 
+             rounded-full hover:bg-rift-gold/30 text-black font-bold text-xl"
+  title="Close"
+>
+  ✕
+</button>
+
+
+            <h3 className="text-lg font-bold mb-2">{sizeModalProduct.name}</h3>
+            <p className="mb-4 text-rift-gold">{sizeModalProduct.price} SEK</p>
+
+            <p className="font-semibold mb-2">Välj storlek</p>
+            <div className="flex gap-2 flex-wrap mb-4">
+              {["XS", "S", "M", "L", "XL"].map((size) => (
+                <button
+                  key={size}
+                  onClick={() => {
+                    addToCart({ ...sizeModalProduct, size });
+                    setSizeModalProduct(null);
+                  }}
+                  className="px-3 py-1 border rounded hover:bg-gray-200"
+                >
+                  {size}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
