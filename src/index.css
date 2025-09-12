@@ -35,14 +35,28 @@
     color: #e5e7eb;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+
+    /* 🔹 Default-cursor överallt som inte är klickbart */
     cursor: url("/cursor-default.png") 2 2, auto;
+
     --bg-fallback: url("/images/fantasy-bg.png");
   }
 
   h1, h2, h3, h4, h5, h6 { font-family: "Beaufort", ui-serif, Georgia, serif; }
 
-  a, button, [role="button"], .cursor-pointer {
-    cursor: url("/cursor-pointer.png") 6 0, pointer;
+  /* 🔹 Pointer-cursor på ALLA klickbara element */
+  a, button, [role="button"], .cursor-pointer,
+  input[type="checkbox"], input[type="radio"],
+  input[type="submit"], input[type="button"],
+  label, select, summary, img, svg, .clickable, [onclick] {
+    cursor: url("/cursor-pointer.png") 6 0, pointer !important;
+  }
+
+  /* 🔹 Text-cursor för skrivfält */
+  input[type="text"], input[type="email"], input[type="password"],
+  input[type="number"], input[type="search"], input[type="url"],
+  textarea {
+    cursor: url("/cursor-default.png") 2 2, text !important;
   }
 }
 
@@ -89,14 +103,13 @@ body.chat-page {
   position: relative;
   z-index: 1;
 
-  /* 👇 flytta bara bakgrundsbilden uppåt */
   background-position: center -80px;
 }
 
 /* ===================== GRID ===================== */
 .paper-grid {
   display: grid;
-  grid-template-columns: 260px 1fr; /* bredare vänster rail */
+  grid-template-columns: 260px 1fr;
   gap: 24px; 
 }
 @media (max-width: 980px) {
@@ -110,7 +123,7 @@ body.chat-page {
   gap: 12px;
   padding: 10px;
   margin-top: 55px;
-  margin-left: 140px; /* flytta in på pappret */
+  margin-left: 140px;
   background: rgba(255,255,255,.03);
   border-radius: 14px;
 }
@@ -135,7 +148,7 @@ body.chat-page {
 .searchbar {
   display: block;
   max-width: 240px;
-  margin: 0 0 24px 0; /* i linje med forumets vänsterkant */
+  margin: 0 0 24px 0;
   padding: 8px 14px;
   font-size: 14px;
   border-radius: 12px;
@@ -155,8 +168,8 @@ body.chat-page {
   border-radius: 10px;
   border: 1px solid rgba(217,178,96,.25);
   background: rgba(255,255,255,.88);
-  margin: 0 auto 10px auto; /* centrerar dem i forumkolumnen */
-  max-width: 850px;          /* gör trådarna smalare */
+  margin: 0 auto 10px auto;
+  max-width: 850px;
 }
 
 .thread-title {
@@ -165,17 +178,17 @@ body.chat-page {
   color: #0f1624;
 
   display: -webkit-box;
-  -webkit-line-clamp: 2;   /* max 2 rader */
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: normal;     /* tillåter radbrytning */
+  white-space: normal;
 }
 
 .thread-meta {
-  font-size: 11px;                /* mindre meta-text */
+  font-size: 11px;
   color: rgba(15,22,36,.6);
-  margin-top: 2px;                /* mindre luft ovanför */
+  margin-top: 2px;
 }
 
 /* ===================== ACTIONS ===================== */
@@ -219,17 +232,11 @@ body.chat-page {
 
 /* ===================== VIDEO POSITION ===================== */
 @media (max-width: 640px) {
-  video {
-    object-position: center 20%; /* flytta fokus lite uppåt */
-  }
+  video { object-position: center 20%; }
 }
 @media (min-width: 641px) and (max-width: 1024px) {
-  video {
-    object-position: center 30%; /* lite mer kompakt på iPad */
-  }
+  video { object-position: center 30%; }
 }
 @media (min-width: 1025px) {
-  video {
-    object-position: 50% 50%; /* centrerad */
-  }
+  video { object-position: 50% 50%; }
 }
