@@ -88,11 +88,14 @@ export default function GallerySection({ profileUserId, me }) {
               />
             )}
             <div className="p-3">
-              <h3 className="font-bold text-white">{album.title}</h3>
+              {/* 🔹 Titel + datum */}
+              <h3 className="font-bold text-white">
+                {album.title || "Untitled"}
+              </h3>
               <div className="text-sm text-white">
-                {album.author} •{" "}
-                {new Date(album.created_at).toLocaleDateString()}
+                {new Date(album.created_at || Date.now()).toLocaleDateString()}
               </div>
+
               <div className="flex gap-4 text-sm text-white mt-2">
                 <button
                   onClick={(e) => {
