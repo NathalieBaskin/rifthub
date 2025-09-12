@@ -122,7 +122,7 @@ export default function ProfilePage() {
             className="rounded-xl px-10 pt-24 pb-16 bg-no-repeat bg-cover bg-center"
             style={{
               backgroundImage: "url('/images/scroll.png')",
-              minHeight: "740px",
+              minHeight: "700px",
               width: "100%",
             }}
           >
@@ -183,12 +183,12 @@ export default function ProfilePage() {
               )}
 
               {profile.socials && (
-                <div className="mt-20 flex gap-9">
+     <div className="absolute bottom-24 left-1/2 -translate-x-1/2 flex items-center justify-center gap-2">
                   {Object.entries(profile.socials).map(([key, value]) =>
                     value ? (
                       <a key={key} href={value} target="_blank" rel="noopener noreferrer" className="relative group">
-                        <img src={socialIcons[key]} alt={key} className="w-7 h-7 opacity-95 hover:opacity-100 transition" />
-                        <span className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100">
+                        <img src={socialIcons[key]} alt={key} className="w-9 h-8 opacity-95 hover:opacity-100 transition" />
+                       <span className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100">
                           {key}
                         </span>
                       </a>
@@ -200,7 +200,7 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        <div className="flex justify-center gap-4 mt-2">
+        <div className="flex justify-center gap-4 -mt-16">
           <button
             className={`px-6 py-2 rounded ${activeTab === "posts" ? "bg-green-950 text-white" : "bg-green-950 text-gray-300"}`}
             onClick={() => setActiveTab("posts")}
@@ -259,17 +259,17 @@ export default function ProfilePage() {
         </div>
 
         {/* Scroll-”papper” */}
-        <div className="relative mt-[-70px] max-w-[820px] mx-auto">
+        <div className="relative mt-[-20px] max-w-[820px] mx-auto">
           <div
             className="relative rounded-xl px-14 pt-24 pb-20 bg-no-repeat bg-cover bg-center"
             style={{
               backgroundImage: "url('/images/scroll.png')",
-              minHeight: "960px",
+              minHeight: "800px",
               width: "100%",
             }}
           >
             {/* Loggor */}
-            <div className="flex items-center justify-center gap-8 -mt-12 mb-6">
+            <div className="flex items-center justify-center gap-8 -mt-20 mb-6">
               {rankIcon && (
                 <img
                   src={rankIcon}
@@ -335,7 +335,7 @@ export default function ProfilePage() {
 
             {/* Socials */}
             {profile.socials && (
-              <div className="absolute bottom-24 left-1/2 -translate-x-1/2 flex items-center justify-center gap-14">
+              <div className="absolute bottom-12 left-1/2 -translate-x-1/2 flex items-center justify-center gap-12">
                 {Object.entries(profile.socials).map(([key, value]) =>
                   value ? (
                     <a
@@ -348,7 +348,7 @@ export default function ProfilePage() {
                       <img
                         src={socialIcons[key]}
                         alt={key}
-                        className="w-8 h-8 opacity-90 hover:opacity-100 transition"
+                        className="w-10 h-10 opacity-90 hover:opacity-100 transition"
                       />
                       <span className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100">
                         {key}
@@ -536,7 +536,7 @@ export default function ProfilePage() {
                   <img
                     src={socialIcons[key]}
                     alt={key}
-                    className="w-8 h-9 opacity-95 hover:opacity-100 transition"
+                    className="w-9 h-9 opacity-95 hover:opacity-100 transition"
                   />
                   <span className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100">
                     {key}
