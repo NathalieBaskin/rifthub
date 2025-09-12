@@ -37,13 +37,16 @@ import WatchStreamPage from "./pages/WatchStreamPage.jsx";
 export default function App() {
   const location = useLocation();
 
-  // Lägg till/ta bort klass på <body> beroende på route (för din chat-layout)
   useEffect(() => {
+    // Hantera chat-body-classen
     if (location.pathname.startsWith("/chat")) {
       document.body.classList.add("chat-page");
     } else {
       document.body.classList.remove("chat-page");
     }
+
+    // Scrolla alltid till toppen på ny sida
+    window.scrollTo(0, 0);
   }, [location]);
 
   return (

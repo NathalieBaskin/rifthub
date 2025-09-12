@@ -168,8 +168,6 @@ function ThreadModal({
   setShowAuthModal,
 }) {
   const [comments, setComments] = useState([]);
-  const [replyOpen, setReplyOpen] = useState({});
-  const [replyText, setReplyText] = useState({});
   const [text, setText] = useState("");
 
   // trådredigering
@@ -221,7 +219,7 @@ function ThreadModal({
   }
 
   // COMMENT ACTIONS
-  async function handlePostComment(parentId = null) {
+  async function handlePostComment(parentId = null, contentOverride = null) {
     if (!user) {
       if (typeof setShowAuthModal === "function") {
         setShowAuthModal(true);
@@ -231,7 +229,7 @@ function ThreadModal({
       return;
     }
 
-    const content = parentId ? replyText[parentId] : text;
+    const content = contentOverride ?? text;
     if (!content?.trim()) return;
 
     const res = await fetch(`${API_URL}/api/threads/${thread.id}/comments`, {
@@ -246,7 +244,7 @@ function ThreadModal({
     setComments((prev) => [...prev, newComment]);
     onCommentCountChange?.(thread.id, +1);
 
-    parentId ? setReplyText((p) => ({ ...p, [parentId]: "" })) : setText("");
+    if (!parentId) setText("");
   }
 
   async function handleToggleLikeComment(commentId) {
@@ -298,6 +296,8 @@ function ThreadModal({
     const liked = !!c.liked_by_me;
     const [isEditing, setIsEditing] = useState(false);
     const [localText, setLocalText] = useState(c.content);
+    const [replyValue, setReplyValue] = useState(""); // 🔹 egen state för varje reply-input
+    const [replyOpen, setReplyOpen] = useState(false);
 
     async function saveEdit() {
       if (!localText.trim()) return;
@@ -359,13 +359,7 @@ function ThreadModal({
                 {liked ? <AiFillLike /> : <AiOutlineLike />}{" "}
                 {c.like_count || 0}
               </button>
-              <button
-                onClick={() =>
-                  setReplyOpen((p) => ({ ...p, [c.id]: !p[c.id] }))
-                }
-              >
-                Reply
-              </button>
+              <button onClick={() => setReplyOpen(!replyOpen)}>Reply</button>
               {canEdit && !isEditing && (
                 <button
                   onClick={() => setIsEditing(true)}
@@ -384,19 +378,20 @@ function ThreadModal({
               )}
             </div>
 
-            {replyOpen[c.id] && (
+            {replyOpen && (
               <div className="mt-2 flex gap-2">
                 <input
                   className="flex-1 border rounded p-2 text-sm"
-                  value={replyText[c.id] || ""}
-                  onChange={(e) =>
-                    setReplyText((p) => ({ ...p, [c.id]: e.target.value }))
-                  }
+                  value={replyValue}
+                  onChange={(e) => setReplyValue(e.target.value)}
                   placeholder={`Reply to ${c.username}`}
                 />
                 <button
                   className="px-3 py-1 bg-rift-card text-rift-gold rounded"
-                  onClick={() => handlePostComment(c.id)}
+                  onClick={() => {
+                    handlePostComment(c.id, replyValue);
+                    setReplyValue("");
+                  }}
                 >
                   Reply
                 </button>
@@ -520,6 +515,7 @@ function ThreadModal({
     </div>
   );
 }
+
 
 function NewThreadModal({ onClose, onCreate }) {
   const [title, setTitle] = useState("");
